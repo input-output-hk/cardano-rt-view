@@ -1,0 +1,23 @@
+## Editors
+##
+*~
+\#*
+\.#*
+*.swp
+.dir-locals.el
+tags
+
+## Build artifacts
+##
+/bin
+/dist
+/dist-newstyle
+.stack-work/
+
+.ghc.environment.*
+stack.yaml.lock
+
+## Runtime artifacts
+##
+result*
+/logs

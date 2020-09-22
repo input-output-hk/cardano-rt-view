@@ -1,0 +1,44 @@
+[
+  {
+    "loname": "cardano.node.release",
+    "locontent": {
+      "kind": "LogMessage",
+      "message": "ByronProtocol"
+    },
+    "lometa": {
+      "tstamp": "2020-08-11T15:04:32.354943121Z",
+      "hostname": "linux",
+      "severity": "Notice",
+      "privacy": "Public",
+      "tid": "48"
+    }
+  },
+  {
+    "loname": "cardano.node.version",
+    "locontent": {
+      "kind": "LogMessage",
+      "message": "1.18.0"
+    },
+    "lometa": {
+      "tstamp": "2020-08-11T15:04:32.354943121Z",
+      "hostname": "linux",
+      "severity": "Notice",
+      "privacy": "Public",
+      "tid": "48"
+    }
+  },
+  {
+    "loname": "cardano.node.commit",
+    "locontent": {
+      "kind": "LogMessage",
+      "message": "a0eb636"
+    },
+    "lometa": {
+      "tstamp": "2020-08-11T15:04:32.354943121Z",
+      "hostname": "linux",
+      "severity": "Notice",
+      "privacy": "Public",
+      "tid": "48"
+    }
+  }
+]

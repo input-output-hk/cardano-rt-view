@@ -1,0 +1,94 @@
+name:                  cardano-rt-view
+version:               0.1.0
+description:           Real-time view service for cardano node
+author:                IOHK
+maintainer:            operations@iohk.io
+license:               Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+build-type:            Simple
+cabal-version:         >= 1.10
+extra-source-files:    README.md
+
+library
+
+  hs-source-dirs:      src
+
+  exposed-modules:     Cardano.Benchmarking.RTView
+                       Cardano.Benchmarking.RTView.CLI
+                       Cardano.Benchmarking.RTView.Config
+
+                       Cardano.Benchmarking.RTView.Acceptor
+
+                       Cardano.Benchmarking.RTView.ErrorBuffer
+
+                       Cardano.Benchmarking.RTView.GUI.Charts
+                       Cardano.Benchmarking.RTView.GUI.Elements
+                       Cardano.Benchmarking.RTView.GUI.Grid
+                       Cardano.Benchmarking.RTView.GUI.Markup
+                       Cardano.Benchmarking.RTView.GUI.Pane
+                       Cardano.Benchmarking.RTView.GUI.Updater
+                       Cardano.Benchmarking.RTView.GUI.CSS.Style
+
+                       Cardano.Benchmarking.RTView.NodeState.Parsers
+                       Cardano.Benchmarking.RTView.NodeState.Types
+                       Cardano.Benchmarking.RTView.NodeState.Updater
+
+                       Cardano.Benchmarking.RTView.Server
+
+  other-modules:       Paths_cardano_rt_view
+
+  build-depends:       aeson
+                     , async
+                     , base >=4.12 && <5
+                     , bytestring
+                     , cardano-prelude
+                     , clay
+                     , containers
+                     , deepseq
+                     , directory
+                     , filepath
+                     , formatting
+                     , iohk-monitoring
+                     , lobemo-backend-trace-acceptor
+                     , network
+                     , optparse-applicative
+                     , stm
+                     , strict-concurrency
+                     , text
+                     , time
+                     , threepenny-gui
+                     , yaml
+
+  default-language:    Haskell2010
+  default-extensions:  NoImplicitPrelude
+                       OverloadedStrings
+
+  ghc-options:         -Weverything
+                       -Wno-implicit-prelude
+                       -fno-warn-safe
+                       -fno-warn-unsafe
+                       -fno-warn-missing-import-lists
+                       -Wno-unticked-promoted-constructors
+                       -Wincomplete-record-updates
+                       -Wincomplete-uni-patterns
+                       -Wredundant-constraints
+                       -Wpartial-fields
+                       -Wcompat
+
+executable cardano-rt-view-service
+  hs-source-dirs:      app
+  main-is:             cardano-rt-view.hs
+  default-language:    Haskell2010
+  ghc-options:         -threaded
+                       -Wall
+                       -rtsopts
+                       "-with-rtsopts=-T"
+  build-depends:       base >=4.12 && <5
+                     , cardano-prelude
+                     , cardano-rt-view
+                     , optparse-applicative
+                     , transformers-except
+
+  default-extensions:  NoImplicitPrelude

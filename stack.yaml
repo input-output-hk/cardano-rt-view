@@ -1,0 +1,113 @@
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/0c5b0a6619fadf22f4d62a12154e181a6d035c1c/snapshot.yaml
+compiler: ghc-8.6.5
+
+packages:
+  - .
+  - test/rt-view-analyzer
+
+local-bin-path: bin
+
+extra-deps:
+  - QuickCheck-2.12.6.1
+  - Unique-0.4.7.6
+  - aeson-1.4.7.1
+  - assoc-1.0.1
+  - base58-bytestring-0.1.0
+  - base64-0.4.2
+  - bech32-1.1.0
+  - bifunctors-5.5.7
+  - bimap-0.4.0
+  - binary-0.8.7.0
+  - brick-0.47
+  - canonical-json-0.6.0.0
+  - cborg-0.2.4.0
+  - clock-0.8
+  - config-ini-0.2.4.0
+  - containers-0.5.11.0
+  - data-clist-0.1.2.2
+  - directory-1.3.6.1
+  - generic-monoid-0.1.0.0
+  - generics-sop-0.5.1.0
+  - ghc-byteorder-4.11.0.0.10
+  - gray-code-0.3.1
+  - hedgehog-1.0.2
+  - hspec-2.7.0
+  - hspec-core-2.7.0
+  - hspec-discover-2.7.0
+  - io-streams-1.5.1.0
+  - io-streams-haproxy-1.0.1.0
+  - micro-recursion-schemes-5.0.2.2
+  - moo-1.2
+  - network-3.1.1.1
+  - persistent-2.10.5.1
+  - persistent-postgresql-2.10.1.2
+  - persistent-template-2.8.2.3
+  - pipes-safe-2.3.2
+  - primitive-0.7.1.0
+  - process-1.6.8.2
+  - protolude-0.3.0
+  - quiet-0.2
+  - quickcheck-instances-0.3.19
+  - serialise-0.2.3.0
+  - snap-core-1.0.4.1
+  - snap-server-1.1.1.1
+  - sop-core-0.5.0.1
+  - statistics-linreg-0.3
+  - streaming-binary-0.3.0.1
+  - systemd-2.3.0
+  - tasty-hedgehog-1.0.0.2
+  - text-1.2.4.0
+  - text-zipper-0.10.1
+  - th-abstraction-0.3.2.0
+  - th-lift-0.8.1
+  - th-lift-instances-0.1.14
+  - these-1.1
+  - time-1.8.0.4
+  - time-compat-1.9.3
+  - time-units-1.0.0
+  - transformers-except-0.1.1
+  - typerep-map-0.3.3.0
+  - unix-2.7.2.2
+  - webdriver-0.9.0.1
+  - websockets-0.12.6.1
+  - Win32-2.8.5.0
+  - word-wrap-0.4.1
+
+  - git: https://github.com/input-output-hk/cardano-prelude
+    commit: 0c5b0a6619fadf22f4d62a12154e181a6d035c1c
+    subdirs:
+      - .
+      - test
+
+  - git: https://github.com/input-output-hk/ouroboros-network
+    commit: 7cda58405b6ee0d335b11e88e5c9989c7a3a6e03
+    subdirs:
+      - Win32-network
+
+  - git: https://github.com/input-output-hk/iohk-monitoring-framework
+    commit: 14143b6e39e89ac0cba6ef1509f19e5ee54bd03c
+    subdirs:
+      - contra-tracer
+      - iohk-monitoring
+      - plugins/backend-trace-acceptor
+      - plugins/scribe-systemd
+      - tracer-transformers
+
+    # dependencies of iohk-monitoring
+  - prometheus-2.1.2
+  - libsystemd-journal-1.4.4
+  - katip-0.8.4.0
+
+# should be reconsidered from time to time
+allow-newer: false
+
+nix:
+#   shell-file: nix/stack-shell.nix
+  pure: false
+  packages: [ zlib.dev, zlib.out
+            , openssl.dev, openssl.out
+            , libsodium.dev, libsodium.out
+            , haskell.compiler.ghc865
+            , pkg-config
+            , systemd.dev
+            ]
