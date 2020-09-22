@@ -1,5 +1,5 @@
 ############################################################################
-# Darwin release cardano-rt-view-service-*.zip
+# Darwin release cardano-rt-view-*.zip
 #
 # This bundles up the macOS executable with its dependencies
 # and static directory. Result is *.zip file.
@@ -14,8 +14,8 @@
 
 let
   lib = pkgs.lib;
-  name = "cardano-rt-view-service-${project.version}-darwin";
-  rtViewServiceExe = lib.head (lib.filter (exe: lib.hasInfix "cardano-rt-view-service" exe.name) exes);
+  name = "cardano-rt-view-${project.version}-darwin";
+  rtViewServiceExe = lib.head (lib.filter (exe: lib.hasInfix "cardano-rt-view" exe.name) exes);
 
 in pkgs.runCommand name {
     buildInputs = with pkgs.buildPackages; [

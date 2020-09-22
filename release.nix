@@ -90,17 +90,17 @@ let
       in (mapTestOn (__trace (__toJSON filteredBuilds) filteredBuilds));
     musl64 = mapTestOnCross musl64 (packagePlatformsCross (filterProject noMusl64Build));
     "${mingwW64.config}" = mapTestOnCross mingwW64 (packagePlatformsCross (filterProject noCrossBuild));
-    cardano-rt-view-service-win64-release = import ./nix/windows-release.nix {
+    cardano-rt-view-win64-release = import ./nix/windows-release.nix {
       inherit pkgs project;
       exes = collectJobs jobs.${mingwW64.config}.exes.cardano-rt-view;
       staticDir = ./static;
     };
-    cardano-rt-view-service-linux-release = import ./nix/linux-release.nix {
+    cardano-rt-view-linux-release = import ./nix/linux-release.nix {
       inherit pkgs project;
       exes = collectJobs jobs.musl64.exes.cardano-rt-view;
       staticDir = ./static;
     };
-    cardano-rt-view-service-darwin-release = import ./nix/darwin-release.nix {
+    cardano-rt-view-darwin-release = import ./nix/darwin-release.nix {
       inherit (pkgsFor "x86_64-darwin") pkgs;
       inherit project;
       exes = filter (p: p.system == "x86_64-darwin") (collectJobs jobs.native.exes.cardano-rt-view);
@@ -110,9 +110,9 @@ let
       (collectJobs jobs.native.checks)
       (collectJobs jobs.native.benchmarks)
       (collectJobs jobs.native.exes)
-      (optional windowsBuild jobs.cardano-rt-view-service-win64-release)
-      (optional linuxBuild jobs.cardano-rt-view-service-linux-release)
-      (optional darwinBuild jobs.cardano-rt-view-service-darwin-release)
+      (optional windowsBuild jobs.cardano-rt-view-win64-release)
+      (optional linuxBuild jobs.cardano-rt-view-linux-release)
+      (optional darwinBuild jobs.cardano-rt-view-darwin-release)
     ]));
 
 in jobs

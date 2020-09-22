@@ -52,7 +52,7 @@ import           Cardano.RTView.CLI (RTViewParams (..), defaultRTViewParams, def
 --   2. By providing configuration explicitly. If `--config`, `--static` and `--port`
 --      options are provided, these values will be used (interactive dialog will be skipped).
 --   3. By using the last used configuration. If the user already launched
---      `cardano-rt-view-service` previously, the configuration was stored in
+--      `cardano-rt-view` previously, the configuration was stored in
 --      user's local directory (different for each supported platform),
 --      and by default that configuration will be used again.
 prepareConfigAndParams
@@ -80,7 +80,7 @@ prepareConfigAndParams params' = do
 configFileIsProvided :: RTViewParams -> Bool
 configFileIsProvided params = not . null $ rtvConfig params
 
--- | Reads the service' configuration file (path is passed via '--config' CLI option).
+-- | Reads the program's configuration file (path is passed via '--config' CLI option).
 readConfigFile :: FilePath -> IO Configuration
 readConfigFile pathToConfig = setup pathToConfig `catch` exceptHandler
  where
@@ -98,7 +98,7 @@ readRTViewParamsFile pathToParams =
                                          <> pathToParams <> ", exception: " <> show e
     Right (params :: RTViewParams) -> return params
 
--- | If `cardano-rt-view-service` already ws used on this computer,
+-- | If `cardano-rt-view` already ws used on this computer,
 --   the configuration was saved in user's local directory, which
 --   differs on different platforms.
 savedConfigurationFile :: IO FilePath
@@ -150,7 +150,7 @@ startDialogToPrepareConfig = do
                <> showDefaultNodesNames nodesNumber <> "\"): "
   nodesNames <- askAboutNodesNames nodesNumber
 
-  TIO.putStrLn $ "Indicate the port for the web service (" <> show minimumPort
+  TIO.putStrLn $ "Indicate the port for the web server (" <> show minimumPort
                <> " - " <> show maximumPort <> ", default is "
                <> show defaultRTVPort <> "): "
   port <- askAboutWebPort
@@ -168,7 +168,7 @@ startDialogToPrepareConfig = do
                      <> show defaultFirstPortForSockets <> "): "
       askAboutFirstPortForSockets nodesNumber
 
-  TIO.putStrLn $ "Indicate the directory with static content for the web service, default is \""
+  TIO.putStrLn $ "Indicate the directory with static content for the web server, default is \""
                  <> T.pack defaultRTVStatic <> "\":"
   staticDir <- askAboutStaticDir
 
@@ -303,7 +303,7 @@ askAboutWebPort = do
                    <> show maximumPort <> ": "
       askAboutWebPort
     else do
-      TIO.putStrLn $ "Ok, the service will be listening on http://127.0.0.1:" <> show port
+      TIO.putStrLn $ "Ok, the server will be listening on http://127.0.0.1:" <> show port
       return port
 
 data ConnectionWay
@@ -414,7 +414,7 @@ saveRTViewParamsForNextSessions params = do
   path <- savedRTViewParamsFile
   encodeFile path params
 
--- | RTView service requires at least one |TraceAcceptor|.
+-- | RTView requires at least one |TraceAcceptor|.
 checkIfTraceAcceptorIsDefined
   :: Configuration
   -> IO [RemoteAddrNamed]

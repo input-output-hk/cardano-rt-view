@@ -5,7 +5,7 @@
 BASEDIR=$(realpath $(dirname "$0"))
 . "${BASEDIR}"/../../scripts/common.sh
 
-prebuild 'cardano-rt-view-service' || exit 1
+prebuild 'cardano-rt-view' || exit 1
 prebuild 'rt-view-analyzer' || exit 1
 
 set -e
@@ -14,7 +14,7 @@ readonly JSON_WITH_LOG_OBJECTS=logObjects.json
 readonly UNIX_SOCKET=./logs/rt-view-pipe-0
 readonly SELENIUM_SERVER_JAR=$1
 
-readonly RT_VIEW_EXE=cardano-rt-view-service
+readonly RT_VIEW_EXE=cardano-rt-view
 readonly RT_VIEW_CONFIG=rt-view-config.yaml
 readonly RT_VIEW_STATIC_DIR=../static
 readonly RT_VIEW_WEB_PORT=8024
@@ -22,7 +22,7 @@ readonly RT_VIEW_WEB_PORT=8024
 echo "Remove old UNIX-socket..."
 rm -f "${UNIX_SOCKET}"
 
-echo "Launch cardano-rt-view-service..."
+echo "Launch cardano-rt-view..."
 run "${RT_VIEW_EXE}" --config "${RT_VIEW_CONFIG}" \
                            --static "${RT_VIEW_STATIC_DIR}" \
                            --port "${RT_VIEW_WEB_PORT}" &
@@ -49,11 +49,11 @@ sleep 1
 kill ${PID_SELENIUM}
 sleep 1
 
-## Stop cardano-rt-view-service.
+## Stop cardano-rt-view.
 kill $(pgrep -f ${RT_VIEW_EXE})
 sleep 1
 
-# Remove cardano-rt-view-service' logs.
+# Remove cardano-rt-view' logs.
 rm -rf logs
 
 # Remove nohup artifacts

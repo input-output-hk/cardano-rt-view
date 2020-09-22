@@ -25,7 +25,7 @@ main = do
   (nodeName, unixSocket) <- getAcceptorInfoFrom rtViewConfig
 
   runSession wdConfig . closeOnException $ do
-    -- We always test cardano-rt-view-service launched locally, so we only need a web port.
+    -- We always test cardano-rt-view launched locally, so we only need a web port.
     let rtViewPageURL = "http://127.0.0.1:" <> show rtViewWebPort
     openPage rtViewPageURL
     waitFor 2 Seconds

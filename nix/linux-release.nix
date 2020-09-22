@@ -1,8 +1,8 @@
 ############################################################################
-# Linux release cardano-rt-view-service-*.AppImage
+# Linux release cardano-rt-view-*.tar.gz
 #
 # This bundles up the linux executable with its dependencies
-# and static directory. Result is *.AppImage file.
+# and static directory. Result is *.tar.gz archive.
 #
 ############################################################################
 
@@ -14,8 +14,8 @@
 
 let
   lib = pkgs.lib;
-  name = "cardano-rt-view-service-${project.version}-linux-x86_64";
-  rtViewServiceExe = lib.head (lib.filter (exe: lib.hasInfix "cardano-rt-view-service" exe.name) exes);
+  name = "cardano-rt-view-${project.version}-linux-x86_64";
+  rtViewServiceExe = lib.head (lib.filter (exe: lib.hasInfix "cardano-rt-view" exe.name) exes);
 
 in pkgs.runCommand name {
     buildInputs = with pkgs.buildPackages; [

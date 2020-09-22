@@ -26,7 +26,7 @@ let
 
     # Grab the executable component of our package.
     inherit (haskellPackages.cardano-rt-view.components.exes)
-      cardano-rt-view-service;
+      cardano-rt-view;
     inherit (haskellPackages.cardano-rt-view.identifier) version;
 
     # `tests` are the test suites which have been built.

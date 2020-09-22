@@ -13,4 +13,4 @@ main = do
  where
   rtViewInfo :: ParserInfo RTViewParams
   rtViewInfo = info (parseRTViewParams <**> helper)
-                    (fullDesc <> header "cardano-rt-view-service - real-time view for cardano node.")
+                    (fullDesc <> header "cardano-rt-view - real-time view for cardano node.")

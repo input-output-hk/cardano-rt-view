@@ -5,11 +5,11 @@
 RTView is a separate process that receives `LogObject`s from another process (for example, `cardano-node`) and displays them on HTML-page. It can be shown like this:
 
 ```
-Process 1                        Process 2                                     Process 3
-+--------------+   [LogObject]   +-------------------------+    web-requests   +-------------+
-| cardano-node |  ------------>  | cardano-rt-view-service |  <--------------  | web browser |
-+--------------+                 +-------------------------+  -------------->  +-------------+
-                                                                 HTML-page
+Process 1                        Process 2                             Process 3
++--------------+   [LogObject]   +-----------------+    web-requests   +-------------+
+| cardano-node |  ------------>  | cardano-rt-view |  <--------------  | web browser |
++--------------+                 +-----------------+  -------------->  +-------------+
+                                                         HTML-page
 ```
 
 To test it automatically, we use additional scripts and programs:
@@ -20,19 +20,19 @@ To test it automatically, we use additional scripts and programs:
 It can be shown like this:
 
 ```
-                                                  Process 1                                     Process 2
-                    +-----------+   [LogObject]   +-------------------------+    web-requests   +----------+
-logObjects.json --> | sender.sh |  ------------>  | cardano-rt-view-service |  <--------------  | analyzer |
-                    +-----------+                 +-------------------------+  -------------->  +----------+
-                                                                                  HTML-page
+                                                  Process 1                             Process 2
+                    +-----------+   [LogObject]   +-----------------+    web-requests   +----------+
+logObjects.json --> | sender.sh |  ------------>  | cardano-rt-view |  <--------------  | analyzer |
+                    +-----------+                 +-----------------+  -------------->  +----------+
+                                                                          HTML-page
 ```
 
 Please note that `analyzer` doesn't analyze RTView UI (complete HTML-page) by itself. Instead, it launches the real web browser and use it to analyze the page automatically, using Selenium standalone server and `webdriver` package. It can be shown like this:
 
 ```
-+----------+       +-------------+       +---------+  web-commands  +-------------------------+
-| analyzer | ----> | GeckoDriver | ----> | Firefox | -------------> | cardano-rt-view-service |
-+----------+       +-------------+       +---------+                +-------------------------+
++----------+       +-------------+       +---------+  web-commands  +-----------------+
+| analyzer | ----> | GeckoDriver | ----> | Firefox | -------------> | cardano-rt-view |
++----------+       +-------------+       +---------+                +-----------------+
        \
         \          +-----------------+
          `-------> | Selenium server |
@@ -44,7 +44,7 @@ Please note that `analyzer` doesn't analyze RTView UI (complete HTML-page) by it
 Please make sure you have these commands in your `PATH`:
 
 1. `jq` to minimize predefined JSON-file with `LogObject`s.
-2. `nc` to send `LogObject`s from predefined JSON-file to `cardano-rt-view-service` (via UNIX socket).
+2. `nc` to send `LogObject`s from predefined JSON-file to `cardano-rt-view` (via UNIX socket).
 3. `firefix` to interact with RTView UI (complete HTML-page),
 4. `geckodriver` to interact with Firefox,
 5. `java` to launch `selenium-server-standalone`.
@@ -55,7 +55,7 @@ Please note that you have to provide full path to `selenium-server-standalone` f
 
 Run `./runTest.sh <options> PATH_TO_SELENIUM_SERVER_JAR` script which launches:
 
-1. `cardano-rt-view-service` process (in the background),
+1. `cardano-rt-view` process (in the background),
 2. `sender.sh` script,
 3. `selenium-server-standalone` process (in the background),
 4. `analyzer` process.
