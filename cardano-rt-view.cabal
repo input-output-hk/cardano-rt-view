@@ -15,27 +15,27 @@ library
 
   hs-source-dirs:      src
 
-  exposed-modules:     Cardano.Benchmarking.RTView
-                       Cardano.Benchmarking.RTView.CLI
-                       Cardano.Benchmarking.RTView.Config
+  exposed-modules:     Cardano.RTView
+                       Cardano.RTView.CLI
+                       Cardano.RTView.Config
 
-                       Cardano.Benchmarking.RTView.Acceptor
+                       Cardano.RTView.Acceptor
 
-                       Cardano.Benchmarking.RTView.ErrorBuffer
+                       Cardano.RTView.ErrorBuffer
 
-                       Cardano.Benchmarking.RTView.GUI.Charts
-                       Cardano.Benchmarking.RTView.GUI.Elements
-                       Cardano.Benchmarking.RTView.GUI.Grid
-                       Cardano.Benchmarking.RTView.GUI.Markup
-                       Cardano.Benchmarking.RTView.GUI.Pane
-                       Cardano.Benchmarking.RTView.GUI.Updater
-                       Cardano.Benchmarking.RTView.GUI.CSS.Style
+                       Cardano.RTView.GUI.Charts
+                       Cardano.RTView.GUI.Elements
+                       Cardano.RTView.GUI.Grid
+                       Cardano.RTView.GUI.Markup
+                       Cardano.RTView.GUI.Pane
+                       Cardano.RTView.GUI.Updater
+                       Cardano.RTView.GUI.CSS.Style
 
-                       Cardano.Benchmarking.RTView.NodeState.Parsers
-                       Cardano.Benchmarking.RTView.NodeState.Types
-                       Cardano.Benchmarking.RTView.NodeState.Updater
+                       Cardano.RTView.NodeState.Parsers
+                       Cardano.RTView.NodeState.Types
+                       Cardano.RTView.NodeState.Updater
 
-                       Cardano.Benchmarking.RTView.Server
+                       Cardano.RTView.Server
 
   other-modules:       Paths_cardano_rt_view
 

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Cardano.Benchmarking.RTView.CLI
+module Cardano.RTView.CLI
     ( RTViewParams (..)
     , defaultRTViewParams
     , defaultRTVConfig

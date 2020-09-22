@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.Benchmarking.RTView.NodeState.Parsers
+module Cardano.RTView.NodeState.Parsers
     ( extractPeersInfo
     ) where
 
@@ -11,7 +11,7 @@ import           Data.Aeson (Object, (.:))
 import qualified Data.Aeson as A
 import qualified Data.Text as T
 
-import           Cardano.Benchmarking.RTView.NodeState.Types (PeerInfo (..))
+import           Cardano.RTView.NodeState.Types (PeerInfo (..))
 
 extractPeersInfo :: Object -> [PeerInfo]
 extractPeersInfo peersObj =

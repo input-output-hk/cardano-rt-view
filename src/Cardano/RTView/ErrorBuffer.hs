@@ -2,7 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Cardano.Benchmarking.RTView.ErrorBuffer
+module Cardano.RTView.ErrorBuffer
     ( ErrorBuffer
     , readErrorBuffer
     , effectuate

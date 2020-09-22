@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.Benchmarking.RTView.GUI.Updater
+module Cardano.RTView.GUI.Updater
     ( updateGUI
     ) where
 
@@ -20,17 +20,17 @@ import           Graphics.UI.Threepenny.Core (Element, UI, children, element, se
                                               ( # ), ( #+ ), ( #. ))
 import           Prelude (String)
 
-import           Cardano.Benchmarking.RTView.CLI (RTViewParams (..))
-import qualified Cardano.Benchmarking.RTView.GUI.Charts as Chart
-import           Cardano.Benchmarking.RTView.GUI.Elements (ElementName (..), ElementValue (..),
-                                                           HTMLClass (..), HTMLId (..),
-                                                           HTMLW3Class (..), NodeStateElements,
-                                                           NodesStateElements,
-                                                           PeerInfoElements (..), PeerInfoItem (..),
-                                                           (<+>))
-import           Cardano.Benchmarking.RTView.NodeState.Types (NodeError (..), NodeInfo (..),
-                                                              NodeMetrics (..), NodeState (..),
-                                                              NodesState, PeerInfo (..))
+import           Cardano.RTView.CLI (RTViewParams (..))
+import qualified Cardano.RTView.GUI.Charts as Chart
+import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..),
+                                              HTMLClass (..), HTMLId (..),
+                                              HTMLW3Class (..), NodeStateElements,
+                                              NodesStateElements,
+                                              PeerInfoElements (..), PeerInfoItem (..),
+                                              (<+>))
+import           Cardano.RTView.NodeState.Types (NodeError (..), NodeInfo (..),
+                                                 NodeMetrics (..), NodeState (..),
+                                                 NodesState, PeerInfo (..))
 import           Cardano.BM.Data.Configuration (RemoteAddr (..), RemoteAddrNamed (..))
 import           Cardano.BM.Data.Severity (Severity (..))
 

@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 
-module Cardano.Benchmarking.RTView.GUI.Grid
+module Cardano.RTView.GUI.Grid
     ( mkNodesGrid
     , metricLabel
     , allMetricsNames
@@ -20,10 +20,10 @@ import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, ( # ), ( #+ ),
                                               ( #. ))
 
-import           Cardano.Benchmarking.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
-                                                           HTMLId (..), HTMLW3Class (..),
-                                                           NodeStateElements, NodesStateElements,
-                                                           PeerInfoItem (..), ( ## ), (<+>))
+import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
+                                              HTMLId (..), HTMLW3Class (..),
+                                              NodeStateElements, NodesStateElements,
+                                              PeerInfoItem (..), ( ## ), (<+>))
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
 mkNodesGrid

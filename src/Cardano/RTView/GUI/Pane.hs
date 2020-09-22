@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.Benchmarking.RTView.GUI.Pane
+module Cardano.RTView.GUI.Pane
     ( mkNodePane
     ) where
 
@@ -14,11 +14,11 @@ import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, ( # ), ( #+ ),
                                               ( #. ))
 
-import           Cardano.Benchmarking.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
-                                                           HTMLId (..), HTMLW3Class (..),
-                                                           NodeStateElements, PeerInfoElements (..),
-                                                           PeerInfoItem (..), hideIt, showIt,
-                                                           ( ## ), (<+>))
+import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
+                                              HTMLId (..), HTMLW3Class (..),
+                                              NodeStateElements, PeerInfoElements (..),
+                                              PeerInfoItem (..), hideIt, showIt,
+                                              ( ## ), (<+>))
 
 mkNodePane
   :: Text

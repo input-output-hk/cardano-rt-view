@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.Benchmarking.RTView.Server
+module Cardano.RTView.Server
     ( launchServer
     ) where
 
@@ -14,11 +14,11 @@ import           Graphics.UI.Threepenny.Timer (interval, start, tick, timer)
 
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
-import           Cardano.Benchmarking.RTView.CLI (RTViewParams (..))
-import           Cardano.Benchmarking.RTView.GUI.CSS.Style (ownCSS)
-import           Cardano.Benchmarking.RTView.GUI.Markup (mkPageBody)
-import           Cardano.Benchmarking.RTView.GUI.Updater (updateGUI)
-import           Cardano.Benchmarking.RTView.NodeState.Types (NodesState)
+import           Cardano.RTView.CLI (RTViewParams (..))
+import           Cardano.RTView.GUI.CSS.Style (ownCSS)
+import           Cardano.RTView.GUI.Markup (mkPageBody)
+import           Cardano.RTView.GUI.Updater (updateGUI)
+import           Cardano.RTView.NodeState.Types (NodesState)
 
 -- | Launch web server.
 launchServer

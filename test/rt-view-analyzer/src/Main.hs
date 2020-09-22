@@ -10,7 +10,7 @@ import           Data.Text (pack)
 import           Test.WebDriver
 import           Test.WebDriver.Monad (closeOnException)
 
-import           Cardano.Benchmarking.RTView.GUI.Elements (HTMLId (..))
+import           Cardano.RTView.GUI.Elements (HTMLId (..))
 
 import           Analyzers (Units (..), ViewMode (..), changeViewModeTo, checkContentOf,
                             checkIfMetricCanBeHiddenOrShown, checkIfNodeCanBeHiddenOrShown,

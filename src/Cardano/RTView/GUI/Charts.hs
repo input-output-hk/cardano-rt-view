@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.Benchmarking.RTView.GUI.Charts
+module Cardano.RTView.GUI.Charts
     ( prepareChartsJS
     -- Charts JS snippets.
     , memoryUsageChartJS

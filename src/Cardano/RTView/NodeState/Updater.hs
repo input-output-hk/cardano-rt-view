@@ -12,7 +12,7 @@
 #define DARWIN
 #endif
 
-module Cardano.Benchmarking.RTView.NodeState.Updater
+module Cardano.RTView.NodeState.Updater
     ( launchNodeStateUpdater
     ) where
 
@@ -33,11 +33,11 @@ import qualified Data.Text as T
 import           Data.Time.Clock (NominalDiffTime, diffUTCTime)
 import           GHC.Clock (getMonotonicTimeNSec)
 
-import           Cardano.Benchmarking.RTView.ErrorBuffer (ErrorBuffer, readErrorBuffer)
-import           Cardano.Benchmarking.RTView.NodeState.Parsers (extractPeersInfo)
-import           Cardano.Benchmarking.RTView.NodeState.Types (NodeError (..), NodeInfo (..),
-                                                              NodeMetrics (..), NodeState (..),
-                                                              NodesState)
+import           Cardano.RTView.ErrorBuffer (ErrorBuffer, readErrorBuffer)
+import           Cardano.RTView.NodeState.Parsers (extractPeersInfo)
+import           Cardano.RTView.NodeState.Types (NodeError (..), NodeInfo (..),
+                                                 NodeMetrics (..), NodeState (..),
+                                                 NodesState)
 
 -- | This function is running in a separate thread.
 --   It takes |LogObject|s with nodes' metrics from |LogBuffer|,

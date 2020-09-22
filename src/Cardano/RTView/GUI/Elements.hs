@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Cardano.Benchmarking.RTView.GUI.Elements
+module Cardano.RTView.GUI.Elements
     ( HTMLClass (..)
     , HTMLW3Class (..)
     , HTMLId (..)

@@ -3,7 +3,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.Benchmarking.RTView.NodeState.Types
+module Cardano.RTView.NodeState.Types
     ( NodeError (..)
     , NodesState
     , NodeState (..)

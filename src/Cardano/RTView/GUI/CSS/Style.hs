@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.Benchmarking.RTView.GUI.CSS.Style
+module Cardano.RTView.GUI.CSS.Style
     ( ownCSS
     ) where
 
@@ -13,7 +13,7 @@ import           Clay.Selector (Selector, selectorFromText)
 import           Data.Text (pack, unpack)
 import qualified Data.Text.Lazy as TL
 
-import           Cardano.Benchmarking.RTView.GUI.Elements (HTMLClass (..), HTMLW3Class (..))
+import           Cardano.RTView.GUI.Elements (HTMLClass (..), HTMLW3Class (..))
 
 ownCSS :: P.String
 ownCSS = unpack . TL.toStrict . render $ do

@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.Benchmarking.RTView.GUI.Markup
+module Cardano.RTView.GUI.Markup
     ( mkPageBody
     ) where
 
@@ -15,14 +15,14 @@ import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, ( # ), ( #+ ),
                                               ( #. ))
 
-import qualified Cardano.Benchmarking.RTView.GUI.Charts as Chart
-import           Cardano.Benchmarking.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
-                                                           HTMLId (..), HTMLW3Class (..),
-                                                           NodeStateElements, NodesStateElements,
-                                                           PeerInfoItem, hideIt, showCell, showIt,
-                                                           showRow, ( ## ), (<+>))
-import           Cardano.Benchmarking.RTView.GUI.Grid (allMetricsNames, metricLabel, mkNodesGrid)
-import           Cardano.Benchmarking.RTView.GUI.Pane (mkNodePane)
+import qualified Cardano.RTView.GUI.Charts as Chart
+import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
+                                              HTMLId (..), HTMLW3Class (..),
+                                              NodeStateElements, NodesStateElements,
+                                              PeerInfoItem, hideIt, showCell, showIt,
+                                              showRow, ( ## ), (<+>))
+import           Cardano.RTView.GUI.Grid (allMetricsNames, metricLabel, mkNodesGrid)
+import           Cardano.RTView.GUI.Pane (mkNodePane)
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
 mkPageBody

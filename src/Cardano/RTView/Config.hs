@@ -5,7 +5,7 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.Benchmarking.RTView.Config
+module Cardano.RTView.Config
     ( prepareConfigAndParams
     ) where
 
@@ -42,8 +42,8 @@ import           Cardano.BM.Data.Output (ScribeDefinition (..), ScribeFormat (..
                                          ScribeKind (..), ScribePrivacy (..))
 import           Cardano.BM.Data.Severity (Severity (..))
 
-import           Cardano.Benchmarking.RTView.CLI (RTViewParams (..), defaultRTViewParams,
-                                                  defaultRTVPort, defaultRTVStatic)
+import           Cardano.RTView.CLI (RTViewParams (..), defaultRTViewParams, defaultRTVPort,
+                                     defaultRTVStatic)
 
 -- | There are few possible ways how we can prepare RTView configuration:
 --   1. By running interactive dialog with the user. If `--config` CLI-option

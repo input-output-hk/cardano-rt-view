@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.Benchmarking.RTView
+module Cardano.RTView
     ( runCardanoRTView
     ) where
 
@@ -16,14 +16,13 @@ import qualified Cardano.BM.Setup as Setup
 import           Cardano.BM.Trace (Trace, logNotice)
 import           Cardano.BM.Tracing (appendName)
 
-import           Cardano.Benchmarking.RTView.Acceptor (launchMetricsAcceptor)
-import           Cardano.Benchmarking.RTView.CLI (RTViewParams (..))
-import           Cardano.Benchmarking.RTView.Config (prepareConfigAndParams)
-import           Cardano.Benchmarking.RTView.ErrorBuffer (ErrorBuffer, effectuate, realize,
-                                                          unrealize)
-import           Cardano.Benchmarking.RTView.NodeState.Types (NodesState, defaultNodesState)
-import           Cardano.Benchmarking.RTView.NodeState.Updater (launchNodeStateUpdater)
-import           Cardano.Benchmarking.RTView.Server (launchServer)
+import           Cardano.RTView.Acceptor (launchMetricsAcceptor)
+import           Cardano.RTView.CLI (RTViewParams (..))
+import           Cardano.RTView.Config (prepareConfigAndParams)
+import           Cardano.RTView.ErrorBuffer (ErrorBuffer, effectuate, realize, unrealize)
+import           Cardano.RTView.NodeState.Types (NodesState, defaultNodesState)
+import           Cardano.RTView.NodeState.Updater (launchNodeStateUpdater)
+import           Cardano.RTView.Server (launchServer)
 
 -- | Run the service.
 runCardanoRTView :: RTViewParams -> IO ()

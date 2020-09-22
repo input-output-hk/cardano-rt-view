@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.Benchmarking.RTView.Acceptor
+module Cardano.RTView.Acceptor
     ( launchMetricsAcceptor
     ) where
 
