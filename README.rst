@@ -54,3 +54,10 @@ Documentation
 
 Please read the complete documentation `here <https://docs.cardano.org/projects/cardano-rt-view/en/latest/>`_.
 
+.. raw:: html
+
+   <hr/>
+
+   <p align="center">
+     <a href="https://github.com/input-output-hk/cardano-rt-view/blob/master/LICENSE"><img src="https://img.shields.io/github/license/input-output-hk/cardano-rt-view.svg?style=for-the-badge" /></a>
+   </p>
