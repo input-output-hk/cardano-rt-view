@@ -19,7 +19,8 @@ cardano-rt-view
    getting-started/install
    getting-started/building-rt-view-from-sources
    getting-started/building-the-documentation
-   getting-started/configuration
+   getting-started/node-configuration
+   getting-started/rt-view-configuration
 
 .. toctree::
    :maxdepth: 3

@@ -22,7 +22,7 @@ let
     (cardanoRTViewHaskellPackages.projectPackages);
 
   self = {
-    inherit haskellPackages cardanoNode pkgs;
+    inherit haskellPackages pkgs;
 
     # Grab the executable component of our package.
     inherit (haskellPackages.cardano-rt-view.components.exes)
