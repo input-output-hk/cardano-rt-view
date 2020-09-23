@@ -42,8 +42,7 @@ mkNodePane nameOfNode = do
   elSlotsMissedNumber       <- string "0"
   elTxsProcessed            <- string "0"
   elPeersNumber             <- string "0"
-  elTraceAcceptorHost       <- string "0"
-  elTraceAcceptorPort       <- string "0"
+  elTraceAcceptorEndpoint   <- string "0"
   elOpCertStartKESPeriod    <- string "0"
   elCurrentKESPeriod        <- string "0"
   elRemainingKESPeriods     <- string "0"
@@ -205,11 +204,7 @@ mkNodePane nameOfNode = do
                      , UI.div #+ [element elCurrentKESPeriod]
                      , UI.div #+ [element elRemainingKESPeriods]
                      , vSpacer NodeInfoVSpacer
-                     , UI.div #+
-                         [ element elTraceAcceptorHost
-                         , string ":"
-                         , element elTraceAcceptorPort
-                         ]
+                     , UI.div #+ [element elTraceAcceptorEndpoint]
                      ]
                  ]
              , UI.div #. show W3Third #+
@@ -618,8 +613,7 @@ mkNodePane nameOfNode = do
           , (ElSlotsMissedNumber,       elSlotsMissedNumber)
           , (ElTxsProcessed,            elTxsProcessed)
           , (ElPeersNumber,             elPeersNumber)
-          , (ElTraceAcceptorHost,       elTraceAcceptorHost)
-          , (ElTraceAcceptorPort,       elTraceAcceptorPort)
+          , (ElTraceAcceptorEndpoint,   elTraceAcceptorEndpoint)
           , (ElOpCertStartKESPeriod,    elOpCertStartKESPeriod)
           , (ElCurrentKESPeriod,        elCurrentKESPeriod)
           , (ElRemainingKESPeriods,     elRemainingKESPeriods)

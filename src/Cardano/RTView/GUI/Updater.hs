@@ -61,7 +61,7 @@ updatePaneGUI
 updatePaneGUI window nodesState params acceptors nodesStateElems = do
   forM_ nodesStateElems $ \(nameOfNode, elements, peerInfoItems) -> do
     let nodeState = nodesState ! nameOfNode
-        (acceptorHost, acceptorPort) = findTraceAcceptorNetInfo nameOfNode acceptors
+        acceptorEndpoint = mkTraceAcceptorEndpoint nameOfNode acceptors
 
     let ni = nsInfo nodeState
         nm = nsMetrics nodeState
@@ -69,6 +69,7 @@ updatePaneGUI window nodesState params acceptors nodesStateElems = do
 
     updateCharts window nameOfNode ni nm
 
+    void $ updateElementValue (ElementString  acceptorEndpoint)               $ elements ! ElTraceAcceptorEndpoint
     void $ updateElementValue (ElementString  $ niNodeRelease ni)             $ elements ! ElNodeRelease
     void $ updateElementValue (ElementString  $ niNodeVersion ni)             $ elements ! ElNodeVersion
     void $ updateElementValue (ElementString  $ niNodePlatform ni)            $ elements ! ElNodePlatform
@@ -85,8 +86,6 @@ updatePaneGUI window nodesState params acceptors nodesStateElems = do
     void $ updateElementValue (ElementInteger $ niSlotsMissedNumber ni)       $ elements ! ElSlotsMissedNumber
     void $ updateElementValue (ElementInteger $ niTxsProcessed ni)            $ elements ! ElTxsProcessed
     void $ updateElementValue (ElementInteger $ niPeersNumber ni)             $ elements ! ElPeersNumber
-    void $ updateElementValue (ElementString  acceptorHost)                   $ elements ! ElTraceAcceptorHost
-    void $ updateElementValue (ElementString  acceptorPort)                   $ elements ! ElTraceAcceptorPort
     void $ updateErrorsList   (niNodeErrors ni)                               $ elements ! ElNodeErrors
     void $ updateElementValue (ElementWord64  $ nmMempoolTxsNumber nm)        $ elements ! ElMempoolTxsNumber
     void $ updateElementValue (ElementDouble  $ nmMempoolTxsPercent nm)       $ elements ! ElMempoolTxsPercent
@@ -292,20 +291,6 @@ updateErrorsList nodeErrors errorsList = do
       , UI.div #. [W3TwoThird, W3Theme] <+> [] #+ [UI.div #. className #+ [UI.string msg]]
       ]
   element errorsList # set children errors
-
--- | To show TraceAcceptorHost and TraceAcceptorPort
---   of the active node we use its name.
-findTraceAcceptorNetInfo
-  :: Text
-  -> [RemoteAddrNamed]
-  -> (String, String)
-findTraceAcceptorNetInfo nameOfNode acceptors =
-  case maybeActiveNode of
-    Just (RemoteAddrNamed _ (RemoteSocket host port)) -> (host, port)
-    Just (RemoteAddrNamed _ (RemotePipe _))           -> ("-", "-")
-    Nothing                                           -> ("-", "-")
- where
-  maybeActiveNode = flip L.find acceptors $ \(RemoteAddrNamed name _) -> name == nameOfNode
 
 mkTraceAcceptorEndpoint
   :: Text
