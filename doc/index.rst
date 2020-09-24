@@ -28,6 +28,7 @@ cardano-rt-view
    :titlesonly:
    :hidden:
 
+   gui-overview/overview
    gui-overview/pane-mode
    gui-overview/grid-mode
 

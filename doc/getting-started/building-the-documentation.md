@@ -20,7 +20,7 @@ pip3 install sphinxemoji --user
 
 ## Building documentation
 
-Use this command to build documentation:
+Use this command to build the documentation:
 
 ```
 sphinx-build doc html

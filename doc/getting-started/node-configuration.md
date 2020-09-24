@@ -2,11 +2,11 @@
 
 ## Prerequisites
 
-It is assumed that you already have at least one instance of `cardano-node` which is already configured properly. If not - please read its [official documentation](https://docs.cardano.org/projects/cardano-node/en/latest/).
+It is assumed that you already have at least one instance of `cardano-node`, which is already configured properly. If not - please read its [official documentation](https://docs.cardano.org/projects/cardano-node/en/latest/).
 
 ## RTView-related changes
 
-Please open your configuration file for `cardano-node` and make the following changes. If you use default configuration files for `cardano-node`, you just have to uncomment a few lines.
+Please open your configuration file for `cardano-node` and make the following changes. If you use default configuration files for `cardano-node`, you have to uncomment a few lines.
 
 ### Setup backends
 
@@ -27,7 +27,7 @@ Find the subsection `mapBackends` in the section `options` and add `TraceForward
       - TraceForwarderBK
 ```
 
-log message(s) sent to `cardano.node.version` will be sent to `TraceForwarderBK` and will be forwarded to RTView.
+log message(s) sent to `cardano.node.version` will be sent to `TraceForwarderBK` and forwarded to RTView.
 
 ### Define forwarder endpoints
 

@@ -1,6 +1,6 @@
 # Building RTView
 
-RTView is a program implemented in Haskell programming language. There are different ways how to build it from scratch, but this guide describes two recommended ways:
+RTView is a program implemented in the Haskell programming language. There are different ways how to build it from scratch, but this guide describes two recommended methods:
 
 1. Using `stack`;
 2. Using `nix`.
@@ -9,8 +9,8 @@ RTView is a program implemented in Haskell programming language. There are diffe
 
 You will need:
 
-1. An x86 host (AMD or Intel) with at least 2 cores, 8GB of RAM and at least 10GB of free disk space;
-2. A recent version of Linux, macOS or Windows (see clarification below);
+1. An x86 host (AMD or Intel) with at least 2 cores, 8GB of RAM, and at least 10GB of free disk space;
+2. A recent version of Linux, macOS, or Windows (see clarification below);
 3. [git](https://git-scm.com/) program.
 
 ## Get the source code
@@ -31,7 +31,7 @@ Go to the repository directory and run:
 stack build
 ```
 
-After build is finished, you can run RTView using this command:
+After the build is finished, you can run RTView using this command:
 
 ```
 stack exec -- cardano-rt-view
@@ -58,7 +58,7 @@ Use the following command to build RTView program:
 ```
 nix-build -A cardano-rt-view
 ```
-After that, you will see a link `result` in the repository directory, this link points to the program. For example, on Linux you will see something like this:
+After that, you will see a link `result` in the repository directory. This link points to the program. For example, on Linux, you will see something like this:
 
 ```
 result -> /nix/store/xnff4qfrpxrsgwnfwc2i6jx5pj8bq3xi-cardano-rt-view-exe-cardano-rt-view-*
@@ -68,12 +68,12 @@ That directory contains `bin/cardano-rt-view` program.
 
 ### Build RTView release package
 
-Also, you can build complete release package for your platform, which is similar to archive available in the [stable releases](https://github.com/input-output-hk/cardano-rt-view/releases). To do it, please use following commands:
+You can also build a complete release package for your platform. It is similar to the archive available in the [stable releases](https://github.com/input-output-hk/cardano-rt-view/releases). To do it, please use the following commands:
 
 1. `nix-build release.nix -A cardano-rt-view-linux-release` - for Linux;
 2. `nix-build release.nix -A cardano-rt-view-darwin-release` - for macOS.
 
-After that, you will see a link `result` in the repository directory, this link points to the package. For example, on Linux you will see something like this:
+After that, you will see a link `result` in the repository directory. This link points to the package. For example, on Linux, you will see something like this:
 
 ```
 result -> /nix/store/fa0c47r743ra9nslpl86zp4pjpz8sygs-cardano-rt-view-*-linux-x86_64

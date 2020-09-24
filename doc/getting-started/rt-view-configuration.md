@@ -2,7 +2,7 @@
 
 ## Saved configuration
 
-During start, RTView initiates an interactive dialog with the user. Based on the given answers, it creates a configuration file (see an example below). This file will be automatically saved on your hard drive, in the default config directory which is depending on your platform. For example, on Linux it's `$HOME/.config/`.
+During the start, RTView initiates an interactive dialog with the user. Based on the given answers, it creates a configuration file (see an example below). This file will be automatically saved on your hard drive in the default config directory, depending on your platform. For example, on Linux, it's `$HOME/.config/`.
 
 So, when you start RTView again, it will ask you:
 
@@ -65,7 +65,7 @@ minSeverity: Info
 
 ## Explicit configuration
 
-It is possible to provide a configuration file explicitly, by passing its path during RTView start:
+It is possible to provide a configuration file explicitly, via `--config` CLI parameter:
 
 ```
 cardano-rt-view --config /path/to/your/configuration.yaml ...
