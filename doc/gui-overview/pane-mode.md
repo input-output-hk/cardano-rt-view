@@ -74,7 +74,7 @@ This tab provides information about the current state of the mempool
 
 ### Resources
 
-This tab displays resources consumed by the node. There are two modes available: `Bars view` and `Charts view`. The first one uses progress bars, the second one uses charts. 
+This tab displays resources consumed by the node. There are two modes available: `Bars view` and `Charts view`. The first one uses progress bars, the second one uses charts.
 
 * `Memory usage` - how much memory is consumed by the node, in MB;
 * `CPU usage` - how many CPU is used by the node, in percents;
@@ -98,3 +98,16 @@ Since Cardano node is a program written in the Haskell programming language and 
 * `GC time elapsed` - total elapsed time used by the GC, in seconds;
 * `Number of GC runs` - total number of GCs;
 * `Major GC runs` - total number of major (oldest generation) GCs.
+
+## Outdated Values
+
+When you look at the RTView web-page, you see that values are changing in real-time because the corresponding node forwards new metrics continuously, so old values are replacing by the new ones.
+
+But it is possible when the node doesn't forward some metrics for a long time. In such a case, it is convenient to show corresponding values as outdated (using gray color). There is a way to define the "metrics lifetime": the period before it will be marked as obsolete.
+
+To do it, please use optional CLI parameters during RTView start:
+
+* `--node-info-life` - lifetime for node-related metrics, in seconds;
+* `--blockchain-info-life` - lifetime for blockchain-related metrics, in seconds;
+* `--resources-info-life` - lifetime for resources-related metrics, in seconds;
+* `--rts-info-life` - lifetime for RTS-related metrics, in seconds.
