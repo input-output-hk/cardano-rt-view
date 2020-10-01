@@ -233,6 +233,9 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl SelectMetricCheck ? do
     marginRightPx     10
 
+  cl MetricsArea ? do
+    minWidthPx        300
+
   cl ProgressBar ?            progressBarColors greenDark  white
   cl ProgressBarOutdated ?    progressBarColors gray60     gray60
   cl ProgressBarBox ?         progressBarColors greenLight white
@@ -263,6 +266,7 @@ ownCSS = unpack . TL.toStrict . render $ do
   minHeightPx     = minHeight . px
   maxHeightPx     = maxHeight . px
 
+  minWidthPx      = minWidth . px
   maxWidthPx      = maxWidth . px
 
   progressBarColors bg c = do

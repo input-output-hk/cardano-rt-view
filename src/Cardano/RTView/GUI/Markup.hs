@@ -159,7 +159,7 @@ topNavigation nodesSelector viewModeSelector metricsSelector =
         ]
     , UI.div ## show SelectMetricButton #. show W3DropdownHover # hideIt #+
         [ UI.button #. show W3Button #+ [string "Select metric ▾"]
-        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] <+> [] #+ metricsSelector
+        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] <+> [MetricsArea] #+ metricsSelector
         ]
     , UI.span #. [W3Right] <+> [ServiceName] #+
         [ string "Cardano Node Real-time View"
