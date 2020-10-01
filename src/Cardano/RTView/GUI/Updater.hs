@@ -10,7 +10,7 @@ import           Cardano.Prelude hiding ((%))
 import qualified Data.List as L
 import           Data.Map.Strict ((!))
 import           Data.Text (unpack)
-import           Data.Time.Calendar (Day (..))
+import           Data.Time.Calendar (Day (..), diffDays)
 import           Data.Time.Clock (NominalDiffTime, UTCTime (..), addUTCTime)
 import           Data.Time.Format (defaultTimeLocale, formatTime)
 import           Formatting (fixed, sformat, (%))
@@ -216,14 +216,21 @@ updateNodeUpTime
   -> Element
   -> UI Element
 updateNodeUpTime upTimeInNs upTimeLabel =
-  element upTimeLabel # set text (formatTime defaultTimeLocale "%X" upTime)
+  element upTimeLabel # set text upTimeWithDays
  where
   upTimeInSec :: Double
   upTimeInSec = fromIntegral upTimeInNs / 1000000000
   -- We show up time as time with seconds, so we don't need fractions of second.
   upTimeDiff :: NominalDiffTime
   upTimeDiff = fromInteger $ round upTimeInSec
-  upTime = addUTCTime upTimeDiff (UTCTime (ModifiedJulianDay 0) 0)
+  nullDay = UTCTime (ModifiedJulianDay 0) 0
+  upTime = upTimeDiff `addUTCTime` nullDay
+  upTimeFormatted = formatTime defaultTimeLocale "%X" upTime
+  daysNum = (utctDay upTime) `diffDays` (utctDay nullDay)
+  upTimeWithDays = if daysNum > 0
+                     -- Show days only if upTime is bigger than 23:59:59.
+                     then show daysNum <> "d " <> upTimeFormatted
+                     else upTimeFormatted
 
 -- | Since peers list will be changed dynamically, we need it
 --   to update corresponding HTML-murkup dynamically as well.
