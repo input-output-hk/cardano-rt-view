@@ -454,8 +454,24 @@ showChangesInNodeConfiguration config = do
           TIO.putStrLn $ "       - \"" <> T.pack port <> "\""
         RemotePipe path -> do
           TIO.putStrLn   "     tag: RemotePipe"
+#if defined(mingw32_HOST_OS)
+          -- We have to escape backslashes on Windows, to avoid an error in the configuration.
+          TIO.putStrLn $ "     contents: \"" <> prepareForWindows (T.pack path) <> "\""
+#else
           TIO.putStrLn $ "     contents: \"" <> T.pack path <> "\""
+#endif
       TIO.putStrLn ""
+
+#if defined(mingw32_HOST_OS)
+  -- For example, default pipe path should be displayed like this
+  --
+  -- "\\\\.\\pipe\\Users-Dorin-AppData-Local-Temp-_rt-view-pipes_node-1"
+  --
+  -- instead of
+  --
+  -- "\\.\pipe\Users-Dorin-AppData-Local-Temp-_rt-view-pipes_node-1"
+  prepareForWindows = T.concatMap (\c -> if c == '\\' then "\\\\" else T.singleton c)
+#endif
 
 rmPipesIfNeeded :: [RemoteAddrNamed] -> IO ()
 #if defined(mingw32_HOST_OS)
