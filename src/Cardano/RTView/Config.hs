@@ -15,6 +15,7 @@ import           Cardano.Prelude
 import           Control.Monad (forM_)
 #endif
 import           Data.List (nub, nubBy)
+import           Data.Maybe (fromJust)
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Text.IO as TIO
@@ -198,6 +199,9 @@ startDialogToPrepareConfig = do
   let params = defaultRTViewParams { rtvPort = port
                                    , rtvStatic = staticDir
                                    }
+  -- Now show to the user the changes that should be done in node's configuration file.
+  showChangesInNodeConfiguration config
+
   return (config, params)
 
 defaultNodesNumber :: Int
@@ -387,6 +391,71 @@ askAboutStaticDir = do
     else do
       TIO.putStrLn $ "Ok, static content will be taken from directory \"" <> dir <> "\"."
       return $ T.unpack dir
+
+showChangesInNodeConfiguration :: Configuration -> IO ()
+showChangesInNodeConfiguration config = do
+  TIO.putStrLn "──────────────────────────────"
+  TIO.putStrLn "Great, RTView is ready to run!"
+  TIO.putStrLn "Please make appropriate changes in the node's configuration file:"
+  TIO.putStrLn ""
+  enableTraceForwarderBK
+  enableMetricsTracing
+  mapBackendsExamples
+  addTraceForwardTo
+  TIO.putStrLn "After you are done, press <Enter> to run RTView..."
+  TIO.getLine >>= \_ -> return ()
+ where
+  enableTraceForwarderBK = do
+    TIO.putStrLn "1. Find setupBackends and add TraceForwarderBK in it:"
+    TIO.putStrLn ""
+    TIO.putStrLn "   setupBackends:"
+    TIO.putStrLn "     - TraceForwarderBK"
+    TIO.putStrLn ""
+
+  enableMetricsTracing = do
+    TIO.putStrLn "2. Find TurnOnLogMetrics and set it to True:"
+    TIO.putStrLn ""
+    TIO.putStrLn "   TurnOnLogMetrics: True"
+    TIO.putStrLn ""
+
+  mapBackendsExamples = do
+    TIO.putStrLn "3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:"
+    TIO.putStrLn ""
+    TIO.putStrLn "   options:"
+    TIO.putStrLn "     mapBackends:"
+    TIO.putStrLn "       cardano.node.metrics:"
+    TIO.putStrLn "         - TraceForwarderBK"
+    TIO.putStrLn "       cardano.node.Forge.metrics:"
+    TIO.putStrLn "         - TraceForwarderBK"
+    TIO.putStrLn ""
+    TIO.putStrLn "   For more info about supported metrics please read the documentation."
+    TIO.putStrLn ""
+
+  addTraceForwardTo = do
+    acceptors <- fromJust <$> CM.getAcceptAt config
+    let num = length acceptors
+        (nNodes :: Text, sections :: Text, its :: Text, nFiles :: Text) =
+          if num == 1
+            then ("1 node",             "section",  "its",   "file")
+            else (show num <> " nodes", "sections", "their", "files")
+    TIO.putStrLn $ "4. Since you have "
+                   <> nNodes <> ", add following traceForwardTo "
+                   <> sections <> " in the root of "
+                   <> its <> " configuration "
+                   <> nFiles <> ":"
+    TIO.putStrLn ""
+    forM_ acceptors $ \(RemoteAddrNamed _ addr) -> do
+      TIO.putStrLn       "   traceForwardTo:"
+      case addr of
+        RemoteSocket host port -> do
+          TIO.putStrLn   "     tag: RemoteSocket"
+          TIO.putStrLn   "     contents:"
+          TIO.putStrLn $ "       - \"" <> T.pack host <> "\""
+          TIO.putStrLn $ "       - \"" <> T.pack port <> "\""
+        RemotePipe path -> do
+          TIO.putStrLn   "     tag: RemotePipe"
+          TIO.putStrLn $ "     contents: \"" <> T.pack path <> "\""
+      TIO.putStrLn ""
 
 rmPipesIfNeeded :: [RemoteAddrNamed] -> IO ()
 #if defined(mingw32_HOST_OS)
