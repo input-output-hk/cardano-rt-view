@@ -185,6 +185,7 @@ data HTMLClass
   | InfoMark
   | InfoMarkImg
   | IOHKLogo
+  | MetricsArea
   | NodeContainer
   | NodeBar
   | NodeInfoValues
