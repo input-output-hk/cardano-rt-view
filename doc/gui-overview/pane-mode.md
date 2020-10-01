@@ -29,7 +29,7 @@ Each panel has the following tabs:
 
 This tab shows necessary information about the node:
 
-* `Node release` - node's release (for example, `Shelley`);
+* `Node protocol` - node's protocol (for example, `Shelley`);
 * `Node version` - version of the node;
 * `Node platform` - a platform the node is working on (for example, `Linux`);
 * `Node commit` - git commit the node was built from;
@@ -61,7 +61,7 @@ This tab displays blockchain-related information:
 * `Forged blocks number` - the number of blocks forged by this node;
 * `Chain density` - chain density, in percents;
 * `Slot leader, number` - the number of slots when this node was a leader;
-* `Cannot lead, number` - the number of slots when this node was a leader but because of misconfiguration (for example, invalid key), it's impossible to forge a new block;
+* `Cannot forge, number` - the number of slots when this node was a leader but because of misconfiguration (for example, invalid key), it's impossible to forge a new block;
 * `Missed slots number` - the number of slots when this node was a leader but didn't forge a new block.
 
 ### Mempool

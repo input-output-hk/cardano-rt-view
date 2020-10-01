@@ -21,7 +21,7 @@ At the top bar of the page, you will find the second dropdown list `Select metri
 ## Metrics
 
 * `TraceAcceptor endpoint` - network socket or the pipe used to connect this node with RTView;
-* `Node release` - node's release (for example, `Shelley`);
+* `Node protocol` - node's protocol (for example, `Shelley`);
 * `Node version` - version of the node;
 * `Node platform` - a platform the node is working on (for example, `Linux`);
 * `Node commit` - git commit the node was built from;
@@ -38,7 +38,7 @@ At the top bar of the page, you will find the second dropdown list `Select metri
 * `Slot in epoch` - the number of the current slot;
 * `Blocks number` - the number of blocks in this blockchain;
 * `Forged blocks number` - the number of blocks forged by this node;
-* `Cannot lead, number` - the number of slots when this node was a leader but because of misconfiguration (for example, invalid key), it's impossible to forge a new block;
+* `Cannot forge, number` - the number of slots when this node was a leader but because of misconfiguration (for example, invalid key), it's impossible to forge a new block;
 * `Chain density` - chain density, in percents;
 * `Slot leader, number` - the number of slots when this node was a leader;
 * `Missed slots number` - the number of slots when this node was a leader but didn't forge a new block;
