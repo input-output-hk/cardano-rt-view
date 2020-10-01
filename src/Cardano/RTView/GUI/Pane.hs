@@ -178,7 +178,7 @@ mkNodePane nameOfNode = do
     <- UI.div #. show TabContainer # showIt #+
          [ UI.div #. show W3Row #+
              [ UI.div #. show W3Third #+
-                 [ UI.div #+ [string "Node release:"]
+                 [ UI.div #+ [string "Node protocol:"]
                  , UI.div #+ [string "Node version:"]
                  , UI.div #+ [string "Node platform:"]
                  , UI.div #+ [string "Node commit:"]
