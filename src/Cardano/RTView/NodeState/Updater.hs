@@ -195,11 +195,6 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
               LogValue "remainingKESPeriods" (PureI kesPeriodsUntilExpiry) ->
                 nodesStateWith $ updateRemainingKESPeriods ns kesPeriodsUntilExpiry now
               _ -> return currentNodesState
-           | "cardano.node.BlockFetchDecision" `T.isInfixOf` aName ->
-            case aContent of
-              LogValue "connectedPeers" (PureI peersNum) ->
-                nodesStateWith $ updatePeersNumber ns peersNum
-              _ -> return currentNodesState
            | "cardano.node.release" `T.isInfixOf` aName ->
             case aContent of
               LogMessage release ->
@@ -651,11 +646,6 @@ updateChainDensity ns density now = ns { nsInfo = newNi }
                       , niChainDensityLastUpdate = now
                       }
   chainDensity = 0.05 + density * 100.0
-
-updatePeersNumber :: NodeState -> Integer -> NodeState
-updatePeersNumber ns peersNum = ns { nsInfo = newNi }
- where
-  newNi = (nsInfo ns) { niPeersNumber = peersNum }
 
 updateBlocksNumber :: NodeState -> Integer -> Word64 -> NodeState
 updateBlocksNumber ns blockNum now = ns { nsInfo = newNi }

@@ -41,7 +41,6 @@ mkNodePane nameOfNode = do
   elNodeIsLeaderNumber      <- string "0"
   elSlotsMissedNumber       <- string "0"
   elTxsProcessed            <- string "0"
-  elPeersNumber             <- string "0"
   elTraceAcceptorEndpoint   <- string "0"
   elOpCertStartKESPeriod    <- string "0"
   elCurrentKESPeriod        <- string "0"
@@ -612,7 +611,6 @@ mkNodePane nameOfNode = do
           , (ElNodeIsLeaderNumber,      elNodeIsLeaderNumber)
           , (ElSlotsMissedNumber,       elSlotsMissedNumber)
           , (ElTxsProcessed,            elTxsProcessed)
-          , (ElPeersNumber,             elPeersNumber)
           , (ElTraceAcceptorEndpoint,   elTraceAcceptorEndpoint)
           , (ElOpCertStartKESPeriod,    elOpCertStartKESPeriod)
           , (ElCurrentKESPeriod,        elCurrentKESPeriod)
