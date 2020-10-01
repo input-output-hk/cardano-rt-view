@@ -142,7 +142,8 @@ data ElementName
   deriving (Eq, Generic, NFData, Ord, Show)
 
 data ElementValue
-  = ElementInteger !Integer
+  = ElementInt     !Int
+  | ElementInteger !Integer
   | ElementWord64  !Word64
   | ElementDouble  !Double
   | ElementString  !String

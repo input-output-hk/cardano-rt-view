@@ -82,7 +82,6 @@ data NodeInfo
       , niChainDensity                   :: !Double
       , niChainDensityLastUpdate         :: !Word64
       , niTxsProcessed                   :: !Integer
-      , niPeersNumber                    :: !Integer
       , niPeersInfo                      :: ![PeerInfo]
       , niTraceAcceptorHost              :: !String
       , niTraceAcceptorPort              :: !String
@@ -201,7 +200,6 @@ defaultNodeInfo = NodeInfo
   , niChainDensity                  = 0.0
   , niChainDensityLastUpdate        = 0
   , niTxsProcessed                  = 0
-  , niPeersNumber                   = 0
   , niPeersInfo                     = []
   , niTraceAcceptorHost             = "-"
   , niTraceAcceptorPort             = "-"

@@ -85,7 +85,6 @@ updatePaneGUI window nodesState params acceptors nodesStateElems = do
     void $ updateElementValue (ElementInteger $ niNodeIsLeaderNum ni)         $ elements ! ElNodeIsLeaderNumber
     void $ updateElementValue (ElementInteger $ niSlotsMissedNumber ni)       $ elements ! ElSlotsMissedNumber
     void $ updateElementValue (ElementInteger $ niTxsProcessed ni)            $ elements ! ElTxsProcessed
-    void $ updateElementValue (ElementInteger $ niPeersNumber ni)             $ elements ! ElPeersNumber
     void $ updateErrorsList   (niNodeErrors ni)                               $ elements ! ElNodeErrors
     void $ updateElementValue (ElementWord64  $ nmMempoolTxsNumber nm)        $ elements ! ElMempoolTxsNumber
     void $ updateElementValue (ElementDouble  $ nmMempoolTxsPercent nm)       $ elements ! ElMempoolTxsPercent
@@ -155,7 +154,7 @@ updateGridGUI window nodesState _params acceptors gridNodesStateElems =
     void $ updateElementValue (ElementString  $ niNodeVersion ni)        $ elements ! ElNodeVersion
     void $ updateElementValue (ElementString  $ niNodePlatform ni)       $ elements ! ElNodePlatform
     void $ updateNodeCommit   (niNodeCommit ni) (niNodeShortCommit ni)   $ elements ! ElNodeCommitHref
-    void $ updateElementValue (ElementInteger $ niPeersNumber ni)        $ elements ! ElPeersNumber
+    void $ updateElementValue (ElementInt     $ length (niPeersInfo ni)) $ elements ! ElPeersNumber
     void $ updateNodeUpTime   (niUpTime ni)                              $ elements ! ElUptime
     void $ updateElementValue (ElementInteger $ niEpoch ni)              $ elements ! ElEpoch
     void $ updateElementValue (ElementInteger $ niSlot ni)               $ elements ! ElSlot
@@ -182,6 +181,7 @@ updateElementValue
   :: ElementValue
   -> Element
   -> UI Element
+updateElementValue (ElementInt     i) el = element el # set text (show i)
 updateElementValue (ElementInteger i) el = element el # set text (show i)
 updateElementValue (ElementWord64  w) el = element el # set text (show w)
 updateElementValue (ElementDouble  d) el = element el # set text (showWith1DecPlace d)
