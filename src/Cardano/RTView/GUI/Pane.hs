@@ -36,7 +36,7 @@ mkNodePane nameOfNode = do
   elSlot                    <- string "0"
   elBlocksNumber            <- string "0"
   elBlocksForgedNumber      <- string "0"
-  elNodeCannotLead          <- string "0"
+  elNodeCannotForge         <- string "0"
   elChainDensity            <- string "0"
   elNodeIsLeaderNumber      <- string "0"
   elSlotsMissedNumber       <- string "0"
@@ -302,7 +302,7 @@ mkNodePane nameOfNode = do
                  , UI.div #+ [string "Forged blocks number:"]
                  , UI.div #+ [string "Chain density:"]
                  , UI.div #+ [string "Slot leader, number:"]
-                 , UI.div #+ [string "Cannot lead, number:"]
+                 , UI.div #+ [string "Cannot forge, number:"]
                  , UI.div #+ [string "Missed slots number:"]
                  ]
              , UI.div #. show W3Third #+
@@ -319,7 +319,7 @@ mkNodePane nameOfNode = do
                          , UI.span #. show DensityPercent #+ [string "%"]
                          ]
                      , UI.div #+ [element elNodeIsLeaderNumber]
-                     , UI.div #+ [element elNodeCannotLead]
+                     , UI.div #+ [element elNodeCannotForge]
                      , UI.div #+ [element elSlotsMissedNumber]
                      ]
                  ]
@@ -607,7 +607,7 @@ mkNodePane nameOfNode = do
           , (ElSlot,                    elSlot)
           , (ElBlocksNumber,            elBlocksNumber)
           , (ElBlocksForgedNumber,      elBlocksForgedNumber)
-          , (ElNodeCannotLead,          elNodeCannotLead)
+          , (ElNodeCannotForge,         elNodeCannotForge)
           , (ElChainDensity,            elChainDensity)
           , (ElNodeIsLeaderNumber,      elNodeIsLeaderNumber)
           , (ElSlotsMissedNumber,       elSlotsMissedNumber)

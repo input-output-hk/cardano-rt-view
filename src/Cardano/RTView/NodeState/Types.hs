@@ -78,7 +78,7 @@ data NodeInfo
       , niBlocksNumberLastUpdate         :: !Word64
       , niBlocksForgedNumber             :: !Integer
       , niBlocksForgedNumberLastUpdate   :: !Word64
-      , niNodeCannotLead                 :: !Integer
+      , niNodeCannotForge                :: !Integer
       , niChainDensity                   :: !Double
       , niChainDensityLastUpdate         :: !Word64
       , niTxsProcessed                   :: !Integer
@@ -197,7 +197,7 @@ defaultNodeInfo = NodeInfo
   , niBlocksNumberLastUpdate        = 0
   , niBlocksForgedNumber            = 0
   , niBlocksForgedNumberLastUpdate  = 0
-  , niNodeCannotLead                = 0
+  , niNodeCannotForge               = 0
   , niChainDensity                  = 0.0
   , niChainDensityLastUpdate        = 0
   , niTxsProcessed                  = 0

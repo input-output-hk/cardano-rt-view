@@ -158,8 +158,8 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
                 nodesStateWith $ updateTxsProcessed ns processedTxsNum
               LogValue "blocksForgedNum" (PureI forgedBlocksNum) ->
                 nodesStateWith $ updateBlocksForged ns forgedBlocksNum now
-              LogValue "nodeCannotLead" (PureI cannotLead) ->
-                nodesStateWith $ updateNodeCannotLead ns cannotLead
+              LogValue "nodeCannotForge" (PureI cannotForge) ->
+                nodesStateWith $ updateNodeCannotForge ns cannotForge
               LogValue "nodeIsLeaderNum" (PureI leaderNum) ->
                 nodesStateWith $ updateNodeIsLeader ns leaderNum now
               LogValue "slotsMissedNum" (PureI missedSlotsNum) ->
@@ -526,12 +526,12 @@ updateBlocksForged ns blocksForged now = ns { nsInfo = newNi }
       }
   currentNi = nsInfo ns
 
-updateNodeCannotLead :: NodeState -> Integer -> NodeState
-updateNodeCannotLead ns cannotLead = ns { nsInfo = newNi }
+updateNodeCannotForge :: NodeState -> Integer -> NodeState
+updateNodeCannotForge ns cannotForge = ns { nsInfo = newNi }
  where
   newNi =
     currentNi
-      { niNodeCannotLead = cannotLead
+      { niNodeCannotForge = cannotForge
       }
   currentNi = nsInfo ns
 

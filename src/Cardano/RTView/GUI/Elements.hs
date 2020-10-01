@@ -50,7 +50,7 @@ data ElementName
   | ElSlot
   | ElBlocksNumber
   | ElBlocksForgedNumber
-  | ElNodeCannotLead
+  | ElNodeCannotForge
   | ElChainDensity
   | ElNodeIsLeaderNumber
   | ElSlotsMissedNumber

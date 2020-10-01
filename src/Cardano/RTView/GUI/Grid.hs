@@ -74,7 +74,7 @@ metricLabel ElSlot                  = "Slot in epoch"
 metricLabel ElChainDensity          = "Chain density"
 metricLabel ElBlocksNumber          = "Blocks number"
 metricLabel ElBlocksForgedNumber    = "Forged blocks number"
-metricLabel ElNodeCannotLead        = "Cannot lead, number"
+metricLabel ElNodeCannotForge       = "Cannot forge, number"
 metricLabel ElNodeIsLeaderNumber    = "Slot leader, number"
 metricLabel ElSlotsMissedNumber     = "Missed slots number"
 metricLabel ElTxsProcessed          = "TXs processed"
@@ -106,7 +106,7 @@ allMetricsNames =
   , ElSlot
   , ElBlocksNumber
   , ElBlocksForgedNumber
-  , ElNodeCannotLead
+  , ElNodeCannotForge
   , ElChainDensity
   , ElNodeIsLeaderNumber
   , ElSlotsMissedNumber
@@ -187,7 +187,7 @@ mkNodeElements nameOfNode = do
   elSlot               <- string "0"
   elBlocksNumber       <- string "0"
   elBlocksForgedNumber <- string "0"
-  elNodeCannotLead     <- string "0"
+  elNodeCannotForge    <- string "0"
   elChainDensity       <- string "0"
   elNodeIsLeaderNumber <- string "0"
   elSlotsMissedNumber  <- string "0"
@@ -219,7 +219,7 @@ mkNodeElements nameOfNode = do
       , (ElSlot,                  elSlot)
       , (ElBlocksNumber,          elBlocksNumber)
       , (ElBlocksForgedNumber,    elBlocksForgedNumber)
-      , (ElNodeCannotLead,        elNodeCannotLead)
+      , (ElNodeCannotForge,       elNodeCannotForge)
       , (ElChainDensity,          elChainDensity)
       , (ElNodeIsLeaderNumber,    elNodeIsLeaderNumber)
       , (ElSlotsMissedNumber,     elSlotsMissedNumber)
