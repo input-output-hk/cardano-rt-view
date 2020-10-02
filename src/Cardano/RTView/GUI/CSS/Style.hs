@@ -23,6 +23,7 @@ ownCSS = unpack . TL.toStrict . render $ do
     fontFamily        ["Roboto Condensed"] [sansSerif]
     fontSizePx        20
     backgroundColor   whitesmoke
+    color "#1b2238"
 
   th ? do
     important $
@@ -40,7 +41,7 @@ ownCSS = unpack . TL.toStrict . render $ do
     color             "#4b0082"
 
   cl TopBar ? do
-    backgroundColor   black
+    backgroundColor   "#1b2238"
     color             whitesmoke
     paddingTopPx      18
     paddingBottomPx   15
@@ -51,13 +52,19 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl TopBar ** w3 W3DropdownHover ** w3 W3Button # hover ? do
     important $
-      color           iohkRed
+      color           cardanoLight
 
   w3 W3DropdownHover # hover |> w3 W3Button # firstChild ? do
     important $
-      color           iohkRed
+      color           cardanoLight
     important $
-      backgroundColor black
+      backgroundColor "#1b2238"
+
+  w3 W3BarItem # hover ? do
+    important $
+      color           cardanoLight
+    important $
+      backgroundColor "#1b2238"
 
   w3 W3DropdownContent ? do
     important $
@@ -67,8 +74,8 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl ServiceName ? do
     fontSizePct       120
     important $
-      color           "#cccccc"
-    paddingTopPx      14
+      color           "#bcbcbc"
+    paddingTopPx      12
     paddingRightPx    18
 
   cl NodeNameArea ? do
@@ -83,17 +90,17 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl NodeBar ? do
     important $
-      backgroundColor "#333333"
+      backgroundColor "#364679"
     important $
       color           whitesmoke
 
   cl NodeBar ** w3 W3Button # hover ? do
     important $
-      color           iohkRed
+      color           cardanoLight
 
   cl ActiveTab ? do
     important $
-      color           iohkRed
+      color           cardanoLight
     fontWeight        bold
 
   cl TabContainer ? do
@@ -128,8 +135,8 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl ReleaseName ? do
     fontWeight        bold
 
-  cl IOHKLogo ? do
-    maxWidthPx        214
+  cl CardanoLogo ? do
+    widthPx           216
 
   cl InfoMark ? do
     paddingLeftPx     5
@@ -241,7 +248,7 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl ProgressBarBox ?         progressBarColors greenLight white
   cl ProgressBarBoxOutdated ? progressBarColors grayLight  gray60
  where
-  iohkRed         = rgb 239 19  29
+  cardanoLight    = rgb 31  193 195
   gray40          = rgb 102 102 102
   gray60          = rgb 153 153 153
   grayLight       = rgb 170 170 170
@@ -266,6 +273,7 @@ ownCSS = unpack . TL.toStrict . render $ do
   minHeightPx     = minHeight . px
   maxHeightPx     = maxHeight . px
 
+  widthPx         = width . px
   minWidthPx      = minWidth . px
   maxWidthPx      = maxWidth . px
 

@@ -143,8 +143,8 @@ topNavigation
   -> UI Element
 topNavigation nodesSelector viewModeSelector metricsSelector =
   UI.div #. [W3Bar, W3Large] <+> [TopBar] #+
-    [ UI.anchor #. show W3BarItem # set UI.href "https://iohk.io/" #+
-        [ UI.img #. show IOHKLogo # set UI.src "/static/images/iohk-logo.png"
+    [ UI.anchor #. show W3BarItem # set UI.href "https://cardano.org/" #+
+        [ UI.img #. show CardanoLogo # set UI.src "/static/images/cardano-logo.svg"
         ]
     , UI.div #. show W3DropdownHover #+
         [ UI.button ## show ViewModeButton
