@@ -39,6 +39,7 @@ library
   other-modules:       Paths_cardano_rt_view
 
   build-depends:       aeson
+                     , ansi-terminal
                      , async
                      , base >=4.12 && <5
                      , bytestring

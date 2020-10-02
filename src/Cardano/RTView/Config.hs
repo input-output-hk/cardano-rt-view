@@ -20,6 +20,8 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Text.IO as TIO
 import           Data.Yaml (ParseException, decodeFileEither, encodeFile)
+import           System.Console.ANSI (Color (..), ColorIntensity (..), ConsoleIntensity (..),
+                                      ConsoleLayer (..), SGR (..), setSGR)
 import           System.Directory (XdgDirectory (..), doesFileExist,
                                    getTemporaryDirectory, getXdgDirectory)
 #if !defined(mingw32_HOST_OS)
@@ -33,6 +35,7 @@ import           System.FilePath (dropDrive)
 import           System.FilePath (takeDirectory)
 #endif
 import qualified System.Exit as Ex
+import           System.IO (hFlush)
 import           Text.Read (readMaybe)
 
 import           Cardano.BM.Configuration (Configuration, getAcceptAt, setup)
@@ -67,8 +70,12 @@ prepareConfigAndParams params' = do
         return (configFromFile, params')
       else
         checkIfPreviousConfigExists >>= \case
-          Just (prevConfig, prevParams) -> askUserAboutPrevConfig prevConfig prevParams
-          Nothing -> startDialogToPrepareConfig
+          Just (prevConfig, prevParams) -> do
+            colorize Magenta NormalIntensity $
+              TIO.putStr "Saved configuration file is found. Do you want to use it? <Y/N>: "
+            askAboutPrevConfig prevConfig prevParams
+          Nothing ->
+            startDialogToPrepareConfig
   acceptors <- checkIfTraceAcceptorIsDefined config
   makeSureTraceAcceptorsAreUnique acceptors
   -- To prevent TraceAcceptorPipeError "Network.Socket.bind: resource busy...
@@ -127,50 +134,74 @@ checkIfPreviousConfigExists = do
     else
       return Nothing
 
-askUserAboutPrevConfig
+askAboutPrevConfig
   :: Configuration
   -> RTViewParams
   -> IO (Configuration, RTViewParams)
-askUserAboutPrevConfig savedConfig savedParams = do
-  TIO.putStrLn "Saved configuration file is found. Do you want to use it? <Y/N>"
+askAboutPrevConfig savedConfig savedParams =
   TIO.getLine >>= \case
     "Y" -> return (savedConfig, savedParams)
     "y" -> return (savedConfig, savedParams)
     ""  -> return (savedConfig, savedParams)
     "N" -> startDialogToPrepareConfig
     "n" -> startDialogToPrepareConfig
-    _   -> startDialogToPrepareConfig
+    _   -> do
+      colorize Red NormalIntensity $
+        TIO.putStr "Sorry? <Y>es or <N>o? "
+      askAboutPrevConfig savedConfig savedParams
 
 startDialogToPrepareConfig :: IO (Configuration, RTViewParams)
 startDialogToPrepareConfig = do
-  TIO.putStrLn $ "How many nodes will you connect (1 - "
+  colorize Magenta BoldIntensity $ do
+    TIO.putStrLn ""
+    TIO.putStrLn $ "Let's configure RTView..."
+
+  colorize Green BoldIntensity $ do
+    TIO.putStrLn ""
+    TIO.putStr $ "How many nodes will you connect (1 - "
                <> show maximumNode <> ", default is " <> show defaultNodesNumber <> "): "
   nodesNumber <- askAboutNodesNumber
+  TIO.putStrLn $ "Ok, " <> show nodesNumber <> " nodes."
 
-  TIO.putStrLn $ "Input the names of the nodes (default are \""
-               <> showDefaultNodesNames nodesNumber <> "\"): "
+  colorize Green BoldIntensity $ do
+    TIO.putStrLn ""
+    let (names :: Text, nodes :: Text, are :: Text, oneAtATime :: Text)
+          = if nodesNumber == 1
+              then ("name",  "node",  "is",  "")
+              else ("names", "nodes", "are", ", one at a time")
+    TIO.putStr $ "Input the " <> names <> " of the " <> nodes <> " (default " <> are <> " \""
+               <> showDefaultNodesNames nodesNumber <> "\")" <> oneAtATime <> ": "
   nodesNames <- askAboutNodesNames nodesNumber
 
-  TIO.putStrLn $ "Indicate the port for the web server (" <> show minimumPort
+  colorize Green BoldIntensity $ do
+    TIO.putStrLn ""
+    TIO.putStr $ "Indicate the port for the web server (" <> show minimumPort
                <> " - " <> show maximumPort <> ", default is "
                <> show defaultRTVPort <> "): "
   port <- askAboutWebPort
+  TIO.putStrLn $ "Ok, the web-page will be available on http://127.0.0.1:" <> show port
 
-  TIO.putStrLn "Connections shall be made via pipes (P, default way) or networking sockets (S)?"
+  colorize Green BoldIntensity $ do
+    TIO.putStrLn ""
+    TIO.putStr "Indicate how your nodes should be connected with RTView (pipes <P> or networking sockets <S>): "
   remoteAddrs <- askAboutPipesAndSockets >>= \case
     Pipe -> do
       defDir <- defaultPipesDir
-      TIO.putStrLn $ "Ok, pipes will be used. Indicate the directory for them, default is \""
-                     <> T.pack defDir <> "\": "
+      TIO.putStr $ "Ok, pipes will be used. Indicate the directory for them, default is \""
+                   <> T.pack defDir <> "\": "
+      hFlush stdout
       askAboutLocationForPipes nodesNumber
     Socket -> do
-      TIO.putStrLn $ "Ok, sockets will be used. Indicate the port base to listen for connections ("
-                     <> show minimumPort <> " - " <> show maximumPort <> ", default is "
-                     <> show defaultFirstPortForSockets <> "): "
+      TIO.putStr $ "Ok, sockets will be used. Indicate the port base to listen for connections ("
+                   <> show minimumPort <> " - " <> show maximumPort <> ", default is "
+                   <> show defaultFirstPortForSockets <> "): "
+      hFlush stdout
       askAboutFirstPortForSockets nodesNumber
 
-  TIO.putStrLn $ "Indicate the directory with static content for the web server, default is \""
-                 <> T.pack defaultRTVStatic <> "\":"
+  colorize Green BoldIntensity $ do
+    TIO.putStrLn ""
+    TIO.putStr $ "Indicate the directory with static content for the web server, default is \""
+                 <> T.pack defaultRTVStatic <> "\": "
   staticDir <- askAboutStaticDir
 
   -- Form configuration and params based on user's input.
@@ -247,15 +278,16 @@ askAboutNodesNumber = do
       else case readMaybe (T.unpack nodesNumberRaw) of
              Just (n :: Int) -> return n
              Nothing -> do
-               TIO.putStrLn "It's not a number, please input the number instead: "
+               colorize Red NormalIntensity $
+                 TIO.putStr "It's not a number, please input the number instead: "
                askAboutNodesNumber
   if nodesNumber < 1 || nodesNumber > maximumNode
     then do
-      TIO.putStrLn $ "Wrong number of nodes, please input the number from 1 to "
-                     <> show maximumNode <> ": "
+      colorize Red NormalIntensity $
+        TIO.putStrLn $ "Wrong number of nodes, please input the number from 1 to "
+                       <> show maximumNode <> ": "
       askAboutNodesNumber
-    else do
-      TIO.putStrLn $ "Ok, " <> show nodesNumber <> " nodes."
+    else
       return nodesNumber
 
 askAboutNodesNames :: Int -> IO [Text]
@@ -265,15 +297,18 @@ askAboutNodesNames nodesNumber = askNodeNames 1
    askNodeNames i = do
      aName <- askNodeName i
      if | T.null aName && i == 1 -> do
-            TIO.putStrLn $ "Ok, default names \"" <> showDefaultNodesNames nodesNumber
+            TIO.putStrLn $ "Ok, default " <> nNames <> " \"" <> showDefaultNodesNames nodesNumber
                            <> "\" will be used."
             return $ defaultNodesNames nodesNumber
         | i == nodesNumber -> do
-            TIO.putStrLn $ "Ok, the last node has name \"" <> aName <> "\""
+            let last :: Text
+                last = if nodesNumber == 1 then "" else "last "
+            TIO.putStrLn $ "Ok, the " <> last <> "node has name \"" <> aName <> "\"."
             return $ aName : []
         | otherwise -> do
-            TIO.putStrLn $ "Ok, node " <> show i <> " has name \"" <> aName
-                           <> "\", input the next one:"
+            TIO.putStr $ "Ok, node " <> show i <> " has name \"" <> aName
+                         <> "\", input the next one: "
+            hFlush stdout
             names <- askNodeNames (i + 1)
             return $ aName : names
 
@@ -283,12 +318,17 @@ askAboutNodesNames nodesNumber = askNodeNames 1
     if | T.null aName && i == 1 ->
            return ""
        | T.null aName && i /= 1 -> do
-           TIO.putStrLn "Node's name cannot be empty, please input again: "
+           colorize Red NormalIntensity $
+             TIO.putStr "Node's name cannot be empty, please input again: "
            askNodeName i
        | T.any (== ' ') aName -> do
-           TIO.putStrLn "Node's name cannot contain spaces, please input again:  "
+           colorize Red NormalIntensity $
+             TIO.putStr "Node's name cannot contain spaces, please input again: "
            askNodeName i
        | otherwise -> return aName
+
+   nNames :: Text
+   nNames = if nodesNumber == 1 then "name" else "names"
 
 askAboutWebPort :: IO Int
 askAboutWebPort = do
@@ -299,15 +339,16 @@ askAboutWebPort = do
       else case readMaybe (T.unpack portRaw) of
              Just (n :: Int) -> return n
              Nothing -> do
-               TIO.putStrLn "It's not a number, please input the number instead: "
+               colorize Red NormalIntensity $
+                 TIO.putStr "It's not a number, please input the number instead: "
                askAboutWebPort
   if port < minimumPort || port > maximumPort
     then do
-      TIO.putStrLn $ "Please choose the port between " <> show minimumPort <> " and "
-                   <> show maximumPort <> ": "
+      colorize Red NormalIntensity $
+        TIO.putStr $ "Please choose the port between " <> show minimumPort <> " and "
+                     <> show maximumPort <> ": "
       askAboutWebPort
-    else do
-      TIO.putStrLn $ "Ok, the server will be listening on http://127.0.0.1:" <> show port
+    else
       return port
 
 data ConnectionWay
@@ -315,15 +356,17 @@ data ConnectionWay
   | Socket
 
 askAboutPipesAndSockets :: IO ConnectionWay
-askAboutPipesAndSockets = do
-  decisionRaw <- TIO.getLine
-  case decisionRaw of
+askAboutPipesAndSockets =
+  TIO.getLine >>= \case
     "P" -> return Pipe
     "p" -> return Pipe
     ""  -> return Pipe
     "S" -> return Socket
     "s" -> return Socket
-    _   -> return Pipe
+    _   -> do
+      colorize Red NormalIntensity $
+        TIO.putStr "Sorry? <P>ipes or <S>ockets? "
+      askAboutPipesAndSockets
 
 askAboutLocationForPipes :: Int -> IO [RemoteAddr]
 askAboutLocationForPipes nodesNumber = do
@@ -371,12 +414,14 @@ askAboutFirstPort = do
       else case readMaybe (T.unpack portRaw) of
              Just (n :: Int) -> return n
              Nothing -> do
-               TIO.putStrLn "It's not a number, please input the number instead: "
+               colorize Red NormalIntensity $
+                 TIO.putStr "It's not a number, please input the number instead: "
                askAboutFirstPort
   if port < minimumPort || port > maximumPort
     then do
-      TIO.putStrLn $ "Please choose the port between " <> show minimumPort <> " and "
-                   <> show maximumPort <> ": "
+      colorize Red NormalIntensity $
+        TIO.putStr $ "Please choose the port between " <> show minimumPort <> " and "
+                     <> show maximumPort <> ": "
       askAboutFirstPort
     else
       return port
@@ -394,40 +439,49 @@ askAboutStaticDir = do
 
 showChangesInNodeConfiguration :: Configuration -> IO ()
 showChangesInNodeConfiguration config = do
-  TIO.putStrLn "──────────────────────────────"
-  TIO.putStrLn "Great, RTView is ready to run!"
-  TIO.putStrLn "Please make appropriate changes in the node's configuration file:"
+  colorize Magenta BoldIntensity $ do
+    TIO.putStrLn ""
+    aPath <- savedConfigurationFile
+    TIO.putStr $ "Great, RTView is ready to run! Its configuration was saved at "
+                 <> T.pack aPath <> ". Press <Enter> to continue..."
+  TIO.getLine >>= \_ -> return ()
+  TIO.putStrLn ""
+  TIO.putStrLn "Now you have to make the following changes in your node's configuration file:"
   TIO.putStrLn ""
   enableTraceForwarderBK
   enableMetricsTracing
   mapBackendsExamples
   addTraceForwardTo
-  TIO.putStrLn "After you are done, press <Enter> to run RTView..."
+  colorize Magenta BoldIntensity $ do
+    TIO.putStr "After you are done, press <Enter> to run RTView..."
   TIO.getLine >>= \_ -> return ()
  where
   enableTraceForwarderBK = do
     TIO.putStrLn "1. Find setupBackends and add TraceForwarderBK in it:"
     TIO.putStrLn ""
-    TIO.putStrLn "   setupBackends:"
-    TIO.putStrLn "     - TraceForwarderBK"
+    colorize Yellow BoldIntensity $ do
+      TIO.putStrLn "   setupBackends:"
+      TIO.putStrLn "     - TraceForwarderBK"
     TIO.putStrLn ""
 
   enableMetricsTracing = do
     TIO.putStrLn "2. Find TurnOnLogMetrics and set it to True:"
     TIO.putStrLn ""
-    TIO.putStrLn "   TurnOnLogMetrics: True"
+    colorize Yellow BoldIntensity $
+      TIO.putStrLn "   TurnOnLogMetrics: True"
     TIO.putStrLn ""
 
   mapBackendsExamples = do
     TIO.putStrLn "3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:"
     TIO.putStrLn ""
-    TIO.putStrLn "   options:"
-    TIO.putStrLn "     mapBackends:"
-    TIO.putStrLn "       cardano.node.metrics:"
-    TIO.putStrLn "         - TraceForwarderBK"
-    TIO.putStrLn "       cardano.node.Forge.metrics:"
-    TIO.putStrLn "         - TraceForwarderBK"
-    TIO.putStrLn ""
+    colorize Yellow BoldIntensity $ do
+      TIO.putStrLn "   options:"
+      TIO.putStrLn "     mapBackends:"
+      TIO.putStrLn "       cardano.node.metrics:"
+      TIO.putStrLn "         - TraceForwarderBK"
+      TIO.putStrLn "       cardano.node.Forge.metrics:"
+      TIO.putStrLn "         - TraceForwarderBK"
+      TIO.putStrLn ""
     TIO.putStrLn "   For more info about supported metrics please read the documentation."
     TIO.putStrLn ""
 
@@ -444,7 +498,7 @@ showChangesInNodeConfiguration config = do
                    <> its <> " configuration "
                    <> nFiles <> ":"
     TIO.putStrLn ""
-    forM_ acceptors $ \(RemoteAddrNamed _ addr) -> do
+    forM_ acceptors $ \(RemoteAddrNamed _ addr) -> colorize Yellow BoldIntensity $ do
       TIO.putStrLn       "   traceForwardTo:"
       case addr of
         RemoteSocket host port -> do
@@ -532,3 +586,12 @@ makeSureTraceAcceptorsAreUnique acceptors = do
 
   names = [name | RemoteAddrNamed name _ <- acceptors]
   addrs = [addr | RemoteAddrNamed _ addr <- acceptors]
+
+colorize :: Color -> ConsoleIntensity -> IO () -> IO ()
+colorize color intensity action = do
+  setSGR [ SetConsoleIntensity intensity
+         , SetColor Foreground Vivid color
+         ]
+  action
+  setSGR [Reset]
+  hFlush stdout -- Truly resets text color to default one.
