@@ -69,7 +69,7 @@ updatePaneGUI window nodesState params acceptors nodesStateElems = do
 
     updateCharts window nameOfNode ni nm
 
-    void $ updateElementValue (ElementString  acceptorEndpoint)               $ elements ! ElTraceAcceptorEndpoint
+    void $ updateEndpoint     acceptorEndpoint                                $ elements ! ElTraceAcceptorEndpoint
     void $ updateElementValue (ElementString  $ niNodeRelease ni)             $ elements ! ElNodeRelease
     void $ updateElementValue (ElementString  $ niNodeVersion ni)             $ elements ! ElNodeVersion
     void $ updateElementValue (ElementString  $ niNodePlatform ni)            $ elements ! ElNodePlatform
@@ -149,7 +149,7 @@ updateGridGUI window nodesState _params acceptors gridNodesStateElems =
 
     updateCharts window nameOfNode ni nm
 
-    void $ updateElementValue (ElementString  acceptorEndpoint)          $ elements ! ElTraceAcceptorEndpoint
+    void $ updateEndpoint     acceptorEndpoint                           $ elements ! ElTraceAcceptorEndpoint
     void $ updateElementValue (ElementString  $ niNodeRelease ni)        $ elements ! ElNodeRelease
     void $ updateElementValue (ElementString  $ niNodeVersion ni)        $ elements ! ElNodeVersion
     void $ updateElementValue (ElementString  $ niNodePlatform ni)       $ elements ! ElNodePlatform
@@ -210,6 +210,20 @@ updateNodeCommit commit shortCommit commitHref = do
   sComm <- UI.string shortCommit
   element commitHref # set UI.href ("https://github.com/input-output-hk/cardano-node/commit/" <> commit)
                      # set children [sComm]
+
+updateEndpoint
+  :: String
+  -> Element
+  -> UI Element
+updateEndpoint endpoint endpointLabel =
+  element endpointLabel # set text shortened
+                        # set UI.title__ fullEndpointTitle
+ where
+  len = length endpoint
+  shortened = if len > 22
+                then take 11 endpoint <> "..." <> drop (len - 11) endpoint
+                else endpoint
+  fullEndpointTitle = if shortened == endpoint then "" else endpoint
 
 updateNodeUpTime
   :: Word64

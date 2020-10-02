@@ -177,18 +177,18 @@ mkNodePane nameOfNode = do
     <- UI.div #. show TabContainer # showIt #+
          [ UI.div #. show W3Row #+
              [ UI.div #. show W3Third #+
-                 [ UI.div #+ [string "Node protocol:"]
-                 , UI.div #+ [string "Node version:"]
-                 , UI.div #+ [string "Node platform:"]
-                 , UI.div #+ [string "Node commit:"]
+                 [ UI.div #+ [string "Node protocol"]
+                 , UI.div #+ [string "Node version"]
+                 , UI.div #+ [string "Node platform"]
+                 , UI.div #+ [string "Node commit"]
                  , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [string "Node uptime:"]
+                 , UI.div #+ [string "Node uptime"]
                  , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [string "Start KES period:"]
-                 , UI.div #+ [string "KES period:"]
-                 , UI.div #+ [string "KES remaining:"]
+                 , UI.div #+ [string "Start KES period"]
+                 , UI.div #+ [string "KES period"]
+                 , UI.div #+ [string "KES remaining"]
                  , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [string "TraceAcceptor endpoint:"]
+                 , UI.div #+ [string "TraceAcceptor endpoint"]
                  ]
              , UI.div #. show W3Third #+
                  [ UI.div #. show NodeInfoValues #+
@@ -296,13 +296,13 @@ mkNodePane nameOfNode = do
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Row #+
              [ UI.div #. show W3Third #+
-                 [ UI.div #+ [string "Epoch / Slot in epoch:"]
-                 , UI.div #+ [string "Blocks number:"]
-                 , UI.div #+ [string "Forged blocks number:"]
-                 , UI.div #+ [string "Chain density:"]
-                 , UI.div #+ [string "Slot leader, number:"]
-                 , UI.div #+ [string "Cannot forge, number:"]
-                 , UI.div #+ [string "Missed slots number:"]
+                 [ UI.div #+ [string "Epoch / Slot in epoch"]
+                 , UI.div #+ [string "Blocks number"]
+                 , UI.div #+ [string "Forged blocks number"]
+                 , UI.div #+ [string "Chain density"]
+                 , UI.div #+ [string "Slot leader, number"]
+                 , UI.div #+ [string "Cannot forge, number"]
+                 , UI.div #+ [string "Missed slots number"]
                  ]
              , UI.div #. show W3Third #+
                  [ UI.div #. show NodeInfoValues #+
@@ -361,7 +361,7 @@ mkNodePane nameOfNode = do
              , vSpacer NodeMetricsVSpacer
              , UI.div #. show W3Row #+
                  [ UI.div #. show W3Theme #+
-                     [ string "TXs processed:"
+                     [ string "TXs processed"
                      , nbsp
                      , nbsp
                      , UI.span #. show NodeInfoValues #+
@@ -490,10 +490,10 @@ mkNodePane nameOfNode = do
          , vSpacer NodeMetricsVSpacer
          , UI.div #. show W3Row #+
              [ UI.div #. show W3Third #+
-                 [ UI.div #+ [string "GC CPU time:"]
-                 , UI.div #+ [string "GC time elapsed:"]
-                 , UI.div #+ [string "Number of GC runs:"]
-                 , UI.div #+ [string "Major GC runs:"]
+                 [ UI.div #+ [string "GC CPU time"]
+                 , UI.div #+ [string "GC time elapsed"]
+                 , UI.div #+ [string "Number of GC runs"]
+                 , UI.div #+ [string "Major GC runs"]
                  ]
              , UI.div #. show W3Third #+
                  [ UI.div #. show NodeInfoValues #+

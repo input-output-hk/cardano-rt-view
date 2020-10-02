@@ -174,6 +174,7 @@ data PeerInfoElements
 data HTMLClass
   = ActiveTab
   | BarValueUnit
+  | CardanoLogo
   | CommitLink
   | DensityPercent
   | ErrorsTabContainer
@@ -184,7 +185,6 @@ data HTMLClass
   | InFlightValues
   | InfoMark
   | InfoMarkImg
-  | IOHKLogo
   | MetricsArea
   | NodeContainer
   | NodeBar
