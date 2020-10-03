@@ -2,6 +2,8 @@
 
    <p align="center">
      <a href="https://buildkite.com/input-output-hk/cardano-rt-view"><img src="https://img.shields.io/buildkite/b1c1ebf2b0fd1cccfff286e1343dc610bd81925558449e21f2/master?label=BUILD&style=for-the-badge"/></a>
+     &nbsp;&nbsp;
+     <a href="https://github.com/input-output-hk/cardano-rt-view/issues"><img src="https://img.shields.io/github/issues/input-output-hk/cardano-rt-view?style=for-the-badge"></a>
    </p>
 
 ********************************************
