@@ -220,8 +220,8 @@ updateEndpoint endpoint endpointLabel =
                         # set UI.title__ fullEndpointTitle
  where
   len = length endpoint
-  shortened = if len > 22
-                then take 11 endpoint <> "..." <> drop (len - 11) endpoint
+  shortened = if len > 20
+                then take 10 endpoint <> "..." <> drop (len - 10) endpoint
                 else endpoint
   fullEndpointTitle = if shortened == endpoint then "" else endpoint
 
@@ -341,50 +341,30 @@ markOutdatedElements params ni nm els = do
       resLife = rtvResourcesInfoLife params
       rtsLife = rtvRTSInfoLife params
 
+  markValues now (niUpTimeLastUpdate ni) niLife [ els ! ElUptime
+                                                , els ! ElNodeRelease
+                                                , els ! ElNodeVersion
+                                                , els ! ElNodePlatform
+                                                , els ! ElNodeCommitHref
+                                                ]
+  markValues now (niEpochLastUpdate ni) bcLife [els ! ElEpoch]
+  markValues now (niOpCertStartKESPeriodLastUpdate ni) niLife [els ! ElOpCertStartKESPeriod]
+  markValues now (niCurrentKESPeriodLastUpdate ni)     niLife [els ! ElCurrentKESPeriod]
+  markValues now (niRemainingKESPeriodsLastUpdate ni)  niLife [els ! ElRemainingKESPeriods]
 
-  markValueW now (niUpTimeLastUpdate ni)       niLife [ els ! ElUptime
-                                                      , els ! ElNodeRelease
-                                                      , els ! ElNodeVersion
-                                                      , els ! ElNodePlatform
-                                                      , els ! ElNodeCommitHref
-                                                      ]
-                                                      [ els ! ElUptimeOutdateWarning
-                                                      , els ! ElNodeReleaseOutdateWarning
-                                                      , els ! ElNodeVersionOutdateWarning
-                                                      , els ! ElNodePlatformOutdateWarning
-                                                      , els ! ElNodeCommitHrefOutdateWarning
-                                                      ]
-
-  markValue  now (niEpochLastUpdate ni)        bcLife (els ! ElEpoch)
-  markValueW now (niOpCertStartKESPeriodLastUpdate ni) niLife [els ! ElOpCertStartKESPeriod]
-                                                              [els ! ElOpCertStartKESPeriodOutdateWarning]
-  markValueW now (niCurrentKESPeriodLastUpdate ni)     niLife [els ! ElCurrentKESPeriod]
-                                                              [els ! ElCurrentKESPeriodOutdateWarning]
-  markValueW now (niRemainingKESPeriodsLastUpdate ni)  niLife [els ! ElRemainingKESPeriods]
-                                                              [els ! ElRemainingKESPeriodsOutdateWarning]
-  markValueW now (niSlotLastUpdate ni)         bcLife [els ! ElSlot]
-                                                      [els ! ElSlotOutdateWarning]
-  markValueW now (niBlocksNumberLastUpdate ni) bcLife [els ! ElBlocksNumber]
-                                                      [els ! ElBlocksNumberOutdateWarning]
-  markValueW now (niBlocksForgedNumberLastUpdate ni) bcLife [ els ! ElBlocksForgedNumber
+  markValues now (niSlotLastUpdate ni)               bcLife [els ! ElSlot]
+  markValues now (niBlocksNumberLastUpdate ni)       bcLife [els ! ElBlocksNumber]
+  markValues now (niBlocksForgedNumberLastUpdate ni) bcLife [ els ! ElBlocksForgedNumber
                                                             , els ! ElNodeCannotForge
                                                             ]
-                                                            [els ! ElBlocksForgedNumberOutdateWarning]
-  markValueW now (niChainDensityLastUpdate ni) bcLife [els ! ElChainDensity]
-                                                      [els ! ElChainDensityOutdateWarning]
-  markValueW now (niSlotsMissedNumberLastUpdate ni) bcLife [els ! ElSlotsMissedNumber]
-                                                           [els ! ElSlotsMissedNumberOutdateWarning]
-  markValueW now (niNodeIsLeaderNumLastUpdate ni) bcLife [els ! ElNodeIsLeaderNumber]
-                                                         [els ! ElNodeIsLeaderNumberOutdateWarning]
+  markValues now (niChainDensityLastUpdate ni)       bcLife [els ! ElChainDensity]
+  markValues now (niSlotsMissedNumberLastUpdate ni)  bcLife [els ! ElSlotsMissedNumber]
+  markValues now (niNodeIsLeaderNumLastUpdate ni)    bcLife [els ! ElNodeIsLeaderNumber]
 
-  markValueW now (nmRTSGcCpuLastUpdate nm)      rtsLife [els ! ElRTSGcCpu]
-                                                        [els ! ElRTSGcCpuOutdateWarning]
-  markValueW now (nmRTSGcElapsedLastUpdate nm)  rtsLife [els ! ElRTSGcElapsed]
-                                                        [els ! ElRTSGcElapsedOutdateWarning]
-  markValueW now (nmRTSGcNumLastUpdate nm)      rtsLife [els ! ElRTSGcNum]
-                                                        [els ! ElRTSGcNumOutdateWarning]
-  markValueW now (nmRTSGcMajorNumLastUpdate nm) rtsLife [els ! ElRTSGcMajorNum]
-                                                        [els ! ElRTSGcMajorNumOutdateWarning]
+  markValues now (nmRTSGcCpuLastUpdate nm)      rtsLife [els ! ElRTSGcCpu]
+  markValues now (nmRTSGcElapsedLastUpdate nm)  rtsLife [els ! ElRTSGcElapsed]
+  markValues now (nmRTSGcNumLastUpdate nm)      rtsLife [els ! ElRTSGcNum]
+  markValues now (nmRTSGcMajorNumLastUpdate nm) rtsLife [els ! ElRTSGcMajorNum]
 
   -- Mark progress bars' state.
   markProgressBar now (nmRTSMemoryLastUpdate nm) rtsLife els ( ElRTSMemoryProgress
@@ -431,32 +411,16 @@ markOutdatedElements params ni nm els = do
                                                                    , ElNetworkUsageOutMaxTotal
                                                                    ]
 
-markValue
-  :: Word64
-  -> Word64
-  -> Word64
-  -> Element
-  -> UI ()
-markValue now lastUpdate lifetime el =
-  if now - lastUpdate > lifetime
-    then void $ markAsOutdated el
-    else void $ markAsUpToDate el
-
-markValueW
+markValues
   :: Word64
   -> Word64
   -> Word64
   -> [Element]
-  -> [Element]
   -> UI ()
-markValueW now lastUpdate lifetime els warnings =
+markValues now lastUpdate lifetime els =
   if now - lastUpdate > lifetime
-    then do
-      mapM_ (void . markAsOutdated) els
-      mapM_ (void . showElement) warnings
-    else do
-      mapM_ (void . markAsUpToDate) els
-      mapM_ (void . hideElement) warnings
+    then mapM_ (void . markAsOutdated) els
+    else mapM_ (void . markAsUpToDate) els
 
 showElement, hideElement :: Element -> UI Element
 showElement w = element w # set UI.style [("display", "inline")]

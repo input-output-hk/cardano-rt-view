@@ -149,34 +149,11 @@ mkNodePane nameOfNode = do
                                 # set UI.title__ "Browse cardano-node repository on this commit"
                                 #+ [string ""]
 
-  elNodeReleaseOutdateWarning    <- infoMark "The value is outdated"
-  elNodeVersionOutdateWarning    <- infoMark "The value is outdated"
-  elNodePlatformOutdateWarning   <- infoMark "The value is outdated"
-  elNodeCommitHrefOutdateWarning <- infoMark "The value is outdated"
-  elUptimeOutdateWarning         <- infoMark "The value is outdated"
-
-  elOpCertStartKESPeriodOutdateWarning <- infoMark "The value is outdated"
-  elCurrentKESPeriodOutdateWarning     <- infoMark "The value is outdated"
-  elRemainingKESPeriodsOutdateWarning  <- infoMark "The value is outdated"
-
-  elSlotOutdateWarning               <- infoMark "The value is outdated"
-  elBlocksNumberOutdateWarning       <- infoMark "The value is outdated"
-  elBlocksForgedNumberOutdateWarning <- infoMark "The value is outdated"
-  elChainDensityOutdateWarning       <- infoMark "The value is outdated"
-  elNodeIsLeaderNumberOutdateWarning <- infoMark "The value is outdated"
-  elSlotsMissedNumberOutdateWarning  <- infoMark "The value is outdated"
-  elForksCreatedNumberOutdateWarning <- infoMark "The value is outdated"
-
-  elRTSGcCpuOutdateWarning       <- infoMark "The value is outdated"
-  elRTSGcElapsedOutdateWarning   <- infoMark "The value is outdated"
-  elRTSGcNumOutdateWarning       <- infoMark "The value is outdated"
-  elRTSGcMajorNumOutdateWarning  <- infoMark "The value is outdated"
-
   -- Create content area for each tab.
   nodeTabContent
     <- UI.div #. show TabContainer # showIt #+
          [ UI.div #. show W3Row #+
-             [ UI.div #. show W3Third #+
+             [ UI.div #. show W3Half #+
                  [ UI.div #+ [string "Node protocol"]
                  , UI.div #+ [string "Node version"]
                  , UI.div #+ [string "Node platform"]
@@ -184,13 +161,10 @@ mkNodePane nameOfNode = do
                  , vSpacer NodeInfoVSpacer
                  , UI.div #+ [string "Node uptime"]
                  , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [string "Start KES period"]
-                 , UI.div #+ [string "KES period"]
-                 , UI.div #+ [string "KES remaining"]
+                 , UI.div #+ [string "Node endpoint"]
                  , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [string "TraceAcceptor endpoint"]
                  ]
-             , UI.div #. show W3Third #+
+             , UI.div #. show W3Half #+
                  [ UI.div #. show NodeInfoValues #+
                      [ UI.span #. show ReleaseName #+ [element elNodeRelease]
                      , UI.div #+ [element elNodeVersion]
@@ -199,27 +173,29 @@ mkNodePane nameOfNode = do
                      , vSpacer NodeInfoVSpacer
                      , UI.div #+ [element elUptime]
                      , vSpacer NodeInfoVSpacer
-                     , UI.div #+ [element elOpCertStartKESPeriod]
+                     , UI.div #+ [element elTraceAcceptorEndpoint]
+                     , vSpacer NodeInfoVSpacer
+                     ]
+                 ]
+             ]
+         ]
+
+  kesTabContent
+    <- UI.div #. show TabContainer # hideIt #+
+         [ UI.div #. show W3Row #+
+             [ UI.div #. show W3Half #+
+                 [ UI.div #+ [string "Start KES period"]
+                 , UI.div #+ [string "KES period"]
+                 , UI.div #+ [string "KES remaining"]
+                 , vSpacer NodeInfoVSpacer
+                 ]
+             , UI.div #. show W3Half #+
+                 [ UI.div #. show NodeInfoValues #+
+                     [ UI.div #+ [element elOpCertStartKESPeriod]
                      , UI.div #+ [element elCurrentKESPeriod]
                      , UI.div #+ [element elRemainingKESPeriods]
                      , vSpacer NodeInfoVSpacer
-                     , UI.div #+ [element elTraceAcceptorEndpoint]
                      ]
-                 ]
-             , UI.div #. show W3Third #+
-                 [ UI.span #+ [element elNodeReleaseOutdateWarning,         nbsp]
-                 , UI.div #+ [element elNodeVersionOutdateWarning,          nbsp]
-                 , UI.div #+ [element elNodePlatformOutdateWarning,         nbsp]
-                 , UI.div #+ [element elNodeCommitHrefOutdateWarning,       nbsp]
-                 , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [element elUptimeOutdateWarning,               nbsp]
-                 , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [element elOpCertStartKESPeriodOutdateWarning, nbsp]
-                 , UI.div #+ [element elCurrentKESPeriodOutdateWarning,     nbsp]
-                 , UI.div #+ [element elRemainingKESPeriodsOutdateWarning,  nbsp]
-                 , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [nbsp]
-                 , UI.div #+ [nbsp]
                  ]
              ]
          ]
@@ -240,12 +216,19 @@ mkNodePane nameOfNode = do
          status     <- string ""
 
          peerItem <- UI.div #. show W3Row # set UI.style [("display", "none")] #+
-                       [ UI.div #. show W3Col # set UI.style [("width", "32%")] #+ [ element endpoint ]
-                       , UI.div #. show W3Col # set UI.style [("width", "12%")] #+ [ element slotNumber ]
-                       , UI.div #. show W3Col # set UI.style [("width", "12%")] #+ [ element bytesInF ]
-                       , UI.div #. show W3Col # set UI.style [("width", "12%")] #+ [ element reqsInF ]
-                       , UI.div #. show W3Col # set UI.style [("width", "12%")] #+ [ element blocksInF ]
-                       , UI.div #. show W3Col # set UI.style [("width", "20%")] #+ [ element status ]
+                       [ UI.div #. [W3Quarter] <+> [NodeMetricsValues] #+
+                           [element endpoint]
+                       , UI.div #. [W3Quarter, W3RightAlign] <+> [NodeMetricsValues] #+
+                           [element slotNumber]
+                       , UI.div #. [W3Quarter, W3RightAlign] <+> [NodeMetricsValues] #+
+                           [ element bytesInF
+                           , string " / "
+                           , element reqsInF
+                           , string " / "
+                           , element blocksInF
+                           ]
+                       , UI.div #. [W3Quarter, W3RightAlign] <+> [NodeMetricsValues] #+
+                           [element status]
                        ]
          return ( element peerItem
                 , PeerInfoItem
@@ -257,35 +240,16 @@ mkNodePane nameOfNode = do
   peersTabContent
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Row #+
-             [ UI.div #. show W3Col # set UI.style [("width", "44%")] #+
-                 [ nbsp ]
-             , UI.div #. show W3Rest #+
-                 [ UI.div #. show InFlight #+ [string "In Flight"]
-                 ]
-             ]
-         , UI.div #. show W3Row #+
-             [ UI.div #. show W3Col # set UI.style [("width", "32%")] #+
+             [ UI.div #. show W3Quarter #+
                  [ string "Endpoint"
                  ]
-             , UI.div #. show W3Col # set UI.style [("width", "12%")] #+
+             , UI.div #. [W3Quarter, W3RightAlign] <+> [] #+
                  [ string "Slot No."
                  ]
-             , UI.div #. show W3Col # set UI.style [("width", "12%")] #+
-                 [ UI.div #. show InFlightValues #+
-                     [ string "Bytes"
-                     ]
+             , UI.div #. [W3Quarter, W3RightAlign] <+> [] #+
+                 [ string "In Flight"
                  ]
-             , UI.div #. show W3Col # set UI.style [("width", "12%")] #+
-                 [ UI.div #. show InFlightValues #+
-                     [ string "Reqs"
-                     ]
-                 ]
-             , UI.div #. show W3Col # set UI.style [("width", "12%")] #+
-                 [ UI.div #. show InFlightValues #+
-                     [ string "Blocks"
-                     ]
-                 ]
-             , UI.div #. show W3Rest #+
+             , UI.div #. [W3Quarter, W3RightAlign] <+> [] #+
                  [ string "Status"
                  ]
              ]
@@ -295,110 +259,111 @@ mkNodePane nameOfNode = do
   blockchainTabContent
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Row #+
-             [ UI.div #. show W3Third #+
+             [ UI.div #. show W3Half #+
                  [ UI.div #+ [string "Epoch / Slot in epoch"]
                  , UI.div #+ [string "Blocks number"]
                  , UI.div #+ [string "Forged blocks number"]
+                 , vSpacer NodeInfoVSpacer
                  , UI.div #+ [string "Chain density"]
+                 , vSpacer NodeInfoVSpacer
                  , UI.div #+ [string "Slot leader, number"]
                  , UI.div #+ [string "Cannot forge, number"]
                  , UI.div #+ [string "Missed slots number"]
+                 , vSpacer NodeInfoVSpacer
                  ]
-             , UI.div #. show W3Third #+
+             , UI.div #. show W3Half #+
                  [ UI.div #. show NodeInfoValues #+
                      [ UI.div #+
                          [ element elEpoch
                          , string " / "
                          , element elSlot
                          ]
-                     , UI.div #+ [element elBlocksNumber]
-                     , UI.div #+ [element elBlocksForgedNumber]
+                     , UI.div #+
+                         [element elBlocksNumber]
+                     , UI.div #+
+                         [element elBlocksForgedNumber]
+                     , vSpacer NodeInfoVSpacer
                      , UI.div #+
                          [ element elChainDensity
                          , UI.span #. show DensityPercent #+ [string "%"]
                          ]
-                     , UI.div #+ [element elNodeIsLeaderNumber]
-                     , UI.div #+ [element elNodeCannotForge]
-                     , UI.div #+ [element elSlotsMissedNumber]
+                     , vSpacer NodeInfoVSpacer
+                     , UI.div #+
+                         [element elNodeIsLeaderNumber]
+                     , UI.div #+
+                         [element elNodeCannotForge]
+                     , UI.div #+
+                         [element elSlotsMissedNumber]
+                     , vSpacer NodeInfoVSpacer
                      ]
-                 ]
-             , UI.div #. show W3Third #+
-                 [ UI.div #+ [element elSlotOutdateWarning,               nbsp]
-                 , UI.div #+ [element elBlocksNumberOutdateWarning,       nbsp]
-                 , UI.div #+ [element elBlocksForgedNumberOutdateWarning, nbsp]
-                 , UI.div #+ [element elChainDensityOutdateWarning,       nbsp]
-                 , UI.div #+ [element elNodeIsLeaderNumberOutdateWarning, nbsp]
-                 , UI.div #+ [element elSlotsMissedNumberOutdateWarning,  nbsp]
-                 , UI.div #+ [element elForksCreatedNumberOutdateWarning, nbsp]
                  ]
              ]
          ]
 
   mempoolTabContent
     <- UI.div #. show TabContainer # hideIt #+
-         [ UI.div #. show W3Row #+
-             [ twoElementsInRow
-                (UI.div #. show W3Container #+
-                   [ UI.div #. show W3Row #+
-                       [ UI.div #. show W3Half #+ [string "Mempool | bytes"]
-                       , UI.div #. [W3Half, W3RightAlign] <+> [] #+
-                           [ element elMempoolMaxBytes
-                           , infoMark "Maximum in bytes"
-                           ]
-                       ]
-                   , element elMempoolBytesProgressBox
-                   ])
-                (UI.div #. show W3Container #+
-                   [ UI.div #. show W3Row #+
-                       [ UI.div #. show W3Half #+ [string "Mempool | TXs"]
-                       , UI.div #. [W3Half, W3RightAlign] <+> [] #+
-                           [ element elMempoolMaxTxs
-                           , infoMark "Maximum in txs"
-                           ]
-                       ]
-                   , element elMempoolTxsProgressBox
-                   ])
-             , vSpacer NodeMetricsVSpacer
-             , UI.div #. show W3Row #+
-                 [ UI.div #. show W3Theme #+
-                     [ string "TXs processed"
-                     , nbsp
-                     , nbsp
-                     , UI.span #. show NodeInfoValues #+
-                         [ element elTxsProcessed
-                         ]
+         [ UI.div #. show W3Container #+
+             [ UI.div #. show W3Row #+
+                 [ UI.div #. show W3Half #+ [string "Mempool | bytes"]
+                 , UI.div #. [W3Half, W3RightAlign] <+> [] #+
+                     [ element elMempoolMaxBytes
+                     , infoMark "Maximum in bytes"
                      ]
                  ]
+                 , element elMempoolBytesProgressBox
              ]
+         , vSpacer NodeMetricsVSpacer
+         , UI.div #. show W3Container #+
+             [ UI.div #. show W3Row #+
+                 [ UI.div #. show W3Half #+ [string "Mempool | TXs"]
+                 , UI.div #. [W3Half, W3RightAlign] <+> [] #+
+                     [ element elMempoolMaxTxs
+                     , infoMark "Maximum in txs"
+                     ]
+                 ]
+                 , element elMempoolTxsProgressBox
+             ]
+         , vSpacer NodeMetricsVSpacer
+         , UI.div #. show W3Row #+
+              [ UI.div #. show W3Theme #+
+                  [ string "TXs processed"
+                  , nbsp
+                  , nbsp
+                  , nbsp
+                  , UI.span #. show NodeInfoValues #+ [element elTxsProcessed]
+                  ]
+              ]
+         , vSpacer NodeMetricsVSpacer
          ]
 
   resourcesTabContentCharts
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Container #+
              [ UI.div #. show W3Row #+
-                 [ UI.div #. show W3Half #+
+                 [ UI.div #. [W3Half, W3Mobile] <+> [] #+
                      [ UI.canvas ## (show MemoryUsageChartId <> T.unpack nameOfNode)
                                  #. show MemoryUsageChart
                                  #+ []
                      ]
-                 , UI.div #. show W3Half #+
+                 , UI.div #. [W3Half, W3Mobile] <+> [] #+
                      [ UI.canvas ## (show CPUUsageChartId <> T.unpack nameOfNode)
                                  #. show CPUUsageChart
                                  #+ []
                      ]
                  ]
              , UI.div #. show W3Row #+
-                 [ UI.div #. show W3Half #+
+                 [ UI.div #. [W3Half, W3Mobile] <+> [] #+
                      [ UI.canvas ## (show DiskUsageChartId <> T.unpack nameOfNode)
                                  #. show DiskUsageChart
                                  #+ []
                      ]
-                 , UI.div #. show W3Half #+
+                 , UI.div #. [W3Half, W3Mobile] <+> [] #+
                      [ UI.canvas ## (show NetworkUsageChartId <> T.unpack nameOfNode)
                                  #. show NetworkUsageChart
                                  #+ []
                      ]
                  ]
+             , vSpacer NodeMetricsVSpacer
              ]
          ]
 
@@ -473,6 +438,7 @@ mkNodePane nameOfNode = do
                    , element elNetworkUsageOutProgressBox
                    ])
              ]
+         , vSpacer NodeMetricsVSpacer
          ]
 
   ghcRTSTabContent
@@ -489,13 +455,13 @@ mkNodePane nameOfNode = do
              ]
          , vSpacer NodeMetricsVSpacer
          , UI.div #. show W3Row #+
-             [ UI.div #. show W3Third #+
+             [ UI.div #. show W3Half #+
                  [ UI.div #+ [string "GC CPU time"]
                  , UI.div #+ [string "GC time elapsed"]
                  , UI.div #+ [string "Number of GC runs"]
                  , UI.div #+ [string "Major GC runs"]
                  ]
-             , UI.div #. show W3Third #+
+             , UI.div #. show W3Half #+
                  [ UI.div #. show NodeInfoValues #+
                      [ UI.div #+
                          [ element elRTSGcCpu
@@ -509,13 +475,8 @@ mkNodePane nameOfNode = do
                      , UI.div #+ [element elRTSGcMajorNum]
                      ]
                  ]
-             , UI.div #. show W3Third #+
-                 [ UI.div #+ [element elRTSGcCpuOutdateWarning,      nbsp]
-                 , UI.div #+ [element elRTSGcElapsedOutdateWarning,  nbsp]
-                 , UI.div #+ [element elRTSGcNumOutdateWarning,      nbsp]
-                 , UI.div #+ [element elRTSGcMajorNumOutdateWarning, nbsp]
-                 ]
              ]
+         , vSpacer NodeMetricsVSpacer
          ]
 
   -- List of node errors, it will be changed dynamically!
@@ -536,33 +497,77 @@ mkNodePane nameOfNode = do
          ]
 
   -- Tabs for corresponding sections.
-  nodeTab       <- UI.button #. [W3BarItem, W3Button] <+> [] # makeItActive #+ [string "Node"]
-  peersTab      <- UI.button #. [W3BarItem, W3Button] <+> [] #+ [string "Peers"]
-  blockchainTab <- UI.button #. [W3BarItem, W3Button] <+> [] #+ [string "Blockchain"]
-  mempoolTab    <- UI.button #. [W3BarItem, W3Button] <+> [] #+ [string "Mempool"]
-  barsViewTab   <- UI.anchor #. [W3BarItem, W3Button] <+> [] # set UI.href "#" #+ [UI.string "Bars view"]
-  chartsViewTab <- UI.anchor #. [W3BarItem, W3Button] <+> [] # set UI.href "#" #+ [UI.string "Charts view"]
-  resourcesTab  <- UI.div #. show W3DropdownHover #+
-                     [ UI.button #. show W3Button #+
-                         [ string "Resources ▾" ]
+  nodeTab       <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
+                             # set UI.title__ "Node info"
+                             # makeItActive #+
+                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/info.svg"
+                     ]
+  kesTab        <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
+                             # set UI.title__ "Key Evolving Signature"
+                             #+
+                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/key.svg"
+                     ]
+  peersTab      <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
+                             # set UI.title__ "Peers"
+                             #+
+                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/peers.svg"
+                     ]
+  blockchainTab <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
+                             # set UI.title__ "Blockchain"
+                             #+
+                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/blockchain.svg"
+                     ]
+  mempoolTab    <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
+                             # set UI.title__ "Mempool"
+                             #+
+                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/mempool.svg"
+                     ]
+  barsViewTab   <- UI.anchor #. [W3BarItem, W3Button, W3Mobile] <+> []
+                             # set UI.href "#"
+                             # set UI.title__ "Bars view"
+                             #+
+                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/bars.svg"
+                     ]
+  chartsViewTab <- UI.anchor #. [W3BarItem, W3Button, W3Mobile] <+> []
+                             # set UI.href "#"
+                             # set UI.title__ "Charts view"
+                             #+
+                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/charts.svg"
+                     ]
+  resourcesTab  <- UI.div #. [W3DropdownHover, W3Mobile] <+> [] #+
+                     [ UI.button #. show W3Button
+                                 # set UI.title__ "Resources"
+                                 #+
+                         [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/resources.svg"
+                         , string " ▾"
+                         ]
                      , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] <+> [] #+
                          [ element barsViewTab
                          , element chartsViewTab
                          ]
                      ]
-  ghcRTSTab     <- UI.button #. [W3BarItem, W3Button] <+> [] #+ [string "GHC RTS"]
-  errorsTab     <- UI.button #. [W3BarItem, W3Button] <+> [] #+ [string "Errors"]
+  ghcRTSTab     <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
+                             # set UI.title__ "RTS GC"
+                             #+
+                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/rts.svg"
+                     ]
+  errorsTab     <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
+                             # set UI.title__ "Errors"
+                             #+
+                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/bugs.svg"
+                     ]
 
-  let tabs :: [(Element, Element, String)]
+  let tabs :: [(Element, Element, Int)]
       tabs =
-        [ (nodeTab,       nodeTabContent,            "Node")
-        , (peersTab,      peersTabContent,           "Peers")
-        , (blockchainTab, blockchainTabContent,      "Blockchain")
-        , (mempoolTab,    mempoolTabContent,         "Mempool")
-        , (barsViewTab,   resourcesTabContentBars,   "Bars view")
-        , (chartsViewTab, resourcesTabContentCharts, "Charts view")
-        , (errorsTab,     errorsTabContent,          "Errors")
-        , (ghcRTSTab,     ghcRTSTabContent,          "GHC RTS")
+        [ (nodeTab,       nodeTabContent,            1)
+        , (kesTab,        kesTabContent,             2)
+        , (peersTab,      peersTabContent,           3)
+        , (blockchainTab, blockchainTabContent,      4)
+        , (mempoolTab,    mempoolTabContent,         5)
+        , (barsViewTab,   resourcesTabContentBars,   6)
+        , (chartsViewTab, resourcesTabContentCharts, 7)
+        , (errorsTab,     errorsTabContent,          8)
+        , (ghcRTSTab,     ghcRTSTabContent,          9)
         ]
 
   registerClicksOnTabs tabs
@@ -576,6 +581,7 @@ mkNodePane nameOfNode = do
           ]
       , UI.div #. [W3Bar] <+> [NodeBar] #+
           [ element nodeTab
+          , element kesTab
           , element peersTab
           , element blockchainTab
           , element mempoolTab
@@ -584,6 +590,7 @@ mkNodePane nameOfNode = do
           , element ghcRTSTab
           ]
       , element nodeTabContent
+      , element kesTabContent
       , element peersTabContent
       , element blockchainTabContent
       , element mempoolTabContent
@@ -642,26 +649,6 @@ mkNodePane nameOfNode = do
           , (ElRTSGcElapsed,            elRTSGcElapsed)
           , (ElRTSGcNum,                elRTSGcNum)
           , (ElRTSGcMajorNum,           elRTSGcMajorNum)
-          -- Outdated warnings
-          , (ElNodeReleaseOutdateWarning,        elNodeReleaseOutdateWarning)
-          , (ElNodeVersionOutdateWarning,        elNodeVersionOutdateWarning)
-          , (ElNodePlatformOutdateWarning,       elNodePlatformOutdateWarning)
-          , (ElNodeCommitHrefOutdateWarning,     elNodeCommitHrefOutdateWarning)
-          , (ElUptimeOutdateWarning,             elUptimeOutdateWarning)
-          , (ElOpCertStartKESPeriodOutdateWarning, elOpCertStartKESPeriodOutdateWarning)
-          , (ElCurrentKESPeriodOutdateWarning,     elCurrentKESPeriodOutdateWarning)
-          , (ElRemainingKESPeriodsOutdateWarning,  elRemainingKESPeriodsOutdateWarning)
-          , (ElSlotOutdateWarning,               elSlotOutdateWarning)
-          , (ElBlocksNumberOutdateWarning,       elBlocksNumberOutdateWarning)
-          , (ElBlocksForgedNumberOutdateWarning, elBlocksForgedNumberOutdateWarning)
-          , (ElChainDensityOutdateWarning,       elChainDensityOutdateWarning)
-          , (ElNodeIsLeaderNumberOutdateWarning, elNodeIsLeaderNumberOutdateWarning)
-          , (ElSlotsMissedNumberOutdateWarning,  elSlotsMissedNumberOutdateWarning)
-          , (ElForksCreatedNumberOutdateWarning, elForksCreatedNumberOutdateWarning)
-          , (ElRTSGcCpuOutdateWarning,           elRTSGcCpuOutdateWarning)
-          , (ElRTSGcElapsedOutdateWarning,       elRTSGcElapsedOutdateWarning)
-          , (ElRTSGcNumOutdateWarning,           elRTSGcNumOutdateWarning)
-          , (ElRTSGcMajorNumOutdateWarning,      elRTSGcMajorNumOutdateWarning)
           -- Progress bars
           , (ElMempoolBytesProgress,    elMempoolBytesProgress)
           , (ElMempoolBytesProgressBox, elMempoolBytesProgressBox)
@@ -700,15 +687,15 @@ twoElementsInRow firstOne secondOne =
 -- | Since information and metrics are splitted to tabs,
 --   we have to make them clickable and show which one is active.
 registerClicksOnTabs
-  :: [(Element, Element, String)]
+  :: [(Element, Element, Int)]
   -> UI ()
 registerClicksOnTabs tabs =
-  forM_ tabs $ \(tab, _, tabName) ->
-    void $ UI.onEvent (UI.click tab) $ \_ -> showTabAndMakeItActive tabName
+  forM_ tabs $ \(tab, _, tabNum) ->
+    void $ UI.onEvent (UI.click tab) $ \_ -> showTabAndMakeItActive tabNum
  where
-  showTabAndMakeItActive aName =
-    forM_ tabs $ \(tab', tabContent, tabName') ->
-      if aName == tabName'
+  showTabAndMakeItActive num =
+    forM_ tabs $ \(tab', tabContent, tabNum') ->
+      if num == tabNum'
         then do
           void $ element tabContent # showIt
           void $ element tab' # makeItActive
@@ -717,15 +704,15 @@ registerClicksOnTabs tabs =
           void $ element tab' # makeItInactive
 
 makeItActive, makeItInactive :: UI Element -> UI Element
-makeItActive   = set UI.class_ ([W3BarItem, W3Button] <+> [ActiveTab])
-makeItInactive = set UI.class_ ([W3BarItem, W3Button] <+> [])
+makeItActive   = set UI.class_ ([W3BarItem, W3Button, W3Mobile] <+> [ActiveTab])
+makeItInactive = set UI.class_ ([W3BarItem, W3Button, W3Mobile] <+> [])
 
 infoMark :: String -> UI Element
 infoMark aTitle =
   UI.span #. show InfoMark
           #  set UI.title__ aTitle
           #+ [ UI.img #. show InfoMarkImg
-                      # set UI.src "/static/images/question-circle-solid.svg" #+ []
+                      # set UI.src "/static/images/question.svg" #+ []
              ]
 
 nbsp :: UI Element

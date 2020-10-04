@@ -143,25 +143,25 @@ topNavigation
   -> UI Element
 topNavigation nodesSelector viewModeSelector metricsSelector =
   UI.div #. [W3Bar, W3Large] <+> [TopBar] #+
-    [ UI.anchor #. show W3BarItem # set UI.href "https://cardano.org/" #+
+    [ UI.anchor #. [W3BarItem, W3Mobile] <+> [] # set UI.href "https://cardano.org/" #+
         [ UI.img #. show CardanoLogo # set UI.src "/static/images/cardano-logo.svg"
         ]
-    , UI.div #. show W3DropdownHover #+
+    , UI.div #. [W3DropdownHover, W3Mobile] <+> [] #+
         [ UI.button ## show ViewModeButton
                     #. show W3Button
                     # set UI.value "paneMode"
                     #+ [string "View mode ▾"]
         , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] <+> [] #+ viewModeSelector
         ]
-    , UI.div #. show W3DropdownHover #+
+    , UI.div #. [W3DropdownHover, W3Mobile] <+> [] #+
         [ UI.button #. show W3Button #+ [string "Select node ▾"]
         , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] <+> [] #+ nodesSelector
         ]
-    , UI.div ## show SelectMetricButton #. show W3DropdownHover # hideIt #+
+    , UI.div ## show SelectMetricButton #. [W3DropdownHover, W3Mobile] <+> [] # hideIt #+
         [ UI.button #. show W3Button #+ [string "Select metric ▾"]
         , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] <+> [MetricsArea] #+ metricsSelector
         ]
-    , UI.span #. [W3Right] <+> [ServiceName] #+
+    , UI.span #. [W3Right, W3HideMedium, W3HideSmall] <+> [ServiceName] #+
         [ string "Cardano Node Real-time View"
         ]
     ]
