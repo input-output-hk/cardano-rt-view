@@ -9,6 +9,7 @@ import           Cardano.Prelude hiding (Selector, link, (**))
 import qualified Prelude as P hiding ((**))
 
 import           Clay
+import qualified Clay.Media as M
 import           Clay.Selector (Selector, selectorFromText)
 import           Data.Text (pack, unpack)
 import qualified Data.Text.Lazy as TL
@@ -24,6 +25,11 @@ ownCSS = unpack . TL.toStrict . render $ do
     fontSizePx        20
     backgroundColor   whitesmoke
     color "#1b2238"
+
+  -- To avoid shifting "labels-values" on mobile screens (for Pane mode).
+  query M.screen [M.maxWidth (px 601)] $ ".w3-col.m6, .w3-half" ?     widthPct 49.99
+  query M.screen [M.maxWidth (px 601)] $ ".w3-col.m4, .w3-third" ?    widthPct 33.33
+  query M.screen [M.maxWidth (px 601)] $ ".w3-col.m8, .w3-twothird" ? widthPct 66.66
 
   th ? do
     important $
@@ -100,8 +106,7 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl ActiveTab ? do
     important $
-      color           cardanoLight
-    fontWeight        bold
+      backgroundColor "#1b2238"
 
   cl TabContainer ? do
     paddingTopPx      16
@@ -134,6 +139,9 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl ReleaseName ? do
     fontWeight        bold
+
+  cl NodeMenuIcon ? do
+    widthPx           26
 
   cl CardanoLogo ? do
     widthPx           216
@@ -181,17 +189,12 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl NodeInfoValues ? do
     fontWeight        bold
 
+  cl NodeMetricsValues ? do
+    fontWeight        bold
+
   cl OutdatedValue ? do
     color             gray60
     fontWeight        normal
-
-  cl InFlight ? do
-    color             "#444444"
-    fontWeight        bold
-
-  cl InFlightValues ? do
-    color             "#444444"
-    fontStyle         italic
 
   cl CPUUsageChart ? do
     maxHeightPx       190
@@ -274,6 +277,7 @@ ownCSS = unpack . TL.toStrict . render $ do
   maxHeightPx     = maxHeight . px
 
   widthPx         = width . px
+  widthPct        = width . pct
   minWidthPx      = minWidth . px
   maxWidthPx      = maxWidth . px
 

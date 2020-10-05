@@ -95,26 +95,6 @@ data ElementName
   | ElRTSGcElapsed
   | ElRTSGcNum
   | ElRTSGcMajorNum
-  -- Outdated warnings.
-  | ElNodeReleaseOutdateWarning
-  | ElNodeVersionOutdateWarning
-  | ElNodePlatformOutdateWarning
-  | ElNodeCommitHrefOutdateWarning
-  | ElUptimeOutdateWarning
-  | ElOpCertStartKESPeriodOutdateWarning
-  | ElCurrentKESPeriodOutdateWarning
-  | ElRemainingKESPeriodsOutdateWarning
-  | ElSlotOutdateWarning
-  | ElBlocksNumberOutdateWarning
-  | ElBlocksForgedNumberOutdateWarning
-  | ElChainDensityOutdateWarning
-  | ElNodeIsLeaderNumberOutdateWarning
-  | ElSlotsMissedNumberOutdateWarning
-  | ElForksCreatedNumberOutdateWarning
-  | ElRTSGcCpuOutdateWarning
-  | ElRTSGcElapsedOutdateWarning
-  | ElRTSGcNumOutdateWarning
-  | ElRTSGcMajorNumOutdateWarning
   -- Progress bars.
   | ElMempoolBytesProgress
   | ElMempoolBytesProgressBox
@@ -181,8 +161,6 @@ data HTMLClass
   | GridNodeNameLabel
   | GridRowCell
   | HSpacer
-  | InFlight
-  | InFlightValues
   | InfoMark
   | InfoMarkImg
   | MetricsArea
@@ -190,7 +168,9 @@ data HTMLClass
   | NodeBar
   | NodeInfoValues
   | NodeInfoVSpacer
+  | NodeMetricsValues
   | NodeMetricsVSpacer
+  | NodeMenuIcon
   | NodeName
   | NodeNameArea
   | OutdatedValue
@@ -243,17 +223,22 @@ data HTMLW3Class
   | W3DropdownContent
   | W3DropdownHover
   | W3Half
+  | W3HideMedium
+  | W3HideSmall
   | W3Large
   | W3Margin
+  | W3Mobile
   | W3Responsive
   | W3Rest
   | W3Right
   | W3RightAlign
   | W3Row
+  | W3Sidebar
   | W3Table
   | W3Theme
   | W3Third
   | W3TwoThird
+  | W3Quarter
   | W3L6
   | W3M12
   | W3S12
@@ -276,17 +261,22 @@ instance Show HTMLW3Class where
   show W3DropdownContent = "w3-dropdown-content"
   show W3DropdownHover   = "w3-dropdown-hover"
   show W3Half            = "w3-half"
+  show W3HideMedium      = "w3-hide-medium"
+  show W3HideSmall       = "w3-hide-small"
   show W3Large           = "w3-large"
   show W3Margin          = "w3-margin"
+  show W3Mobile          = "w3-mobile"
   show W3Responsive      = "w3-responsive"
   show W3Rest            = "w3-rest"
   show W3Right           = "w3-right"
   show W3RightAlign      = "w3-right-align"
   show W3Row             = "w3-row"
+  show W3Sidebar         = "w3-sidebar"
   show W3Table           = "w3-table"
   show W3Theme           = "w3-theme"
   show W3Third           = "w3-third"
   show W3TwoThird        = "w3-twothird"
+  show W3Quarter         = "w3-quarter"
   show W3L6              = "l6"
   show W3M12             = "m12"
   show W3S12             = "s12"

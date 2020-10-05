@@ -55,7 +55,7 @@ mkNodesGrid _window acceptors = do
   return (nodesGrid, nodesEls)
 
 metricLabel :: ElementName -> String
-metricLabel ElTraceAcceptorEndpoint = "TraceAcceptor endpoint"
+metricLabel ElTraceAcceptorEndpoint = "Node endpoint"
 metricLabel ElNodeRelease           = "Node protocol"
 metricLabel ElNodeVersion           = "Node version"
 metricLabel ElNodePlatform          = "Node platform"
