@@ -126,6 +126,27 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
             case aContent of
               LogValue "upTime" (Nanoseconds upTimeInNs) ->
                 nodesStateWith $ updateNodeUpTime ns upTimeInNs now
+              LogValue "txsInMempool" (PureI txsInMempool) ->
+                nodesStateWith $ updateMempoolTxs ns txsInMempool
+              LogValue "mempoolBytes" (PureI mempoolBytes) ->
+                nodesStateWith $ updateMempoolBytes ns mempoolBytes
+              LogValue "txsProcessedNum" (PureI processedTxsNum) ->
+                nodesStateWith $ updateTxsProcessed ns processedTxsNum
+              LogValue "blocksForgedNum" (PureI forgedBlocksNum) ->
+                nodesStateWith $ updateBlocksForged ns forgedBlocksNum now
+              LogValue "nodeCannotForge" (PureI cannotForge) ->
+                nodesStateWith $ updateNodeCannotForge ns cannotForge
+              LogValue "nodeIsLeaderNum" (PureI leaderNum) ->
+                nodesStateWith $ updateNodeIsLeader ns leaderNum now
+              LogValue "slotsMissedNum" (PureI missedSlotsNum) ->
+                nodesStateWith $ updateSlotsMissed ns missedSlotsNum now
+              _ -> return currentNodesState
+           | "cardano.node-metrics" `T.isInfixOf` aName ->
+            case aContent of
+#ifdef WINDOWS
+              LogValue "Stat.CPUTime" (Microseconds microsecs) ->
+                nodesStateWith $ updateCPUSecs ns (microsecs * 1000) aMeta now
+#endif
 #ifdef DARWIN
               LogValue "Mem.resident_size" (Bytes bytes) ->
                 nodesStateWith $ updateMemoryBytes ns bytes now
@@ -149,27 +170,6 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
                 nodesStateWith $ updateNetworkIn ns inBytes aMeta now
               LogValue "Net.IpExt:OutOctets" (Bytes outBytes) ->
                 nodesStateWith $ updateNetworkOut ns outBytes aMeta now
-#endif
-              LogValue "txsInMempool" (PureI txsInMempool) ->
-                nodesStateWith $ updateMempoolTxs ns txsInMempool
-              LogValue "mempoolBytes" (PureI mempoolBytes) ->
-                nodesStateWith $ updateMempoolBytes ns mempoolBytes
-              LogValue "txsProcessedNum" (PureI processedTxsNum) ->
-                nodesStateWith $ updateTxsProcessed ns processedTxsNum
-              LogValue "blocksForgedNum" (PureI forgedBlocksNum) ->
-                nodesStateWith $ updateBlocksForged ns forgedBlocksNum now
-              LogValue "nodeCannotForge" (PureI cannotForge) ->
-                nodesStateWith $ updateNodeCannotForge ns cannotForge
-              LogValue "nodeIsLeaderNum" (PureI leaderNum) ->
-                nodesStateWith $ updateNodeIsLeader ns leaderNum now
-              LogValue "slotsMissedNum" (PureI missedSlotsNum) ->
-                nodesStateWith $ updateSlotsMissed ns missedSlotsNum now
-              _ -> return currentNodesState
-           | "cardano.node-metrics" `T.isInfixOf` aName ->
-            case aContent of
-#ifdef WINDOWS
-              LogValue "Stat.CPUTime" (Microseconds microsecs) ->
-                nodesStateWith $ updateCPUSecs ns (microsecs * 1000) aMeta now
 #endif
               LogValue "Sys.Platform" (PureI pfid) ->
                 nodesStateWith $ updateNodePlatform ns (fromIntegral pfid)
