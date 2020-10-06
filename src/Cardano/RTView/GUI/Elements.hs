@@ -100,18 +100,6 @@ data ElementName
   | ElMempoolBytesProgressBox
   | ElMempoolTxsProgress
   | ElMempoolTxsProgressBox
-  | ElMemoryProgress
-  | ElMemoryProgressBox
-  | ElCPUProgress
-  | ElCPUProgressBox
-  | ElDiskReadProgress
-  | ElDiskReadProgressBox
-  | ElDiskWriteProgress
-  | ElDiskWriteProgressBox
-  | ElNetworkInProgress
-  | ElNetworkInProgressBox
-  | ElNetworkOutProgress
-  | ElNetworkOutProgressBox
   | ElRTSMemoryProgress
   | ElRTSMemoryProgressBox
   -- Charts

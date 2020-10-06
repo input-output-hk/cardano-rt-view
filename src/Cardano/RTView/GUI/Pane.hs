@@ -91,52 +91,6 @@ mkNodePane nameOfNode = do
                                  ]
   elMempoolTxsProgressBox   <- UI.div #. show ProgressBarBox #+ [element elMempoolTxsProgress]
 
-  elMemoryProgress          <- UI.div #. show ProgressBar #+
-                                 [ UI.span #. show HSpacer #+ []
-                                 , element elMemory
-                                 , UI.span #. show BarValueUnit #+ [string "MB"]
-                                 , UI.span #. show PercentsSlashHSpacer #+ [string "/"]
-                                 , UI.span #. show PercentsSlashHRSpacer #+ [string "max"]
-                                 , element elMemoryMax
-                                 , UI.span #. show BarValueUnit #+ [string "MB"]
-                                 ]
-  elMemoryProgressBox       <- UI.div #. show ProgressBarBox #+ [element elMemoryProgress]
-
-  elCPUProgress             <- UI.div #. show ProgressBar #+
-                                 [ UI.span #. show HSpacer #+ []
-                                 , element elCPUPercent
-                                 , string "%"
-                                 ]
-  elCPUProgressBox          <- UI.div #. show ProgressBarBox #+ [element elCPUProgress]
-
-  elDiskUsageRProgress      <- UI.div #. show ProgressBar #+
-                                 [ UI.span #. show HSpacer #+ []
-                                 , element elDiskUsageR
-                                 , UI.span #. show BarValueUnit #+ [string "KB/s"]
-                                 ]
-  elDiskUsageRProgressBox   <- UI.div #. show ProgressBarBox #+ [element elDiskUsageRProgress]
-
-  elDiskUsageWProgress      <- UI.div #. show ProgressBar #+
-                                 [ UI.span #. show HSpacer #+ []
-                                 , element elDiskUsageW
-                                 , UI.span #. show BarValueUnit #+ [string "KB/s"]
-                                 ]
-  elDiskUsageWProgressBox   <- UI.div #. show ProgressBarBox #+ [element elDiskUsageWProgress]
-
-  elNetworkUsageInProgress     <- UI.div #. show ProgressBar #+
-                                    [ UI.span #. show HSpacer #+ []
-                                    , element elNetworkUsageIn
-                                    , UI.span #. show BarValueUnit #+ [string "KB/s"]
-                                    ]
-  elNetworkUsageInProgressBox  <- UI.div #. show ProgressBarBox #+ [element elNetworkUsageInProgress]
-
-  elNetworkUsageOutProgress    <- UI.div #. show ProgressBar #+
-                                    [ UI.span #. show HSpacer #+ []
-                                    , element elNetworkUsageOut
-                                    , UI.span #. show BarValueUnit #+ [string "KB/s"]
-                                    ]
-  elNetworkUsageOutProgressBox <- UI.div #. show ProgressBarBox #+ [element elNetworkUsageOutProgress]
-
   elRTSMemoryProgress       <- UI.div #. show ProgressBar #+
                                  [ UI.span #. show HSpacer #+ []
                                  , element elRTSMemoryUsed
@@ -336,7 +290,7 @@ mkNodePane nameOfNode = do
          , vSpacer NodeMetricsVSpacer
          ]
 
-  resourcesTabContentCharts
+  resourcesTabContent
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Container #+
              [ UI.div #. show W3Row #+
@@ -365,80 +319,6 @@ mkNodePane nameOfNode = do
                  ]
              , vSpacer NodeMetricsVSpacer
              ]
-         ]
-
-  resourcesTabContentBars
-    <- UI.div #. show TabContainer # hideIt #+
-         [ UI.div #. show W3Row #+
-             [ UI.div #. show W3Container #+
-                 [ UI.div #. show W3Row #+
-                     [ UI.div #. show W3Half #+ [string "Memory usage"]
-                     , UI.div #. [W3Half, W3RightAlign] <+> [] #+
-                         [ element elMemoryMaxTotal
-                         , UI.span #. show ValueUnit #+ [string "MB"]
-                         ]
-                     ]
-                 , element elMemoryProgressBox
-                 ]
-             , vSpacer NodeMetricsVSpacer
-             , UI.div #. show W3Container #+
-                 [ UI.div #. show W3Row #+
-                     [ UI.div #. show W3Half #+ [string "CPU usage"]
-                     , UI.div #. [W3Half, W3RightAlign] <+> [] #+
-                         [ string "100"
-                         , UI.span #. show ValueUnitPercent #+ [string "%"]
-                         ]
-                     ]
-                 , element elCPUProgressBox
-                 ]
-             , vSpacer NodeMetricsVSpacer
-             , twoElementsInRow
-                (UI.div #. show W3Container #+
-                   [ UI.div #. show W3Row #+
-                       [ UI.div #. show W3Half #+ [string "Disk | RD"]
-                       , UI.div #. [W3Half, W3RightAlign] <+> [] #+
-                           [ element elDiskUsageRMaxTotal
-                           , UI.span #. show ValueUnit #+ [string "KB/s"]
-                           , infoMark "Maximum value over the last two minutes"
-                           ]
-                       ]
-                   , element elDiskUsageRProgressBox
-                   ])
-                (UI.div #. show W3Container #+
-                   [ UI.div #. show W3Row #+
-                       [ UI.div #. show W3Half #+ [string "Disk | WR"]
-                       , UI.div #. [W3Half, W3RightAlign] <+> [] #+
-                           [ element elDiskUsageWMaxTotal
-                           , UI.span #. show ValueUnit #+ [string "KB/s"]
-                           , infoMark "Maximum value over the last two minutes"
-                           ]
-                       ]
-                   , element elDiskUsageWProgressBox
-                   ])
-             , vSpacer NodeMetricsVSpacer
-             , twoElementsInRow
-                (UI.div #. show W3Container #+
-                   [ UI.div #. show W3Row #+
-                       [ UI.div #. show W3Half #+ [string "Network | IN"]
-                       , UI.div #. [W3Half, W3RightAlign] <+> [] #+
-                           [ element elNetworkUsageInMaxTotal
-                           , UI.span #. show ValueUnit #+ [string "KB/s"]
-                           ]
-                       ]
-                   , element elNetworkUsageInProgressBox
-                   ])
-                (UI.div #. show W3Container #+
-                   [ UI.div #. show W3Row #+
-                       [ UI.div #. show W3Half #+ [string "Network | OUT"]
-                       , UI.div #. [W3Half, W3RightAlign] <+> [] #+
-                           [ element elNetworkUsageOutMaxTotal
-                           , UI.span #. show ValueUnit #+ [string "KB/s"]
-                           ]
-                       ]
-                   , element elNetworkUsageOutProgressBox
-                   ])
-             ]
-         , vSpacer NodeMetricsVSpacer
          ]
 
   ghcRTSTabContent
@@ -522,29 +402,10 @@ mkNodePane nameOfNode = do
                              #+
                      [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/mempool.svg"
                      ]
-  barsViewTab   <- UI.anchor #. [W3BarItem, W3Button, W3Mobile] <+> []
-                             # set UI.href "#"
-                             # set UI.title__ "Bars view"
+  resourcesTab  <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
+                             # set UI.title__ "Resources"
                              #+
-                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/bars.svg"
-                     ]
-  chartsViewTab <- UI.anchor #. [W3BarItem, W3Button, W3Mobile] <+> []
-                             # set UI.href "#"
-                             # set UI.title__ "Charts view"
-                             #+
-                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/charts.svg"
-                     ]
-  resourcesTab  <- UI.div #. [W3DropdownHover, W3Mobile] <+> [] #+
-                     [ UI.button #. show W3Button
-                                 # set UI.title__ "Resources"
-                                 #+
-                         [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/resources.svg"
-                         , string " ▾"
-                         ]
-                     , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] <+> [] #+
-                         [ element barsViewTab
-                         , element chartsViewTab
-                         ]
+                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/resources.svg"
                      ]
   ghcRTSTab     <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
                              # set UI.title__ "RTS GC"
@@ -557,18 +418,18 @@ mkNodePane nameOfNode = do
                      [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/bugs.svg"
                      ]
 
-  let tabs :: [(Element, Element, Int)]
+  let tabs :: [((Element, Element), Int)]
       tabs =
-        [ (nodeTab,       nodeTabContent,            1)
-        , (kesTab,        kesTabContent,             2)
-        , (peersTab,      peersTabContent,           3)
-        , (blockchainTab, blockchainTabContent,      4)
-        , (mempoolTab,    mempoolTabContent,         5)
-        , (barsViewTab,   resourcesTabContentBars,   6)
-        , (chartsViewTab, resourcesTabContentCharts, 7)
-        , (errorsTab,     errorsTabContent,          8)
-        , (ghcRTSTab,     ghcRTSTabContent,          9)
-        ]
+        let allTabs = [ (nodeTab,       nodeTabContent)
+                      , (kesTab,        kesTabContent)
+                      , (peersTab,      peersTabContent)
+                      , (blockchainTab, blockchainTabContent)
+                      , (mempoolTab,    mempoolTabContent)
+                      , (resourcesTab,  resourcesTabContent)
+                      , (errorsTab,     errorsTabContent)
+                      , (ghcRTSTab,     ghcRTSTabContent)
+                      ]
+        in zip allTabs [1..length allTabs]
 
   registerClicksOnTabs tabs
 
@@ -594,8 +455,7 @@ mkNodePane nameOfNode = do
       , element peersTabContent
       , element blockchainTabContent
       , element mempoolTabContent
-      , element resourcesTabContentBars
-      , element resourcesTabContentCharts
+      , element resourcesTabContent
       , element errorsTabContent
       , element ghcRTSTabContent
       ]
@@ -654,18 +514,6 @@ mkNodePane nameOfNode = do
           , (ElMempoolBytesProgressBox, elMempoolBytesProgressBox)
           , (ElMempoolTxsProgress,      elMempoolTxsProgress)
           , (ElMempoolTxsProgressBox,   elMempoolTxsProgressBox)
-          , (ElMemoryProgress,          elMemoryProgress)
-          , (ElMemoryProgressBox,       elMemoryProgressBox)
-          , (ElCPUProgress,             elCPUProgress)
-          , (ElCPUProgressBox,          elCPUProgressBox)
-          , (ElDiskReadProgress,        elDiskUsageRProgress)
-          , (ElDiskReadProgressBox,     elDiskUsageRProgressBox)
-          , (ElDiskWriteProgress,       elDiskUsageWProgress)
-          , (ElDiskWriteProgressBox,    elDiskUsageWProgressBox)
-          , (ElNetworkInProgress,       elNetworkUsageInProgress)
-          , (ElNetworkInProgressBox,    elNetworkUsageInProgressBox)
-          , (ElNetworkOutProgress,      elNetworkUsageOutProgress)
-          , (ElNetworkOutProgressBox,   elNetworkUsageOutProgressBox)
           , (ElRTSMemoryProgress,       elRTSMemoryProgress)
           , (ElRTSMemoryProgressBox,    elRTSMemoryProgressBox)
           ]
@@ -677,24 +525,17 @@ mkNodePane nameOfNode = do
 vSpacer :: HTMLClass -> UI Element
 vSpacer className = UI.div #. show className #+ []
 
-twoElementsInRow :: UI Element -> UI Element -> UI Element
-twoElementsInRow firstOne secondOne =
-  UI.div #. show W3Row #+
-    [ UI.div #. show W3Half #+ [firstOne]
-    , UI.div #. show W3Half #+ [secondOne]
-    ]
-
 -- | Since information and metrics are splitted to tabs,
 --   we have to make them clickable and show which one is active.
 registerClicksOnTabs
-  :: [(Element, Element, Int)]
+  :: [((Element, Element), Int)]
   -> UI ()
 registerClicksOnTabs tabs =
-  forM_ tabs $ \(tab, _, tabNum) ->
+  forM_ tabs $ \((tab, _), tabNum) ->
     void $ UI.onEvent (UI.click tab) $ \_ -> showTabAndMakeItActive tabNum
  where
   showTabAndMakeItActive num =
-    forM_ tabs $ \(tab', tabContent, tabNum') ->
+    forM_ tabs $ \((tab', tabContent), tabNum') ->
       if num == tabNum'
         then do
           void $ element tabContent # showIt
