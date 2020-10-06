@@ -122,12 +122,6 @@ updatePaneGUI window nodesState params acceptors nodesStateElems = do
 
     void $ updateProgressBar (nmMempoolBytesPercent nm)    $ elements ! ElMempoolBytesProgress
     void $ updateProgressBar (nmMempoolTxsPercent nm)      $ elements ! ElMempoolTxsProgress
-    void $ updateProgressBar (nmMemoryPercent nm)          $ elements ! ElMemoryProgress
-    void $ updateProgressBar (nmCPUPercent nm)             $ elements ! ElCPUProgress
-    void $ updateProgressBar (nmDiskUsageRPercent nm)      $ elements ! ElDiskReadProgress
-    void $ updateProgressBar (nmDiskUsageWPercent nm)      $ elements ! ElDiskWriteProgress
-    void $ updateProgressBar (nmNetworkUsageInPercent nm)  $ elements ! ElNetworkInProgress
-    void $ updateProgressBar (nmNetworkUsageOutPercent nm) $ elements ! ElNetworkOutProgress
     void $ updateProgressBar (nmRTSMemoryUsedPercent nm)   $ elements ! ElRTSMemoryProgress
 
     markOutdatedElements params ni nm elements
@@ -338,7 +332,6 @@ markOutdatedElements params ni nm els = do
   -- Different metrics have different lifetime.
   let niLife  = rtvNodeInfoLife params
       bcLife  = rtvBlockchainInfoLife params
-      resLife = rtvResourcesInfoLife params
       rtsLife = rtvRTSInfoLife params
 
   markValues now (niUpTimeLastUpdate ni) niLife [ els ! ElUptime
@@ -374,42 +367,6 @@ markOutdatedElements params ni nm els = do
                                                              , ElRTSMemoryUsed
                                                              , ElRTSMemoryUsedPercent
                                                              ]
-  markProgressBar now (nmMemoryLastUpdate nm) resLife els ( ElMemoryProgress
-                                                          , ElMemoryProgressBox
-                                                          )
-                                                          [ ElMemoryMaxTotal
-                                                          , ElMemory
-                                                          , ElMemoryMax
-                                                          ]
-  markProgressBar now (nmCPULastUpdate nm)    resLife els ( ElCPUProgress
-                                                          , ElCPUProgressBox
-                                                          )
-                                                          [ ElCPUPercent
-                                                          ]
-  markProgressBar now (nmDiskUsageRLastUpdate nm) resLife els ( ElDiskReadProgress
-                                                              , ElDiskReadProgressBox
-                                                              )
-                                                              [ ElDiskUsageR
-                                                              , ElDiskUsageRMaxTotal
-                                                              ]
-  markProgressBar now (nmDiskUsageWLastUpdate nm) resLife els ( ElDiskWriteProgress
-                                                              , ElDiskWriteProgressBox
-                                                              )
-                                                              [ ElDiskUsageW
-                                                              , ElDiskUsageWMaxTotal
-                                                              ]
-  markProgressBar now (nmNetworkUsageInLastUpdate nm)  resLife els ( ElNetworkInProgress
-                                                                   , ElNetworkInProgressBox
-                                                                   )
-                                                                   [ ElNetworkUsageIn
-                                                                   , ElNetworkUsageInMaxTotal
-                                                                   ]
-  markProgressBar now (nmNetworkUsageOutLastUpdate nm) resLife els ( ElNetworkOutProgress
-                                                                   , ElNetworkOutProgressBox
-                                                                   )
-                                                                   [ ElNetworkUsageOut
-                                                                   , ElNetworkUsageOutMaxTotal
-                                                                   ]
 
 markValues
   :: Word64
