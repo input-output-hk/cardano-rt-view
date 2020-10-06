@@ -30,21 +30,11 @@ Key features
 How it looks like
 =================
 
-There are two view modes available.
-
-Pane Mode
----------
+The default view mode looks like this:
 
 .. image:: https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/images/screenshot-pane-mode.png
-  :width: 400
+  :width: 500
   :alt: Pane Mode
-
-Grid Mode
----------
-
-.. image:: https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/images/screenshot-grid-mode.png
-  :width: 400
-  :alt: Grid Mode
 
 Download
 ========
