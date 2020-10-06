@@ -247,7 +247,7 @@ mkNodePane nameOfNode = do
                  [ string "Slot No."
                  ]
              , UI.div #. [W3Quarter, W3RightAlign] <+> [] #+
-                 [ string "In Flight"
+                 [ string "In Flight: b/r/bl" # set UI.title__ "In Flight: bytes/reqs/blocks"
                  ]
              , UI.div #. [W3Quarter, W3RightAlign] <+> [] #+
                  [ string "Status"
