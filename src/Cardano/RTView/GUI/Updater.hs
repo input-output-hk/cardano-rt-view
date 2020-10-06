@@ -70,7 +70,7 @@ updatePaneGUI window nodesState params acceptors nodesStateElems = do
     updateCharts window nameOfNode ni nm
 
     void $ updateEndpoint     acceptorEndpoint                                $ elements ! ElTraceAcceptorEndpoint
-    void $ updateElementValue (ElementString  $ niNodeRelease ni)             $ elements ! ElNodeRelease
+    void $ updateElementValue (ElementString  $ niNodeProtocol ni)            $ elements ! ElNodeProtocol
     void $ updateElementValue (ElementString  $ niNodeVersion ni)             $ elements ! ElNodeVersion
     void $ updateElementValue (ElementString  $ niNodePlatform ni)            $ elements ! ElNodePlatform
     void $ updateNodeCommit   (niNodeCommit ni) (niNodeShortCommit ni)        $ elements ! ElNodeCommitHref
@@ -144,7 +144,7 @@ updateGridGUI window nodesState _params acceptors gridNodesStateElems =
     updateCharts window nameOfNode ni nm
 
     void $ updateEndpoint     acceptorEndpoint                           $ elements ! ElTraceAcceptorEndpoint
-    void $ updateElementValue (ElementString  $ niNodeRelease ni)        $ elements ! ElNodeRelease
+    void $ updateElementValue (ElementString  $ niNodeProtocol ni)       $ elements ! ElNodeProtocol
     void $ updateElementValue (ElementString  $ niNodeVersion ni)        $ elements ! ElNodeVersion
     void $ updateElementValue (ElementString  $ niNodePlatform ni)       $ elements ! ElNodePlatform
     void $ updateNodeCommit   (niNodeCommit ni) (niNodeShortCommit ni)   $ elements ! ElNodeCommitHref
@@ -335,7 +335,7 @@ markOutdatedElements params ni nm els = do
       rtsLife = rtvRTSInfoLife params
 
   markValues now (niUpTimeLastUpdate ni) niLife [ els ! ElUptime
-                                                , els ! ElNodeRelease
+                                                , els ! ElNodeProtocol
                                                 , els ! ElNodeVersion
                                                 , els ! ElNodePlatform
                                                 , els ! ElNodeCommitHref

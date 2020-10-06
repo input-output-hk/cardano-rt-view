@@ -59,7 +59,7 @@ data NodeError
 
 data NodeInfo
   = NodeInfo
-      { niNodeRelease                    :: !String
+      { niNodeProtocol                   :: !String
       , niNodeVersion                    :: !String
       , niNodeCommit                     :: !String
       , niNodeShortCommit                :: !String
@@ -177,7 +177,7 @@ defaultNodeState = NodeState
 
 defaultNodeInfo :: NodeInfo
 defaultNodeInfo = NodeInfo
-  { niNodeRelease                   = "—"
+  { niNodeProtocol                  = "—"
   , niNodeVersion                   = "—"
   , niNodeCommit                    = "—"
   , niNodeShortCommit               = "—"
