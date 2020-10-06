@@ -40,7 +40,7 @@ type NodeStateElements = Map ElementName Element
 type NodesStateElements = [(Text, NodeStateElements, [PeerInfoItem])]
 
 data ElementName
-  = ElNodeRelease
+  = ElNodeProtocol
   | ElNodeVersion
   | ElNodePlatform
   | ElNodeCommitHref
@@ -169,6 +169,7 @@ data HTMLClass
   | ProgressBarBox
   | ProgressBarBoxOutdated
   | ReleaseName
+  | ResourcesIcon
   | SelectMetricCheck
   | SelectMetricCheckArea
   | SelectNodeCheck

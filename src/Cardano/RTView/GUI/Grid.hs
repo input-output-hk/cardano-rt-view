@@ -55,13 +55,13 @@ mkNodesGrid _window acceptors = do
   return (nodesGrid, nodesEls)
 
 metricLabel :: ElementName -> String
-metricLabel ElTraceAcceptorEndpoint = "Node endpoint"
-metricLabel ElNodeRelease           = "Node protocol"
+metricLabel ElNodeProtocol          = "Node protocol"
 metricLabel ElNodeVersion           = "Node version"
 metricLabel ElNodePlatform          = "Node platform"
 metricLabel ElNodeCommitHref        = "Node commit"
-metricLabel ElPeersNumber           = "Peers number"
 metricLabel ElUptime                = "Node uptime"
+metricLabel ElTraceAcceptorEndpoint = "Node endpoint"
+metricLabel ElPeersNumber           = "Peers number"
 metricLabel ElOpCertStartKESPeriod  = "Start KES period"
 metricLabel ElCurrentKESPeriod      = "Current KES period"
 metricLabel ElRemainingKESPeriods   = "KES remaining periods"
@@ -88,13 +88,13 @@ metricLabel _                       = ""
 
 allMetricsNames :: [ElementName]
 allMetricsNames =
-  [ ElTraceAcceptorEndpoint
-  , ElNodeRelease
+  [ ElNodeProtocol
   , ElNodeVersion
   , ElNodePlatform
   , ElNodeCommitHref
-  , ElPeersNumber
   , ElUptime
+  , ElTraceAcceptorEndpoint
+  , ElPeersNumber
   , ElOpCertStartKESPeriod
   , ElCurrentKESPeriod
   , ElRemainingKESPeriods
@@ -151,8 +151,7 @@ mkNodeElements
   :: Text
   -> UI NodeStateElements
 mkNodeElements nameOfNode = do
-  elTraceAcceptorEndpoint <- string "localhost:0"
-  elNodeRelease  <- string "-"
+  elNodeProtocol <- string "-"
   elNodeVersion  <- string "-"
   elNodePlatform <- string "-"
   elNodeCommitHref
@@ -160,8 +159,9 @@ mkNodeElements nameOfNode = do
                  # set UI.target "_blank"
                  # set UI.title__ "Browse cardano-node repository on this commit"
                  #+ [string ""]
-  elPeersNumber <- string "0"
   elUptime      <- string "00:00:00"
+  elTraceAcceptorEndpoint <- string "localhost:0"
+  elPeersNumber <- string "0"
   elOpCertStartKESPeriod <- string "-"
   elCurrentKESPeriod     <- string "-"
   elRemainingKESPeriods  <- string "-"
@@ -201,13 +201,13 @@ mkNodeElements nameOfNode = do
 
   return $
     Map.fromList
-      [ (ElTraceAcceptorEndpoint, elTraceAcceptorEndpoint)
-      , (ElNodeRelease,           elNodeRelease)
+      [ (ElNodeProtocol,          elNodeProtocol)
       , (ElNodeVersion,           elNodeVersion)
       , (ElNodePlatform,          elNodePlatform)
       , (ElNodeCommitHref,        elNodeCommitHref)
-      , (ElPeersNumber,           elPeersNumber)
       , (ElUptime,                elUptime)
+      , (ElTraceAcceptorEndpoint, elTraceAcceptorEndpoint)
+      , (ElPeersNumber,           elPeersNumber)
       , (ElOpCertStartKESPeriod,  elOpCertStartKESPeriod)
       , (ElCurrentKESPeriod,      elCurrentKESPeriod)
       , (ElRemainingKESPeriods,   elRemainingKESPeriods)

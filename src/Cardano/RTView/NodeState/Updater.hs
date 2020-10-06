@@ -197,8 +197,8 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
               _ -> return currentNodesState
            | "cardano.node.release" `T.isInfixOf` aName ->
             case aContent of
-              LogMessage release ->
-                nodesStateWith $ updateNodeRelease ns release
+              LogMessage protocol ->
+                nodesStateWith $ updateNodeProtocol ns protocol
               _ -> return currentNodesState
            | "cardano.node.version" `T.isInfixOf` aName ->
             case aContent of
@@ -261,10 +261,10 @@ updatePeersInfo ns peersInfo = ns { nsInfo = newNi }
   currentNi = nsInfo ns
   newPeersInfo = extractPeersInfo peersInfo
 
-updateNodeRelease :: NodeState -> Text -> NodeState
-updateNodeRelease ns release = ns { nsInfo = newNi }
+updateNodeProtocol :: NodeState -> Text -> NodeState
+updateNodeProtocol ns protocol = ns { nsInfo = newNi }
  where
-  newNi = currentNi { niNodeRelease = T.unpack release }
+  newNi = currentNi { niNodeProtocol = T.unpack protocol }
   currentNi = nsInfo ns
 
 updateNodeVersion :: NodeState -> Text -> NodeState

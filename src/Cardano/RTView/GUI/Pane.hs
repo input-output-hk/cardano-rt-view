@@ -27,7 +27,7 @@ mkNodePane nameOfNode = do
   -- Create |Element|s containing node state (info, metrics).
   -- These elements will be part of the complete page,
   -- later they will be updated by acceptor thread.
-  elNodeRelease             <- string ""
+  elNodeProtocol            <- string ""
   elNodeVersion             <- string ""
   elNodePlatform            <- string ""
   elActiveNode              <- string "-"
@@ -120,7 +120,7 @@ mkNodePane nameOfNode = do
                  ]
              , UI.div #. show W3Half #+
                  [ UI.div #. show NodeInfoValues #+
-                     [ UI.span #. show ReleaseName #+ [element elNodeRelease]
+                     [ UI.span #. show ReleaseName #+ [element elNodeProtocol]
                      , UI.div #+ [element elNodeVersion]
                      , UI.div #+ [element elNodePlatform]
                      , UI.div #. show CommitLink #+ [element elNodeCommitHref]
@@ -290,34 +290,39 @@ mkNodePane nameOfNode = do
          , vSpacer NodeMetricsVSpacer
          ]
 
-  resourcesTabContent
+  resourcesTabMemoryContent
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Container #+
-             [ UI.div #. show W3Row #+
-                 [ UI.div #. [W3Half, W3Mobile] <+> [] #+
-                     [ UI.canvas ## (show MemoryUsageChartId <> T.unpack nameOfNode)
-                                 #. show MemoryUsageChart
-                                 #+ []
-                     ]
-                 , UI.div #. [W3Half, W3Mobile] <+> [] #+
-                     [ UI.canvas ## (show CPUUsageChartId <> T.unpack nameOfNode)
-                                 #. show CPUUsageChart
-                                 #+ []
-                     ]
-                 ]
-             , UI.div #. show W3Row #+
-                 [ UI.div #. [W3Half, W3Mobile] <+> [] #+
-                     [ UI.canvas ## (show DiskUsageChartId <> T.unpack nameOfNode)
-                                 #. show DiskUsageChart
-                                 #+ []
-                     ]
-                 , UI.div #. [W3Half, W3Mobile] <+> [] #+
-                     [ UI.canvas ## (show NetworkUsageChartId <> T.unpack nameOfNode)
-                                 #. show NetworkUsageChart
-                                 #+ []
-                     ]
-                 ]
-             , vSpacer NodeMetricsVSpacer
+             [ UI.canvas ## (show MemoryUsageChartId <> T.unpack nameOfNode)
+                         #. show MemoryUsageChart
+                         #+ []
+             ]
+         ]
+
+  resourcesTabCPUContent
+    <- UI.div #. show TabContainer # hideIt #+
+         [ UI.div #. show W3Container #+
+             [ UI.canvas ## (show CPUUsageChartId <> T.unpack nameOfNode)
+                         #. show CPUUsageChart
+                         #+ []
+             ]
+         ]
+
+  resourcesTabDiskContent
+    <- UI.div #. show TabContainer # hideIt #+
+         [ UI.div #. show W3Container #+
+             [ UI.canvas ## (show DiskUsageChartId <> T.unpack nameOfNode)
+                         #. show DiskUsageChart
+                         #+ []
+             ]
+         ]
+
+  resourcesTabNetworkContent
+    <- UI.div #. show TabContainer # hideIt #+
+         [ UI.div #. show W3Container #+
+             [ UI.canvas ## (show NetworkUsageChartId <> T.unpack nameOfNode)
+                         #. show NetworkUsageChart
+                         #+ []
              ]
          ]
 
@@ -377,57 +382,60 @@ mkNodePane nameOfNode = do
          ]
 
   -- Tabs for corresponding sections.
-  nodeTab       <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
-                             # set UI.title__ "Node info"
-                             # makeItActive #+
-                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/info.svg"
+  let tabButton title iconName =
+        UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
+                  # set UI.title__ title
+                  #+ [UI.img #. show NodeMenuIcon
+                             # set UI.src ("/static/images/" <> iconName)]
+      anchorButton title iconName =
+        UI.anchor #. [W3BarItem, W3Button, W3Mobile] <+> []
+                  # set UI.href "#"
+                  #+ [ UI.img #. show ResourcesIcon
+                              # set UI.src ("/static/images/" <> iconName)
+                     , string title
                      ]
-  kesTab        <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
-                             # set UI.title__ "Key Evolving Signature"
-                             #+
-                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/key.svg"
-                     ]
-  peersTab      <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
-                             # set UI.title__ "Peers"
-                             #+
-                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/peers.svg"
-                     ]
-  blockchainTab <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
-                             # set UI.title__ "Blockchain"
-                             #+
-                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/blockchain.svg"
-                     ]
-  mempoolTab    <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
-                             # set UI.title__ "Mempool"
-                             #+
-                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/mempool.svg"
-                     ]
-  resourcesTab  <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
-                             # set UI.title__ "Resources"
-                             #+
-                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/resources.svg"
-                     ]
-  ghcRTSTab     <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
-                             # set UI.title__ "RTS GC"
-                             #+
-                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/rts.svg"
-                     ]
-  errorsTab     <- UI.button #. [W3BarItem, W3Button, W3Mobile] <+> []
-                             # set UI.title__ "Errors"
-                             #+
-                     [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/bugs.svg"
+
+  nodeTab       <- tabButton "Node info" "info.svg" # makeItActive
+  kesTab        <- tabButton "Key Evolving Signature" "key.svg"
+  peersTab      <- tabButton "Peers" "peers.svg"
+  blockchainTab <- tabButton "Blockchain" "blockchain.svg"
+  mempoolTab    <- tabButton "Mempool" "mempool.svg"
+  ghcRTSTab     <- tabButton "RTS GC" "rts.svg"
+  errorsTab     <- tabButton "Errors" "bugs.svg"
+
+  resourcesTabMemory  <- anchorButton "Memory" "memory.svg"
+  resourcesTabCPU     <- anchorButton "CPU" "cpu.svg"
+  resourcesTabDisk    <- anchorButton "Disk" "disk.svg"
+  resourcesTabNetwork <- anchorButton "Network" "network.svg"
+
+  resourcesTab  <- UI.div #. [W3DropdownHover, W3Mobile] <+> [] #+
+                     [ UI.button #. show W3Button
+                                 # set UI.title__ "Resources"
+                                 #+
+                         [ UI.img #. show NodeMenuIcon # set UI.src "/static/images/resources.svg"
+                         , string " ▾"
+                         ]
+                     , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] <+> [] #+
+                         [ element resourcesTabMemory
+                         , element resourcesTabCPU
+                         , element resourcesTabDisk
+                         , element resourcesTabNetwork
+                         ]
                      ]
 
   let tabs :: [((Element, Element), Int)]
       tabs =
-        let allTabs = [ (nodeTab,       nodeTabContent)
-                      , (kesTab,        kesTabContent)
-                      , (peersTab,      peersTabContent)
-                      , (blockchainTab, blockchainTabContent)
-                      , (mempoolTab,    mempoolTabContent)
-                      , (resourcesTab,  resourcesTabContent)
-                      , (errorsTab,     errorsTabContent)
-                      , (ghcRTSTab,     ghcRTSTabContent)
+        let allTabs = [ (nodeTab,             nodeTabContent)
+                      , (kesTab,              kesTabContent)
+                      , (peersTab,            peersTabContent)
+                      , (blockchainTab,       blockchainTabContent)
+                      , (mempoolTab,          mempoolTabContent)
+                      , (resourcesTabMemory,  resourcesTabMemoryContent)
+                      , (resourcesTabCPU,     resourcesTabCPUContent)
+                      , (resourcesTabDisk,    resourcesTabDiskContent)
+                      , (resourcesTabNetwork, resourcesTabNetworkContent)
+                      , (errorsTab,           errorsTabContent)
+                      , (ghcRTSTab,           ghcRTSTabContent)
                       ]
         in zip allTabs [1..length allTabs]
 
@@ -455,7 +463,10 @@ mkNodePane nameOfNode = do
       , element peersTabContent
       , element blockchainTabContent
       , element mempoolTabContent
-      , element resourcesTabContent
+      , element resourcesTabMemoryContent
+      , element resourcesTabCPUContent
+      , element resourcesTabDiskContent
+      , element resourcesTabNetworkContent
       , element errorsTabContent
       , element ghcRTSTabContent
       ]
@@ -463,7 +474,7 @@ mkNodePane nameOfNode = do
   -- Return these elements, they will be updated by another thread later.
   let nodeStateElems =
         Map.fromList
-          [ (ElNodeRelease,             elNodeRelease)
+          [ (ElNodeProtocol,            elNodeProtocol)
           , (ElNodeVersion,             elNodeVersion)
           , (ElNodePlatform,            elNodePlatform)
           , (ElNodeCommitHref,          elNodeCommitHref)

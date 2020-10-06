@@ -143,6 +143,10 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl NodeMenuIcon ? do
     widthPx           26
 
+  cl ResourcesIcon ? do
+    widthPx           32
+    paddingRightPx    13
+
   cl CardanoLogo ? do
     widthPx           216
 
@@ -197,16 +201,16 @@ ownCSS = unpack . TL.toStrict . render $ do
     fontWeight        normal
 
   cl CPUUsageChart ? do
-    maxHeightPx       190
+    maxHeightPx       360
 
   cl MemoryUsageChart ? do
-    maxHeightPx       190
+    maxHeightPx       360
 
   cl DiskUsageChart ? do
-    maxHeightPx       190
+    maxHeightPx       360
 
   cl NetworkUsageChart ? do
-    maxHeightPx       190
+    maxHeightPx       360
 
   cl GridCPUUsageChart ? do
     maxWidthPx        280
