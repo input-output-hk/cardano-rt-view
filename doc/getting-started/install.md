@@ -10,13 +10,13 @@ You will need:
 
 ## Download and unpack
 
-Please go to [releases page](https://github.com/input-output-hk/cardano-rt-view/releases) and download the package for your platform:
+Please go to [releases page](https://github.com/input-output-hk/cardano-rt-view/releases) and download an archive for your platform, their names look like this:
 
 1. `cardano-rt-view-*-darwin.zip`
 2. `cardano-rt-view-*-linux-x86_64.tar.gz`
 3. `cardano-rt-view-*-win64.zip`
 
-Then unpack an archive that contains an executable `cardano-rt-view`.
+Then unpack an archive, inside you will find an executable `cardano-rt-view`.
 
 ## Prepare to run
 
@@ -40,7 +40,15 @@ please go to `Settings` -> `Language Settings` -> `Administrative language setti
 
 ## Run and configuration dialog
 
-After you run an executable `cardano-rt-view`, an interactive dialog will be started.
+After you run an executable `cardano-rt-view`, an interactive dialog will be started:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ RTView: real-time watching for Cardano nodes 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Let's configure RTView...
+```
 
 The first question is:
 
@@ -53,29 +61,29 @@ Please input the number of `cardano-node` processes that should forward their me
 The next question is:
 
 ```
-"Input the names of the nodes (default are "node-1", "node-2", "node-3"):
+Input the names of the nodes (default are "node-1", "node-2", "node-3"), one at a time:
 ```
 
-From RTView's point of view, each external process that forwards its metrics to RTView, should be identified by a unique name. You can use any name you want (please note that name does not include spaces).
+From RTView's point of view, each `cardano-node` process that forwards its metrics to RTView, should be identified by a unique name. You can use any name you want (please note that name should not include spaces).
 
 The next question is:
 
 ```
-Indicate the port for the web service (1024 - 65535, default is 8024):
+Indicate the port for the web server (1024 - 65535, default is 8024):
 ```
 
-Please input the port RTView will use to display the web-page. For example, if you keep the default port `8024`, RTView will start the web server that listens on `http://127.0.0.1:8024`.
+Please input the port RTView will use to display the web-page. For example, if you keep the default port `8024`, the web-page will be available on `http://127.0.0.1:8024`.
 
 The next question is:
 
 ```
-Connections shall be made via pipes (P, default way) or networking sockets (S)?
+Indicate how your nodes should be connected with RTView (pipes <P> or networking sockets <S>):
 ```
 
 Please choose the way how the nodes should be connected to RTView. If you selected `P`, you will be asked about the directory when pipes will be created:
 
 ```
-Ok, pipes will be used. Indicate the directory for them, default is "/tmp/rt-view-pipes":
+Ok, pipes will be used. Indicate the directory for them, default is "/run/user/1000/rt-view-pipes":
 ```
 
 But if you chose `S`, you will be asked about the base port:
@@ -84,20 +92,68 @@ But if you chose `S`, you will be asked about the base port:
 Ok, sockets will be used. Indicate the port base to listen for connections (1024 - 65535, default is 3000):
 ```
 
-The base port will be used for the first node that forwards its metrics to RTView. For example, if you will launch three `cardano-node` processes that will forward their metrics to the network sockets, this is how they will be connected to RTView:
+The base port will be used for the first node that forwards its metrics to RTView. For example, if you will launch three `cardano-node` processes (`node-1`, `node-2`, and `node-3`) that will forward their metrics using network sockets, this is how they will be connected to RTView:
 
-1. first node -> `http://127.0.0.1:3000`
-1. second node -> `http://127.0.0.1:3001`
-1. third node -> `http://127.0.0.1:3002`
-
-**Important**: Please make sure your connection settings correspond to the section `traceForwardTo` in your node(s) configuration file(s).
+1. `node-1` -> `http://127.0.0.1:3000`
+1. `node-2` -> `http://127.0.0.1:3001`
+1. `node-3` -> `http://127.0.0.1:3002`
 
 The last question is:
 
 ```
-"Indicate the directory with static content for the web service, default is "static":
+Indicate the directory with static content for the web server, default is "static":
 ```
 
-Since RTView displays nodes' metrics on the web-page, it uses static web content (CSS styles, JS, images). By default, it's `static` directory that is included in the package you've downloaded.
+Since RTView displays nodes' metrics on the web-page, it uses static web content (CSS, JS, images). By default, it's `static` directory that is included in the archive you've downloaded.
 
-After that, RTView will be launched, and you can open `http://127.0.0.1:8024` (if you chose default web-port) and see the web-page.
+Then you will see this message:
+
+```
+Great, RTView is ready to run! Its configuration was saved at PATH_TO/rt-view.yaml. Press <Enter> to continue...
+```
+
+where `PATH_TO` is the full path to the default system configuration directory.
+
+After you pressed `Enter`, RTView will show all the changes you have to make in your node(s) configuration file(s). For example, if you chose all default values on Linux, you will see this:
+
+```
+Now you have to make the following changes in your node's configuration file:
+
+1. Find setupBackends and add TraceForwarderBK in it:
+
+   setupBackends:
+     - TraceForwarderBK
+
+2. Find TurnOnLogMetrics and set it to True:
+
+   TurnOnLogMetrics: True
+
+3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:
+
+   options:
+     mapBackends:
+       cardano.node.metrics:
+         - TraceForwarderBK
+       cardano.node.Forge.metrics:
+         - TraceForwarderBK
+
+   For more info about supported metrics please read the documentation.
+
+4. Since you have 3 nodes, add following traceForwardTo sections in the root of their configuration files:
+
+   traceForwardTo:
+     tag: RemotePipe
+     contents: "/run/user/1000/rt-view-pipes/node-1"
+
+   traceForwardTo:
+     tag: RemotePipe
+     contents: "/run/user/1000/rt-view-pipes/node-2"
+
+   traceForwardTo:
+     tag: RemotePipe
+     contents: "/run/user/1000/rt-view-pipes/node-3"
+
+After you are done, press <Enter> to run RTView...
+```
+
+After you pressed `Enter`, RTView will be launched, and you can open `http://127.0.0.1:8024` (if you chose default web-port) and see the web-page.

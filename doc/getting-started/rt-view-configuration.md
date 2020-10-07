@@ -2,9 +2,9 @@
 
 ## Saved configuration
 
-During the start, RTView initiates an interactive dialog with the user. Based on the given answers, it creates a configuration file (see an example below). This file will be automatically saved on your hard drive in the default config directory, depending on your platform. For example, on Linux, it's `$HOME/.config/`.
+During the start, RTView initiates an interactive dialog with the user. Based on the given answers, it creates a configuration file (see an example below). This file will be automatically saved on your hard drive in the system default configuration directory, depending on your platform.
 
-So, when you start RTView again, it will ask you:
+And when you'll start RTView again, it will ask you:
 
 ```
 Saved configuration file is found. Do you want to use it? <Y/N>
@@ -14,7 +14,7 @@ Saved configuration file is found. Do you want to use it? <Y/N>
 
 ## Configuration file: example
 
-This is the complete example of saved configuration file (taken from `NixOS 20.03`):
+This is an example of a saved RTView configuration created on Linux, with all default values accepted during dialog:
 
 ```
 rotation: null
@@ -31,15 +31,15 @@ traceForwardTo: null
 traceAcceptAt:
 - remoteAddr:
     tag: RemotePipe
-    contents: /tmp/rt-view-pipes/node-1
+    contents: /run/user/1000/rt-view-pipes/node-1
   nodeName: node-1
 - remoteAddr:
     tag: RemotePipe
-    contents: /tmp/rt-view-pipes/node-2
+    contents: /run/user/1000/rt-view-pipes/node-2
   nodeName: node-2
 - remoteAddr:
     tag: RemotePipe
-    contents: /tmp/rt-view-pipes/node-3
+    contents: /run/user/1000/rt-view-pipes/node-3
   nodeName: node-3
 defaultScribes:
 - - StdoutSK
@@ -65,8 +65,8 @@ minSeverity: Info
 
 ## Explicit configuration
 
-It is possible to provide a configuration file explicitly, via `--config` CLI parameter:
+It is possible to provide a configuration file explicitly, via `--config` command line parameter:
 
 ```
-cardano-rt-view --config /path/to/your/configuration.yaml ...
+cardano-rt-view --config /path/to/your/rt-view.yaml
 ```

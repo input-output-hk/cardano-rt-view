@@ -39,4 +39,3 @@ cardano-rt-view
    :hidden:
 
    technical-details/understanding-metrics
-   technical-details/gui-automatic-testing

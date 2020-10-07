@@ -1,3 +1,0 @@
-# GUI: Automatic Testing
-
-TODO

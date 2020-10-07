@@ -50,7 +50,7 @@ Also, you can download the latest CI builds from Hydra:
 Documentation
 =============
 
-Please read the documentation `here <https://docs.cardano.org/projects/cardano-rt-view/en/latest/>`_.
+Official documentation is published `here <https://docs.cardano.org/projects/cardano-rt-view/en/latest/>`_. But you can also read this documentation right `on GitHub <https://github.com/input-output-hk/cardano-rt-view/tree/master/doc>`_.
 
 .. raw:: html
 
