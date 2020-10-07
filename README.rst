@@ -2,7 +2,7 @@
 
    <p align="center">
      <a href="https://buildkite.com/input-output-hk/cardano-rt-view"><img src="https://img.shields.io/buildkite/b1c1ebf2b0fd1cccfff286e1343dc610bd81925558449e21f2/master?label=BUILD&style=for-the-badge"/></a>
-     &nbsp;&nbsp;
+     &nbsp;
      <a href="https://github.com/input-output-hk/cardano-rt-view/issues"><img src="https://img.shields.io/github/issues/input-output-hk/cardano-rt-view?style=for-the-badge"></a>
    </p>
 
@@ -41,12 +41,16 @@ Download
 
 Stable release packages for Windows, Linux, and macOS are available `here <https://github.com/input-output-hk/cardano-rt-view/releases>`_.
 
-Also, you can download the latest CI builds for `Linux <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-linux-release/latest/download/1>`_, `Windows <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-win64-release/latest/download/1>`_ and `macOS <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-darwin-release/latest/download/1>`_.
+Also, you can download the latest CI builds from Hydra:
+
+1. `Windows <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-win64-release/latest/download/1>`_
+2. `Linux <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-linux-release/latest/download/1>`_
+3. `macOS <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-darwin-release/latest/download/1>`_.
 
 Documentation
 =============
 
-Please read the complete documentation `here <https://docs.cardano.org/projects/cardano-rt-view/en/latest/>`_.
+Please read the documentation `here <https://docs.cardano.org/projects/cardano-rt-view/en/latest/>`_.
 
 .. raw:: html
 
