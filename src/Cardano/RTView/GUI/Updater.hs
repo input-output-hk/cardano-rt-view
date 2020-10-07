@@ -86,6 +86,7 @@ updatePaneGUI window nodesState params acceptors nodesStateElems = do
     void $ updateElementValue (ElementInteger $ niSlotsMissedNumber ni)       $ elements ! ElSlotsMissedNumber
     void $ updateElementValue (ElementInteger $ niTxsProcessed ni)            $ elements ! ElTxsProcessed
     void $ updateErrorsList   (niNodeErrors ni)                               $ elements ! ElNodeErrors
+    void $ updateErrorsTab    (niNodeErrors ni)                               $ elements ! ElNodeErrorsTab
     void $ updateElementValue (ElementWord64  $ nmMempoolTxsNumber nm)        $ elements ! ElMempoolTxsNumber
     void $ updateElementValue (ElementDouble  $ nmMempoolTxsPercent nm)       $ elements ! ElMempoolTxsPercent
     void $ updateElementValue (ElementWord64  $ nmMempoolBytes nm)            $ elements ! ElMempoolBytes
@@ -306,6 +307,20 @@ updateErrorsList nodeErrors errorsList = do
       , UI.div #. [W3TwoThird, W3Theme] <+> [] #+ [UI.div #. className #+ [UI.string msg]]
       ]
   element errorsList # set children errors
+
+updateErrorsTab
+  :: [NodeError]
+  -> Element
+  -> UI Element
+updateErrorsTab nodeErrors errorsTab =
+  if null nodeErrors
+    then disableErrorsTab
+    else enableErrorsTab
+ where
+   disableErrorsTab = element errorsTab # set UI.enabled False
+                                        # set UI.title__ "Good news: there are no errors!"
+   enableErrorsTab  = element errorsTab # set UI.enabled True
+                                        # set UI.title__ "Errors"
 
 mkTraceAcceptorEndpoint
   :: Text

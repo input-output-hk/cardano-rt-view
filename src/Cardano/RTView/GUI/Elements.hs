@@ -63,6 +63,7 @@ data ElementName
   | ElCurrentKESPeriod
   | ElRemainingKESPeriods
   | ElNodeErrors
+  | ElNodeErrorsTab
   | ElMempoolTxsNumber
   | ElMempoolTxsPercent
   | ElMempoolBytes
