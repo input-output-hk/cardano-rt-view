@@ -494,6 +494,7 @@ mkNodePane nameOfNode = do
           , (ElCurrentKESPeriod,        elCurrentKESPeriod)
           , (ElRemainingKESPeriods,     elRemainingKESPeriods)
           , (ElNodeErrors,              elNodeErrorsList)
+          , (ElNodeErrorsTab,           errorsTab)
           , (ElMempoolTxsNumber,        elMempoolTxsNumber)
           , (ElMempoolTxsPercent,       elMempoolTxsPercent)
           , (ElMempoolBytes,            elMempoolBytes)
