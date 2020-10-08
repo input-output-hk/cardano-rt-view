@@ -108,14 +108,14 @@ mkNodePane nameOfNode = do
     <- UI.div #. show TabContainer # showIt #+
          [ UI.div #. show W3Row #+
              [ UI.div #. show W3Half #+
-                 [ UI.div #+ [string "Node protocol"]
-                 , UI.div #+ [string "Node version"]
-                 , UI.div #+ [string "Node platform"]
-                 , UI.div #+ [string "Node commit"]
+                 [ UI.div #+ [string "Node protocol" # set UI.title__ "Node's protocol"]
+                 , UI.div #+ [string "Node version"  # set UI.title__ "Version of the node"]
+                 , UI.div #+ [string "Node platform" # set UI.title__ "Platform the node is working on"]
+                 , UI.div #+ [string "Node commit"   # set UI.title__ "Git commit the node was built from"]
                  , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [string "Node uptime"]
+                 , UI.div #+ [string "Node uptime"   # set UI.title__ "How long the node is working"]
                  , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [string "Node endpoint"]
+                 , UI.div #+ [string "Node endpoint" # set UI.title__ "Socket/pipe used to connect the node with RTView"]
                  , vSpacer NodeInfoVSpacer
                  ]
              , UI.div #. show W3Half #+
@@ -138,9 +138,9 @@ mkNodePane nameOfNode = do
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Row #+
              [ UI.div #. show W3Half #+
-                 [ UI.div #+ [string "Start KES period"]
-                 , UI.div #+ [string "KES period"]
-                 , UI.div #+ [string "KES remaining"]
+                 [ UI.div #+ [string "Start KES period" # set UI.title__ "Certificate KES start period"]
+                 , UI.div #+ [string "KES period"       # set UI.title__ "Current KES period"]
+                 , UI.div #+ [string "KES remaining"    # set UI.title__ "KES periods until expiry"]
                  , vSpacer NodeInfoVSpacer
                  ]
              , UI.div #. show W3Half #+
@@ -175,11 +175,11 @@ mkNodePane nameOfNode = do
                        , UI.div #. [W3Quarter, W3RightAlign] <+> [NodeMetricsValues] #+
                            [element slotNumber]
                        , UI.div #. [W3Quarter, W3RightAlign] <+> [NodeMetricsValues] #+
-                           [ element bytesInF
+                           [ element bytesInF # set UI.title__ "Sum of the byte count of blocks expected from all in-flight fetch requests"
                            , string " / "
-                           , element reqsInF
+                           , element reqsInF # set UI.title__ "Number of blocks fetch requests that are currently in-flight"
                            , string " / "
-                           , element blocksInF
+                           , element blocksInF # set UI.title__ "Blocks that are currently in-flight"
                            ]
                        , UI.div #. [W3Quarter, W3RightAlign] <+> [NodeMetricsValues] #+
                            [element status]
@@ -195,16 +195,16 @@ mkNodePane nameOfNode = do
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Row #+
              [ UI.div #. show W3Quarter #+
-                 [ string "Endpoint"
+                 [ string "Endpoint" # set UI.title__ "How the peer connected to this node"
                  ]
              , UI.div #. [W3Quarter, W3RightAlign] <+> [] #+
-                 [ string "Slot No."
+                 [ string "Slot No." # set UI.title__ "Total number of peers reported by peer"
                  ]
              , UI.div #. [W3Quarter, W3RightAlign] <+> [] #+
-                 [ string "In Flight: b/r/bl" # set UI.title__ "In Flight: bytes/reqs/blocks"
+                 [ string "In Flight: b/r/bl" # set UI.title__ "In Flight: bytes/requests/blocks"
                  ]
              , UI.div #. [W3Quarter, W3RightAlign] <+> [] #+
-                 [ string "Status"
+                 [ string "Status" # set UI.title__ "Peer's status"
                  ]
              ]
          , UI.div #+ elPeersList
@@ -214,15 +214,15 @@ mkNodePane nameOfNode = do
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Row #+
              [ UI.div #. show W3Half #+
-                 [ UI.div #+ [string "Epoch / Slot in epoch"]
-                 , UI.div #+ [string "Blocks number"]
-                 , UI.div #+ [string "Forged blocks number"]
+                 [ UI.div #+ [string "Epoch / Slot in epoch" # set UI.title__ "Number of current epoch / number of the current slot in this epoch"]
+                 , UI.div #+ [string "Blocks number" # set UI.title__ "Total number of blocks in this blockchain"]
+                 , UI.div #+ [string "Forged blocks number" # set UI.title__ "Number of blocks forged by this node"]
                  , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [string "Chain density"]
+                 , UI.div #+ [string "Chain density" # set UI.title__ "Chain density, in percents"]
                  , vSpacer NodeInfoVSpacer
-                 , UI.div #+ [string "Slot leader, number"]
-                 , UI.div #+ [string "Cannot forge, number"]
-                 , UI.div #+ [string "Missed slots number"]
+                 , UI.div #+ [string "Slot leader, number" # set UI.title__ "Number of slots when this node was a leader"]
+                 , UI.div #+ [string "Cannot forge, number" # set UI.title__ "Number of slots when this node was a leader but because of misconfiguration, it's impossible to forge a new block"]
+                 , UI.div #+ [string "Missed slots number" # set UI.title__ "Number of slots when this node was a leader but didn't forge a new block"]
                  , vSpacer NodeInfoVSpacer
                  ]
              , UI.div #. show W3Half #+
@@ -258,7 +258,7 @@ mkNodePane nameOfNode = do
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Container #+
              [ UI.div #. show W3Row #+
-                 [ UI.div #. show W3Half #+ [string "Mempool | bytes"]
+                 [ UI.div #. show W3Half #+ [string "Mempool | bytes" # set UI.title__ "Size of all transactions in the mempool, in bytes"]
                  , UI.div #. [W3Half, W3RightAlign] <+> [] #+
                      [ element elMempoolMaxBytes
                      , infoMark "Maximum in bytes"
@@ -269,7 +269,7 @@ mkNodePane nameOfNode = do
          , vSpacer NodeMetricsVSpacer
          , UI.div #. show W3Container #+
              [ UI.div #. show W3Row #+
-                 [ UI.div #. show W3Half #+ [string "Mempool | TXs"]
+                 [ UI.div #. show W3Half #+ [string "Mempool | TXs" # set UI.title__ "Number of transactions in the mempool"]
                  , UI.div #. [W3Half, W3RightAlign] <+> [] #+
                      [ element elMempoolMaxTxs
                      , infoMark "Maximum in txs"
@@ -280,7 +280,7 @@ mkNodePane nameOfNode = do
          , vSpacer NodeMetricsVSpacer
          , UI.div #. show W3Row #+
               [ UI.div #. show W3Theme #+
-                  [ string "TXs processed"
+                  [ string "TXs processed" # set UI.title__ "Number of processed transactions in this blockchain (these transactions are already removed from the mempool)"
                   , nbsp
                   , nbsp
                   , nbsp
@@ -330,7 +330,7 @@ mkNodePane nameOfNode = do
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Container #+
              [ UI.div #. show W3Row #+
-                 [ UI.div #. show W3Half #+ [string "RTS live memory"]
+                 [ UI.div #. show W3Half #+ [string "RTS live memory" # set UI.title__ "Total amount of live data in the heap, in MB (updated after every GC)"]
                  , UI.div #. [W3Half, W3RightAlign] <+> [] #+
                      [ element elRTSMemoryAllocated
                      , UI.span #. show ValueUnit #+ [string "MB"]
@@ -341,10 +341,10 @@ mkNodePane nameOfNode = do
          , vSpacer NodeMetricsVSpacer
          , UI.div #. show W3Row #+
              [ UI.div #. show W3Half #+
-                 [ UI.div #+ [string "GC CPU time"]
-                 , UI.div #+ [string "GC time elapsed"]
-                 , UI.div #+ [string "Number of GC runs"]
-                 , UI.div #+ [string "Major GC runs"]
+                 [ UI.div #+ [string "GC CPU time"       # set UI.title__ "Total CPU time used by the GC, in seconds"]
+                 , UI.div #+ [string "GC time elapsed"   # set UI.title__ "Total elapsed time used by the GC, in seconds"]
+                 , UI.div #+ [string "Number of GC runs" # set UI.title__ "Total number of GCs"]
+                 , UI.div #+ [string "Major GC runs"     # set UI.title__ "Total number of major (oldest generation) GCs"]
                  ]
              , UI.div #. show W3Half #+
                  [ UI.div #. show NodeInfoValues #+

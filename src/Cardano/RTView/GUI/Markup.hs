@@ -281,7 +281,7 @@ mkCheckbox window elemName = do
   metricArea
     <- UI.div #. show SelectMetricCheckArea #+
          [ element metricCheckbox
-         , UI.label #+ [UI.string $ metricLabel elemName]
+         , UI.label #+ [UI.string $ fst $ metricLabel elemName]
          ]
   return metricArea
 
