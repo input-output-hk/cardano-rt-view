@@ -54,37 +54,37 @@ mkNodesGrid _window acceptors = do
 
   return (nodesGrid, nodesEls)
 
-metricLabel :: ElementName -> String
-metricLabel ElNodeProtocol          = "Node protocol"
-metricLabel ElNodeVersion           = "Node version"
-metricLabel ElNodePlatform          = "Node platform"
-metricLabel ElNodeCommitHref        = "Node commit"
-metricLabel ElUptime                = "Node uptime"
-metricLabel ElTraceAcceptorEndpoint = "Node endpoint"
-metricLabel ElPeersNumber           = "Peers number"
-metricLabel ElOpCertStartKESPeriod  = "Start KES period"
-metricLabel ElCurrentKESPeriod      = "Current KES period"
-metricLabel ElRemainingKESPeriods   = "KES remaining periods"
-metricLabel ElMemoryUsageChart      = "Memory usage"
-metricLabel ElCPUUsageChart         = "CPU usage"
-metricLabel ElDiskUsageChart        = "Disk usage"
-metricLabel ElNetworkUsageChart     = "Network usage"
-metricLabel ElEpoch                 = "Epoch"
-metricLabel ElSlot                  = "Slot in epoch"
-metricLabel ElChainDensity          = "Chain density"
-metricLabel ElBlocksNumber          = "Blocks number"
-metricLabel ElBlocksForgedNumber    = "Forged blocks number"
-metricLabel ElNodeCannotForge       = "Cannot forge, number"
-metricLabel ElNodeIsLeaderNumber    = "Slot leader, number"
-metricLabel ElSlotsMissedNumber     = "Missed slots number"
-metricLabel ElTxsProcessed          = "TXs processed"
-metricLabel ElMempoolTxsNumber      = "TXs in mempool, number"
-metricLabel ElMempoolBytes          = "Txs in mempool, bytes"
-metricLabel ElRTSGcCpu              = "GC CPU time"
-metricLabel ElRTSGcElapsed          = "GC time elapsed"
-metricLabel ElRTSGcNum              = "Number of GC runs"
-metricLabel ElRTSGcMajorNum         = "Major GC runs"
-metricLabel _                       = ""
+metricLabel :: ElementName -> (String, String)
+metricLabel ElNodeProtocol          = ("Node protocol", "Node's protocol")
+metricLabel ElNodeVersion           = ("Node version", "Version of the node")
+metricLabel ElNodePlatform          = ("Node platform", "Platform the node is working on")
+metricLabel ElNodeCommitHref        = ("Node commit", "Git commit the node was built from")
+metricLabel ElUptime                = ("Node uptime", "How long the node is working")
+metricLabel ElTraceAcceptorEndpoint = ("Node endpoint", "Socket/pipe used to connect the node with RTView")
+metricLabel ElPeersNumber           = ("Peers number", "Number of peers connected to the node")
+metricLabel ElOpCertStartKESPeriod  = ("Start KES period", "Certificate KES start period")
+metricLabel ElCurrentKESPeriod      = ("Current KES period", "Current KES period")
+metricLabel ElRemainingKESPeriods   = ("KES remaining periods", "KES periods until expiry")
+metricLabel ElMemoryUsageChart      = ("Memory usage", "Memory used by the node, in MB")
+metricLabel ElCPUUsageChart         = ("CPU usage", "CPU used by the node, in percents")
+metricLabel ElDiskUsageChart        = ("Disk usage", "Node's disk operations, both READ and WRITE")
+metricLabel ElNetworkUsageChart     = ("Network usage", "Node's network operations, both IN and OUT")
+metricLabel ElEpoch                 = ("Epoch", "Number of current epoch")
+metricLabel ElSlot                  = ("Slot in epoch", "Number of the current slot in this epoch")
+metricLabel ElChainDensity          = ("Chain density", "Chain density, in percents")
+metricLabel ElBlocksNumber          = ("Blocks number", "Total number of blocks in this blockchain")
+metricLabel ElBlocksForgedNumber    = ("Forged blocks number", "Number of blocks forged by this node")
+metricLabel ElNodeCannotForge       = ("Cannot forge, number", "Number of slots when this node was a leader but because of misconfiguration, it's impossible to forge a new block")
+metricLabel ElNodeIsLeaderNumber    = ("Slot leader, number", "Number of slots when this node was a leader")
+metricLabel ElSlotsMissedNumber     = ("Missed slots number", "Number of slots when this node was a leader but didn't forge a new block")
+metricLabel ElTxsProcessed          = ("TXs processed", "Number of processed transactions in this blockchain (these transactions are already removed from the mempool")
+metricLabel ElMempoolTxsNumber      = ("TXs in mempool, number", "Number of transactions in the mempool")
+metricLabel ElMempoolBytes          = ("Txs in mempool, bytes", "Size of all transactions in the mempool, in bytes")
+metricLabel ElRTSGcCpu              = ("GC CPU time", "Total CPU time used by the GC, in seconds")
+metricLabel ElRTSGcElapsed          = ("GC time elapsed", "Total elapsed time used by the GC, in seconds")
+metricLabel ElRTSGcNum              = ("Number of GC runs", "Total number of GCs")
+metricLabel ElRTSGcMajorNum         = ("Major GC runs", "Total number of major (oldest generation) GCs")
+metricLabel _                       = ("", "")
 
 allMetricsNames :: [ElementName]
 allMetricsNames =
@@ -138,7 +138,8 @@ mkRowCells
   -> ElementName
   -> UI [UI Element]
 mkRowCells nodesElements elemName = do
-  tagTd <- element <$> UI.td #+ [string $ metricLabel elemName]
+  tagTd <- element <$> UI.td #+ [string (fst $ metricLabel elemName)
+                                        # set UI.title__ (snd $ metricLabel elemName)]
   -- We specify HTML-id for each td because each td corresponds to "node column".
   -- It can be used to hide/show the whole column.
   tds <- forM nodesElements $ \(nameOfNode, nodeElements, _) ->
