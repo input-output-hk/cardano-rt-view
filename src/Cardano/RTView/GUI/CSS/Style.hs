@@ -107,6 +107,9 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl ActiveTab ? do
     important $
       backgroundColor "#1b2238"
+    important $
+      color           cardanoLight
+    fontWeight        bold
 
   cl TabContainer ? do
     paddingTopPx      16
