@@ -69,26 +69,35 @@ mkPageBody window acceptors = do
       changeStatusOfShowAllButton window ShowAllNodesButton SelectNodeCheck
     return $ element nodeButton
 
-  showAllNodesButton
+  showAndHideAllNodesButtons
     <- if length nodesSelector > 1
          then do
-           allNodesButton <- UI.anchor ## show ShowAllNodesButton
-                                       #. [W3BarItem, W3Button, W3BorderTop, W3Disabled] <+> []
-                                       # set UI.href "#"
-                                       #+ [UI.string "Show all"]
-           void $ UI.onEvent (UI.click allNodesButton) $ \_ -> do
+           showAllNodesButton <- showAllButton ShowAllNodesButton
+           hideAllNodesButton <- hideAllButton HideAllNodesButton
+
+           void $ UI.onEvent (UI.click showAllNodesButton) $ \_ -> do
              UI.getElementById window (show ViewModeButton) >>= \case
                Just btn -> UI.get UI.value btn >>= \case
                  "paneMode" -> showAllNodes window nodePanesWithElems
                  _ -> showAllNodesColumns window nodePanesWithElems
                Nothing -> return ()
-             -- All nodes checkboxes are already shown, disable button again.
-             void $ element allNodesButton # set UI.class_ ([W3BarItem, W3Button, W3BorderTop, W3Disabled] <+> [])
-           return [element allNodesButton]
+             void $ element showAllNodesButton # set UI.class_ ([W3BarItem, W3Button, W3Disabled] <+> [])
+             void $ element hideAllNodesButton # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom] <+> [])
+
+           void $ UI.onEvent (UI.click hideAllNodesButton) $ \_ -> do
+             UI.getElementById window (show ViewModeButton) >>= \case
+               Just btn -> UI.get UI.value btn >>= \case
+                 "paneMode" -> hideAllNodes window nodePanesWithElems
+                 _ -> hideAllNodesColumns window nodePanesWithElems
+               Nothing -> return ()
+             void $ element showAllNodesButton # set UI.class_ ([W3BarItem, W3Button] <+> [])
+             void $ element hideAllNodesButton # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom, W3Disabled] <+> [])
+
+           return [element showAllNodesButton, element hideAllNodesButton]
          else
            return []
 
-  let allSelectors = nodesSelector ++ showAllNodesButton
+  let allSelectors = showAndHideAllNodesButtons ++ nodesSelector
 
   -- View mode buttons.
   paneViewButton <- UI.anchor #. [W3BarItem, W3Button] <+> [] # set UI.href "#" #+ [UI.string "Pane view"]
@@ -189,27 +198,43 @@ forNodeColumn window nameOfNode action = do
   forM_ allCells $ \anId ->
     forElementWithId window anId action
 
-showAllNodes
+showAllNodes, hideAllNodes
   :: UI.Window
   -> [(Text, Element, NodeStateElements, [PeerInfoItem])]
   -> UI ()
-showAllNodes window nodePanesWithElems = do
-  forM_ nodePanesWithElems $ \(_, pane, _, _) ->
-    void $ element pane # showIt
-  nodesCheckboxes <- UI.getElementsByClassName window (show SelectNodeCheck)
-  forM_ nodesCheckboxes $ \checkbox ->
-    void $ element checkbox # set UI.checked True
+showAllNodes = changeNodesVisibility True
+hideAllNodes = changeNodesVisibility False
 
-showAllNodesColumns
+changeNodesVisibility
+  :: Bool
+  -> UI.Window
+  -> [(Text, Element, NodeStateElements, [PeerInfoItem])]
+  -> UI ()
+changeNodesVisibility showThem window nodePanesWithElems = do
+  forM_ nodePanesWithElems $ \(_, pane, _, _) ->
+    void $ element pane # if showThem then showIt else hideIt
+  nodesCheckboxes <- UI.getElementsByClassName window (show SelectNodeCheck)
+  forM_ nodesCheckboxes $ \checkbox ->
+    void $ element checkbox # set UI.checked showThem
+
+showAllNodesColumns, hideAllNodesColumns
   :: UI.Window
   -> [(Text, Element, NodeStateElements, [PeerInfoItem])]
   -> UI ()
-showAllNodesColumns window nodePanesWithElems = do
+showAllNodesColumns = changeNodesColumnsVisibility True
+hideAllNodesColumns = changeNodesColumnsVisibility False
+
+changeNodesColumnsVisibility
+  :: Bool
+  -> UI.Window
+  -> [(Text, Element, NodeStateElements, [PeerInfoItem])]
+  -> UI ()
+changeNodesColumnsVisibility showThem window nodePanesWithElems = do
   forM_ nodePanesWithElems $ \(nameOfNode, _, _, _) ->
-    forNodeColumn window nameOfNode showCell
+    forNodeColumn window nameOfNode $ if showThem then showCell else hideIt
   nodesCheckboxes <- UI.getElementsByClassName window (show SelectNodeCheck)
   forM_ nodesCheckboxes $ \checkbox ->
-    void $ element checkbox # set UI.checked True
+    void $ element checkbox # set UI.checked showThem
 
 toggleViewMode
   :: UI.Window
@@ -236,32 +261,55 @@ changeStatusOfShowAllButton
   -> UI ()
 changeStatusOfShowAllButton window anId aClass =
   UI.getElementById window (show anId) >>= \case
-    Just showAllButton -> do
+    Just button -> do
       checkboxes <- UI.getElementsByClassName window (show aClass)
       statuses <- mapM (UI.get UI.checked) checkboxes
       if all ((==) True) statuses
-        then void $ element showAllButton # set UI.class_ ([W3BarItem, W3Button, W3BorderTop, W3Disabled] <+> [])
-        else void $ element showAllButton # set UI.class_ ([W3BarItem, W3Button, W3BorderTop] <+> [])
+        then void $ element button # set UI.class_ ([W3BarItem, W3Button, W3Disabled] <+> [])
+        else void $ element button # set UI.class_ ([W3BarItem, W3Button] <+> [])
+    Nothing -> return ()
+
+-- | If all checkboxes are unchecked - "Hide all" button should be disabled.
+--   If at least one of them are checked - "Hide all" button should be enabled.
+changeStatusOfHideAllButton
+  :: UI.Window
+  -> HTMLId
+  -> HTMLClass
+  -> UI ()
+changeStatusOfHideAllButton window anId aClass =
+  UI.getElementById window (show anId) >>= \case
+    Just button -> do
+      checkboxes <- UI.getElementsByClassName window (show aClass)
+      statuses <- mapM (UI.get UI.checked) checkboxes
+      if all ((==) False) statuses
+        then void $ element button # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom, W3Disabled] <+> [])
+        else void $ element button # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom] <+> [])
     Nothing -> return ()
 
 mkMetricsSelector
   :: UI.Window
   -> UI [UI Element]
 mkMetricsSelector window = do
-  allMetricsButton <-
-    UI.anchor ## show ShowAllMetricsButton
-              #. [W3BarItem, W3Button, W3BorderTop, W3Disabled] <+> []
-              # set UI.href "#"
-              #+ [UI.string "Show all"]
-  void $ UI.onEvent (UI.click allMetricsButton) $ \_ -> do
+  showAllMetricsButton <- showAllButton ShowAllMetricsButton
+  hideAllMetricsButton <- hideAllButton HideAllMetricsButton
+
+  void $ UI.onEvent (UI.click showAllMetricsButton) $ \_ -> do
     showAllMetrics window allMetricsNames
-    -- All metrics checkboxes are already shown, disable button again.
-    void $ element allMetricsButton # set UI.class_ ([W3BarItem, W3Button, W3BorderTop, W3Disabled] <+> [])
+    void $ element showAllMetricsButton # set UI.class_ ([W3BarItem, W3Button, W3Disabled] <+> [])
+    void $ element hideAllMetricsButton # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom] <+> [])
+
+  void $ UI.onEvent (UI.click hideAllMetricsButton) $ \_ -> do
+    hideAllMetrics window allMetricsNames
+    void $ element showAllMetricsButton # set UI.class_ ([W3BarItem, W3Button] <+> [])
+    void $ element hideAllMetricsButton # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom, W3Disabled] <+> [])
 
   checkboxes <-
     forM allMetricsNames $ \aName ->
       element <$> mkCheckbox window aName
-  return $ checkboxes ++ [element allMetricsButton]
+
+  return $    [element showAllMetricsButton]
+           ++ [element hideAllMetricsButton]
+           ++ checkboxes
 
 mkCheckbox
   :: UI.Window
@@ -277,6 +325,7 @@ mkCheckbox window elemName = do
     let action = if isChecked then showRow else hideIt
     forElementWithId window (show elemName) action
     changeStatusOfShowAllButton window ShowAllMetricsButton SelectMetricCheck
+    changeStatusOfHideAllButton window HideAllMetricsButton SelectMetricCheck
 
   metricArea
     <- UI.div #. show SelectMetricCheckArea #+
@@ -295,13 +344,37 @@ forElementWithId window anId action =
     Just el -> void $ element el # action
     Nothing -> return ()
 
-showAllMetrics
+showAllMetrics, hideAllMetrics
   :: UI.Window
   -> [ElementName]
   -> UI ()
-showAllMetrics window metricsElems = do
+showAllMetrics = changeMetricsVisibility True
+hideAllMetrics = changeMetricsVisibility False
+
+changeMetricsVisibility
+  :: Bool
+  -> UI.Window
+  -> [ElementName]
+  -> UI ()
+changeMetricsVisibility showThem window metricsElems = do
   forM_ metricsElems $ \elemName ->
-    forElementWithId window (show elemName) showRow
+    forElementWithId window (show elemName) (if showThem then showRow else hideIt)
   metricsCheckboxes <- UI.getElementsByClassName window (show SelectMetricCheck)
   forM_ metricsCheckboxes $ \checkbox ->
-    void $ element checkbox # set UI.checked True
+    void $ element checkbox # set UI.checked showThem
+
+showAllButton, hideAllButton :: HTMLId -> UI Element
+showAllButton anId = mkButton anId [W3BarItem, W3Button, W3Disabled]     "show.svg" "Show all"
+hideAllButton anId = mkButton anId [W3BarItem, W3Button, W3BorderBottom] "hide.svg" "Hide all"
+
+mkButton
+  :: HTMLId
+  -> [HTMLW3Class]
+  -> String
+  -> String
+  -> UI Element
+mkButton anId w3Classes icon label =
+  UI.anchor ## show anId #. w3Classes <+> [] # set UI.href "#" #+
+    [ UI.img #. show ShowHideIcon # set UI.src ("/static/images/" <> icon)
+    , string label
+    ]
