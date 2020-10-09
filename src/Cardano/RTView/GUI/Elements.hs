@@ -176,6 +176,7 @@ data HTMLClass
   | SelectNodeCheck
   | SelectNodeCheckArea
   | ServiceName
+  | ShowHideIcon
   | TabContainer
   | TopBar
   | ValueUnit
@@ -203,6 +204,7 @@ data HTMLW3Class
   | W3BarItem
   | W3Border
   | W3Bordered
+  | W3BorderBottom
   | W3BorderTop
   | W3Button
   | W3Card4
@@ -241,6 +243,7 @@ instance Show HTMLW3Class where
   show W3BarItem         = "w3-bar-item"
   show W3Border          = "w3-border"
   show W3Bordered        = "w3-bordered"
+  show W3BorderBottom    = "w3-border-bottom"
   show W3BorderTop       = "w3-border-top"
   show W3Button          = "w3-button"
   show W3Card4           = "w3-card-4"
@@ -281,7 +284,9 @@ instance Show HTMLW3Class where
 
 data HTMLId
   = SelectMetricButton
+  | HideAllMetricsButton
   | ShowAllMetricsButton
+  | HideAllNodesButton
   | ShowAllNodesButton
   | ViewModeButton
   -- Id parts (the final id will be formed using unique name of node).

@@ -150,6 +150,10 @@ ownCSS = unpack . TL.toStrict . render $ do
     widthPx           32
     paddingRightPx    13
 
+  cl ShowHideIcon ? do
+    widthPx           32
+    paddingRightPx    13
+
   cl CardanoLogo ? do
     widthPx           216
 
