@@ -264,7 +264,7 @@ changeStatusOfShowAllButton window anId aClass =
     Just button -> do
       checkboxes <- UI.getElementsByClassName window (show aClass)
       statuses <- mapM (UI.get UI.checked) checkboxes
-      if all ((==) True) statuses
+      if all (True ==) statuses
         then void $ element button # set UI.class_ ([W3BarItem, W3Button, W3Disabled] <+> [])
         else void $ element button # set UI.class_ ([W3BarItem, W3Button] <+> [])
     Nothing -> return ()
@@ -281,7 +281,7 @@ changeStatusOfHideAllButton window anId aClass =
     Just button -> do
       checkboxes <- UI.getElementsByClassName window (show aClass)
       statuses <- mapM (UI.get UI.checked) checkboxes
-      if all ((==) False) statuses
+      if all (False ==) statuses
         then void $ element button # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom, W3Disabled] <+> [])
         else void $ element button # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom] <+> [])
     Nothing -> return ()
@@ -327,12 +327,10 @@ mkCheckbox window elemName = do
     changeStatusOfShowAllButton window ShowAllMetricsButton SelectMetricCheck
     changeStatusOfHideAllButton window HideAllMetricsButton SelectMetricCheck
 
-  metricArea
-    <- UI.div #. show SelectMetricCheckArea #+
-         [ element metricCheckbox
-         , UI.label #+ [UI.string $ fst $ metricLabel elemName]
-         ]
-  return metricArea
+  UI.div #. show SelectMetricCheckArea #+
+    [ element metricCheckbox
+    , UI.label #+ [UI.string $ fst $ metricLabel elemName]
+    ]
 
 forElementWithId
   :: UI.Window

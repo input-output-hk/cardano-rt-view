@@ -1,6 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -154,7 +152,7 @@ startDialogToPrepareConfig :: IO (Configuration, RTViewParams)
 startDialogToPrepareConfig = do
   colorize Magenta BoldIntensity $ do
     TIO.putStrLn ""
-    TIO.putStrLn $ "Let's configure RTView..."
+    TIO.putStrLn "Let's configure RTView..."
 
   colorize Green BoldIntensity $ do
     TIO.putStrLn ""
@@ -223,7 +221,7 @@ startDialogToPrepareConfig = do
   CM.setBackends config "cardano-rt-view.acceptor" (Just [ LogBufferBK
                                                          , UserDefinedBK "ErrorBufferBK"
                                                          ])
-  let remoteAddrsNamed = map (\(nName, rAddr) -> RemoteAddrNamed nName rAddr)
+  let remoteAddrsNamed = map (uncurry RemoteAddrNamed)
                              $ zip nodesNames remoteAddrs
   CM.setAcceptAt config (Just remoteAddrsNamed)
 
@@ -304,7 +302,7 @@ askAboutNodesNames nodesNumber = askNodeNames 1
             let last :: Text
                 last = if nodesNumber == 1 then "" else "last "
             TIO.putStrLn $ "Ok, the " <> last <> "node has name \"" <> aName <> "\"."
-            return $ aName : []
+            return [aName]
         | otherwise -> do
             TIO.putStr $ "Ok, node " <> show i <> " has name \"" <> aName
                          <> "\", input the next one: "
@@ -392,7 +390,7 @@ askAboutLocationForPipes nodesNumber = do
   prepname d n = d </> T.unpack n
 #endif
   mkpipe :: FilePath -> [RemoteAddr]
-  mkpipe d = map (\defName -> RemotePipe (prepname d defName)) $
+  mkpipe d = map (RemotePipe . prepname d) $
                  defaultNodesNames nodesNumber
 
 askAboutFirstPortForSockets :: Int -> IO [RemoteAddr]
@@ -400,7 +398,7 @@ askAboutFirstPortForSockets nodesNumber = do
   firstPort <- askAboutFirstPort
   let portsForAllNodes = [firstPort .. firstPort + nodesNumber - 1]
   TIO.putStrLn $ "Ok, these ports will be used to accept nodes' metrics: " <> showPorts portsForAllNodes
-  return $ map (\p -> RemoteSocket "127.0.0.1" (show p)) portsForAllNodes
+  return $ map (RemoteSocket "127.0.0.1" . show) portsForAllNodes
  where
   showPorts :: [Int] -> Text
   showPorts ports = T.intercalate ", " $ map (T.pack . show) ports
@@ -431,7 +429,7 @@ askAboutStaticDir = do
   dir <- T.strip <$> TIO.getLine
   if T.null dir
     then do
-      TIO.putStrLn $ "Ok, default directory will be used."
+      TIO.putStrLn "Ok, default directory will be used."
       return defaultRTVStatic
     else do
       TIO.putStrLn $ "Ok, static content will be taken from directory \"" <> dir <> "\"."
@@ -444,7 +442,7 @@ showChangesInNodeConfiguration config = do
     aPath <- savedConfigurationFile
     TIO.putStr $ "Great, RTView is ready to run! Its configuration was saved at "
                  <> T.pack aPath <> ". Press <Enter> to continue..."
-  TIO.getLine >>= \_ -> return ()
+  void TIO.getLine
   TIO.putStrLn ""
   TIO.putStrLn "Now you have to make the following changes in your node's configuration file:"
   TIO.putStrLn ""
@@ -454,7 +452,7 @@ showChangesInNodeConfiguration config = do
   addTraceForwardTo
   colorize Magenta BoldIntensity $ do
     TIO.putStr "After you are done, press <Enter> to run RTView..."
-  TIO.getLine >>= \_ -> return ()
+  void TIO.getLine
  where
   enableTraceForwarderBK = do
     TIO.putStrLn "1. Find setupBackends and add TraceForwarderBK in it:"
@@ -534,9 +532,9 @@ rmPipesIfNeeded _ = pure ()
 rmPipesIfNeeded acceptors = do
   let pipesDirs = map collectPipesDirs acceptors
   forM_ pipesDirs $ \dir ->
-    when (not . null $ dir) $ do
+    unless (null dir) $ do
       allFiles <- listDirectory dir
-      let allPipes = filter (\file -> defaultNodeNamePrefix `T.isPrefixOf` (T.pack file)) allFiles
+      let allPipes = filter (\file -> defaultNodeNamePrefix `T.isPrefixOf` T.pack file) allFiles
       forM_ allPipes $ \pipe -> removeFile (dir </> pipe)
  where
   collectPipesDirs (RemoteAddrNamed _ (RemoteSocket _ _)) = ""

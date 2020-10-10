@@ -20,10 +20,10 @@ module Cardano.RTView.GUI.Elements
     , showCell
     ) where
 
-import           Cardano.Prelude
+import           Cardano.Prelude hiding (unwords)
 import           Control.DeepSeq (NFData (..), rwhnf)
 import           Data.Map.Strict (Map)
-import           Prelude (Show (..), String)
+import           Prelude (Show (..), String, unwords)
 
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, ( # ))
@@ -278,7 +278,7 @@ instance Show HTMLW3Class where
 --   that w3-classes should be the first, because our
 --   own classes override some of them.
 (<+>) :: [HTMLW3Class] -> [HTMLClass] -> String
-(<+>) w3Classes ownClasses = concat $ intersperse " " allClasses
+(<+>) w3Classes ownClasses = unwords allClasses
  where
   allClasses = map Prelude.show w3Classes ++ map Prelude.show ownClasses
 

@@ -411,8 +411,8 @@ updateCPUTicks ns ticks meta now = ns { nsMetrics = newNm }
       }
   currentNm = nsMetrics ns
   tns       = utc2ns $ tstamp meta
-  tdiff     = max 0.1 $ (fromIntegral (tns - nmCPUNs currentNm)) / 1000000000 :: Double
-  cpuperc   = (fromIntegral (ticks - nmCPULast currentNm)) / (fromIntegral clktck) / tdiff
+  tdiff     = max 0.1 $ fromIntegral (tns - nmCPUNs currentNm) / 1000000000 :: Double
+  cpuperc   = fromIntegral (ticks - nmCPULast currentNm) / fromIntegral clktck / tdiff
   clktck    = 100 :: Integer
 
 #if defined(DARWIN) || defined(WINDOWS)
@@ -582,7 +582,7 @@ updateGcCpuNs ns gcCpuNs now = ns { nsMetrics = newNm }
                         , nmRTSGcCpuLastUpdate = now
                         }
   currentNm = nsMetrics ns
-  seconds   = (fromIntegral gcCpuNs) / 1000000000 :: Double
+  seconds   = fromIntegral gcCpuNs / 1000000000 :: Double
 
 updateGcElapsedNs :: NodeState -> Word64 -> Word64 -> NodeState
 updateGcElapsedNs ns gcElapsedNs now = ns { nsMetrics = newNm }
@@ -591,7 +591,7 @@ updateGcElapsedNs ns gcElapsedNs now = ns { nsMetrics = newNm }
                         , nmRTSGcElapsedLastUpdate = now
                         }
   currentNm = nsMetrics ns
-  seconds   = (fromIntegral gcElapsedNs) / 1000000000 :: Double
+  seconds   = fromIntegral gcElapsedNs / 1000000000 :: Double
 
 updateGcNum :: NodeState -> Integer -> Word64 -> NodeState
 updateGcNum ns gcNum now = ns { nsMetrics = newNm }

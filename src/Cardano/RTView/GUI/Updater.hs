@@ -235,7 +235,7 @@ updateNodeUpTime upTimeInNs upTimeLabel =
   nullDay = UTCTime (ModifiedJulianDay 0) 0
   upTime = upTimeDiff `addUTCTime` nullDay
   upTimeFormatted = formatTime defaultTimeLocale "%X" upTime
-  daysNum = (utctDay upTime) `diffDays` (utctDay nullDay)
+  daysNum = utctDay upTime `diffDays` utctDay nullDay
   upTimeWithDays = if daysNum > 0
                      -- Show days only if upTime is bigger than 23:59:59.
                      then show daysNum <> "d " <> upTimeFormatted
@@ -343,7 +343,7 @@ markOutdatedElements
   -> NodeStateElements
   -> UI ()
 markOutdatedElements params ni nm els = do
-  now <- liftIO $ getMonotonicTimeNSec
+  now <- liftIO getMonotonicTimeNSec
   -- Different metrics have different lifetime.
   let niLife  = rtvNodeInfoLife params
       bcLife  = rtvBlockchainInfoLife params

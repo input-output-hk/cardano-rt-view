@@ -298,7 +298,7 @@ ownCSS = unpack . TL.toStrict . render $ do
 
 -- | Convert class name as a constructor to 'Selector'.
 w3 :: HTMLW3Class -> Selector
-w3 className = selectorFromText $ "." <> (pack $ show className)
+w3 className = selectorFromText $ "." <> pack (show className)
 
 cl :: HTMLClass -> Selector
-cl className = selectorFromText $ "." <> (pack $ show className)
+cl className = selectorFromText $ "." <> pack (show className)

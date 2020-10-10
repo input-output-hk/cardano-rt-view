@@ -1,7 +1,5 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 
 module Cardano.RTView.GUI.Grid
     ( mkNodesGrid
@@ -131,7 +129,7 @@ mkNodesRowCells acceptors = do
                        ]
   -- To keep top-left corner cell empty.
   emptyRowCell <- element <$> UI.th #+ [UI.span # set UI.html "&nbsp;" #+ []]
-  return $ [emptyRowCell] ++ nodesRowCells
+  return $ emptyRowCell : nodesRowCells
 
 mkRowCells
   :: [(Text, NodeStateElements, [PeerInfoItem])]
@@ -146,7 +144,7 @@ mkRowCells nodesElements elemName = do
            element <$> UI.td ## (show elemName <> "-" <> T.unpack nameOfNode)
                              #. show GridRowCell
                              #+ [element $ nodeElements ! elemName]
-  return $ [tagTd] ++ tds
+  return $ tagTd : tds
 
 mkNodeElements
   :: Text

@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Cardano.RTView.ErrorBuffer
@@ -34,7 +33,7 @@ newtype ErrorBuffer a = ErrorBuffer
   { getErrBuf :: MVar (ErrorBufferInternal a)
   }
 
-data ErrorBufferInternal a
+newtype ErrorBufferInternal a
   = ErrorBufferInternal
       { errQueue :: TBQ.TBQueue (LoggerName, LogObject a)
       }
