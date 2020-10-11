@@ -8,6 +8,7 @@ module Cardano.RTView.Config
     ) where
 
 import           Cardano.Prelude
+import           Prelude (String)
 
 #if !defined(mingw32_HOST_OS)
 import           Control.Monad (forM_)
@@ -177,24 +178,32 @@ startDialogToPrepareConfig = do
                <> " - " <> show maximumPort <> ", default is "
                <> show defaultRTVPort <> "): "
   port <- askAboutWebPort
-  TIO.putStrLn $ "Ok, the web-page will be available on http://127.0.0.1:" <> show port
+  TIO.putStrLn $ "Ok, the web-page will be available on http://"
+                 <> T.pack defaultRTVHost <> ":" <> show port
+                 <> ", on the machine RTView will be launched on."
 
   colorize Green BoldIntensity $ do
     TIO.putStrLn ""
     TIO.putStr "Indicate how your nodes should be connected with RTView (pipes <P> or networking sockets <S>): "
-  remoteAddrs <- askAboutPipesAndSockets >>= \case
+  (remoteAddrs, rtViewMachineHost) <- askAboutPipesAndSockets >>= \case
     Pipe -> do
       defDir <- defaultPipesDir
       TIO.putStr $ "Ok, pipes will be used. Indicate the directory for them, default is \""
                    <> T.pack defDir <> "\": "
       hFlush stdout
-      askAboutLocationForPipes nodesNumber
+      addrs <- askAboutLocationForPipes nodesNumber
+      return (addrs, defaultRTVHost)
     Socket -> do
       TIO.putStr $ "Ok, sockets will be used. Indicate the port base to listen for connections ("
                    <> show minimumPort <> " - " <> show maximumPort <> ", default is "
                    <> show defaultFirstPortForSockets <> "): "
       hFlush stdout
-      askAboutFirstPortForSockets nodesNumber
+      addrsWithDefaultHost <- askAboutFirstPortForSockets nodesNumber
+      TIO.putStr $ "Now, indicate a host of machine RTView will be launched on (default is "
+                   <> T.pack defaultRTVHost <> "): "
+      hFlush stdout
+      host <- askAboutRTViewMachineHost
+      return (addrsWithDefaultHost, host)
 
   colorize Green BoldIntensity $ do
     TIO.putStrLn ""
@@ -229,7 +238,7 @@ startDialogToPrepareConfig = do
                                    , rtvStatic = staticDir
                                    }
   -- Now show to the user the changes that should be done in node's configuration file.
-  showChangesInNodeConfiguration config
+  showChangesInNodeConfiguration config rtViewMachineHost
 
   return (config, params)
 
@@ -251,6 +260,9 @@ showDefaultNodesNames nodesNumber =
 
 defaultFirstPortForSockets :: Int
 defaultFirstPortForSockets = 3000
+
+defaultRTVHost :: String
+defaultRTVHost = "127.0.0.1"
 
 minimumPort, maximumPort :: Int
 minimumPort = 1024
@@ -398,7 +410,7 @@ askAboutFirstPortForSockets nodesNumber = do
   firstPort <- askAboutFirstPort
   let portsForAllNodes = [firstPort .. firstPort + nodesNumber - 1]
   TIO.putStrLn $ "Ok, these ports will be used to accept nodes' metrics: " <> showPorts portsForAllNodes
-  return $ map (RemoteSocket "127.0.0.1" . show) portsForAllNodes
+  return $ map (RemoteSocket defaultRTVHost . show) portsForAllNodes
  where
   showPorts :: [Int] -> Text
   showPorts ports = T.intercalate ", " $ map (T.pack . show) ports
@@ -424,6 +436,17 @@ askAboutFirstPort = do
     else
       return port
 
+askAboutRTViewMachineHost :: IO String
+askAboutRTViewMachineHost = do
+  host <- T.strip <$> TIO.getLine
+  if T.null host
+    then do
+      TIO.putStrLn "Ok, default host will be used."
+      return  defaultRTVHost
+    else do
+      TIO.putStrLn $ "Ok, it is assumed that RTView will be launched on the host \"" <> host <> "\"."
+      return $ T.unpack host
+
 askAboutStaticDir :: IO FilePath
 askAboutStaticDir = do
   dir <- T.strip <$> TIO.getLine
@@ -435,8 +458,8 @@ askAboutStaticDir = do
       TIO.putStrLn $ "Ok, static content will be taken from directory \"" <> dir <> "\"."
       return $ T.unpack dir
 
-showChangesInNodeConfiguration :: Configuration -> IO ()
-showChangesInNodeConfiguration config = do
+showChangesInNodeConfiguration :: Configuration -> String -> IO ()
+showChangesInNodeConfiguration config rtViewMachineHost = do
   colorize Magenta BoldIntensity $ do
     TIO.putStrLn ""
     aPath <- savedConfigurationFile
@@ -499,10 +522,10 @@ showChangesInNodeConfiguration config = do
     forM_ acceptors $ \(RemoteAddrNamed _ addr) -> colorize Yellow BoldIntensity $ do
       TIO.putStrLn       "   traceForwardTo:"
       case addr of
-        RemoteSocket host port -> do
+        RemoteSocket _ port -> do
           TIO.putStrLn   "     tag: RemoteSocket"
           TIO.putStrLn   "     contents:"
-          TIO.putStrLn $ "       - \"" <> T.pack host <> "\""
+          TIO.putStrLn $ "       - \"" <> T.pack rtViewMachineHost <> "\""
           TIO.putStrLn $ "       - \"" <> T.pack port <> "\""
         RemotePipe path -> do
           TIO.putStrLn   "     tag: RemotePipe"
