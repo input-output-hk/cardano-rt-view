@@ -262,7 +262,7 @@ defaultFirstPortForSockets :: Int
 defaultFirstPortForSockets = 3000
 
 defaultRTVHost :: String
-defaultRTVHost = "127.0.0.1"
+defaultRTVHost = "0.0.0.0"
 
 minimumPort, maximumPort :: Int
 minimumPort = 1024
