@@ -44,7 +44,7 @@ After you run an executable `cardano-rt-view`, an interactive dialog will be sta
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- RTView: real-time watching for Cardano nodes 
+ RTView: real-time watching for Cardano nodes
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Let's configure RTView...
@@ -94,9 +94,17 @@ Ok, sockets will be used. Indicate the port base to listen for connections (1024
 
 The base port will be used for the first node that forwards its metrics to RTView. For example, if you will launch three `cardano-node` processes (`node-1`, `node-2`, and `node-3`) that will forward their metrics using network sockets, this is how they will be connected to RTView:
 
-1. `node-1` -> `http://127.0.0.1:3000`
-1. `node-2` -> `http://127.0.0.1:3001`
-1. `node-3` -> `http://127.0.0.1:3002`
+1. `node-1` -> `0.0.0.0:3000`
+1. `node-2` -> `0.0.0.0:3001`
+1. `node-3` -> `0.0.0.0:3002`
+
+The next question is:
+
+```
+Now, indicate a host of machine RTView will be launched on (default is 0.0.0.0):
+```
+
+If your nodes are launched on the same machine with RTView, you can choose the default address. But if RTView will be launched on another machine, please specify its IP address. It will allow your nodes to connect with RTView. In this case, it is assumed that a machine with RTView is accessible.
 
 The last question is:
 
