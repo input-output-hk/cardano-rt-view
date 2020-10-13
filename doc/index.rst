@@ -34,6 +34,14 @@ cardano-rt-view
 
 .. toctree::
    :maxdepth: 3
+   :caption: Use Cases
+   :titlesonly:
+   :hidden:
+
+   use-cases/different-machines
+
+.. toctree::
+   :maxdepth: 3
    :caption: Technical Details
    :titlesonly:
    :hidden:
