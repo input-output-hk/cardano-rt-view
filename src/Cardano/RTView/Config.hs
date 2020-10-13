@@ -21,10 +21,10 @@ import           Data.Text.IO as TIO
 import           Data.Yaml (ParseException, decodeFileEither, encodeFile)
 import           System.Console.ANSI (Color (..), ColorIntensity (..), ConsoleIntensity (..),
                                       ConsoleLayer (..), SGR (..), setSGR)
-import           System.Directory (XdgDirectory (..), doesFileExist,
+import           System.Directory (XdgDirectory (..), createDirectoryIfMissing, doesFileExist,
                                    getTemporaryDirectory, getXdgDirectory)
 #if !defined(mingw32_HOST_OS)
-import           System.Directory (createDirectoryIfMissing, listDirectory, removeFile)
+import           System.Directory (listDirectory, removeFile)
 #endif
 
 import           System.FilePath ((</>))
@@ -105,7 +105,7 @@ readRTViewParamsFile pathToParams =
                                          <> pathToParams <> ", exception: " <> show e
     Right (params :: RTViewParams) -> return params
 
--- | If `cardano-rt-view` already ws used on this computer,
+-- | If `cardano-rt-view` already was used on this computer,
 --   the configuration was saved in user's local directory, which
 --   differs on different platforms.
 savedConfigurationFile :: IO FilePath
@@ -114,11 +114,13 @@ savedConfigurationFile = do
   -- On non-Windows systems, the default is ~/.config.
   -- On Windows, the default is %APPDATA% (e.g. C:/Users/<user>/AppData/Roaming).
   dir <- getXdgDirectory XdgConfig ""
+  createDirectoryIfMissing True dir
   return $ dir </> "rt-view.yaml"
 
 savedRTViewParamsFile :: IO FilePath
 savedRTViewParamsFile = do
   dir <- getXdgDirectory XdgConfig ""
+  createDirectoryIfMissing True dir
   return $ dir </> "rt-view-params.yaml"
 
 checkIfPreviousConfigExists :: IO (Maybe (Configuration, RTViewParams))
