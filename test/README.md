@@ -60,7 +60,7 @@ Run `./runTest.sh <options> PATH_TO_SELENIUM_SERVER_JAR` script which launches:
 3. `selenium-server-standalone` process (in the background),
 4. `analyzer` process.
 
-(<options> can be something like `--stack-nix` or `--nix` to select the builder)
+(<options> can be something like `--nix` to select the builder)
 
 `analyzer` process launches Firefox web browser and sends corresponding web-commands to it. The results returned by `analyzer` are the results of the test.
 
