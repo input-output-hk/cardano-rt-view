@@ -2,7 +2,7 @@
 
 RTView is a program implemented in the Haskell programming language. There are different ways how to build it from scratch, but this guide describes two recommended methods:
 
-1. Using `stack`;
+1. Using `cabal`;
 2. Using `nix`.
 
 ## Prerequisites
@@ -21,25 +21,49 @@ Clone RTView repository:
 git clone https://github.com/input-output-hk/cardano-rt-view.git
 ```
 
-## Building using stack
+## Building using cabal
 
-Stack is a cross-platform program for developing Haskell projects. Please install it on your platform following [these instructions](https://docs.haskellstack.org/en/stable/README/#how-to-install).
+### Install GHC and cabal
 
-Go to the repository directory and run:
+It is recommended to use [ghcup](https://www.haskell.org/ghcup/) to install GHC and cabal on your computer. Run this command (as a user other than `root`):
 
 ```
-stack build
+curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+```
+
+and follow the onscreen instructions. Please do not forget to restart your terminal to activate changes in your `PATH` variable.
+
+Now install and activate the required GHC version:
+
+```
+ghcup install ghc 8.6.5
+ghcup set ghc 8.6.5
+```
+
+Check GHC version:
+
+```
+ghc --version
+The Glorious Glasgow Haskell Compilation System, version 8.6.5
+```
+
+### Building RTView
+
+Now go to the repository directory and run:
+
+```
+cabal build all
 ```
 
 After the build is finished, you can run RTView using this command:
 
 ```
-stack exec -- cardano-rt-view
+cabal exec -- cardano-rt-view
 ```
 
 ## Building using nix
 
-Nix is a powerful package manager for Linux and other Unix systems that makes package management reliable and reproducible. Please note that you **cannot** use `nix` on Windows (use `stack` instead).
+Nix is a powerful package manager for Linux and other Unix systems that makes package management reliable and reproducible. Please note that you **cannot** use `nix` on Windows (use `cabal` instead).
 
 The quickest way to install Nix is to run the following command (as a user other than `root` with `sudo` permission):
 
