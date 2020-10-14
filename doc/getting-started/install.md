@@ -104,7 +104,7 @@ The next question is:
 Now, indicate a host of machine RTView will be launched on (default is 0.0.0.0):
 ```
 
-If your nodes are launched on the same machine with RTView, you can choose the default address. But if RTView will be launched on another machine, please specify its IP address. It will allow your nodes to connect with RTView. In this case, it is assumed that a machine with RTView is accessible.
+If your nodes are launched on the same machine with RTView, you can choose the default address. But if RTView will be launched on another machine, please specify its reachable public IP address. It will allow your nodes to connect with RTView. In this case, it is assumed that a machine with RTView is accessible using that IP address.
 
 The last question is:
 
