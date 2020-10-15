@@ -1,6 +1,8 @@
 .. raw:: html
 
    <p align="center">
+     <a href="https://github.com/input-output-hk/cardano-rt-view/releases"><img src="https://img.shields.io/github/release-pre/input-output-hk/cardano-rt-view.svg?style=for-the-badge" /></a>
+     &nbsp;
      <a href="https://buildkite.com/input-output-hk/cardano-rt-view"><img src="https://img.shields.io/buildkite/b1c1ebf2b0fd1cccfff286e1343dc610bd81925558449e21f2/master?label=BUILD&style=for-the-badge"/></a>
      &nbsp;
      <a href="https://github.com/input-output-hk/cardano-rt-view/issues"><img src="https://img.shields.io/github/issues/input-output-hk/cardano-rt-view?style=for-the-badge"></a>
@@ -45,12 +47,12 @@ Also, you can download the latest CI builds from Hydra:
 
 1. `Windows <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-win64-release/latest/download/1>`_
 2. `Linux <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-linux-release/latest/download/1>`_
-3. `macOS <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-darwin-release/latest/download/1>`_.
+3. `macOS <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-darwin-release/latest/download/1>`_
 
 Documentation
 =============
 
-Official documentation is published `here <https://docs.cardano.org/projects/cardano-rt-view/en/latest/>`_. But you can also read this documentation right `on GitHub <https://github.com/input-output-hk/cardano-rt-view/tree/master/doc>`_.
+The documentation is published `here <https://docs.cardano.org/en/latest/rt-view/rt-view.html>`_. But you can also read this documentation right `on GitHub <https://github.com/input-output-hk/cardano-rt-view/tree/master/doc>`_.
 
 .. raw:: html
 
