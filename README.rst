@@ -52,7 +52,22 @@ Also, you can download the latest CI builds from Hydra:
 Documentation
 =============
 
-The documentation is published `here <https://docs.cardano.org/en/latest/rt-view/rt-view.html>`_. But you can also read this documentation right `on GitHub <https://github.com/input-output-hk/cardano-rt-view/tree/master/doc>`_.
+Recommended topics:
+
+* `Overview <https://docs.cardano.org/en/latest/rt-view/rt-view.html>`_
+* `Quick start <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/install.md>`_
+* `Configure your nodes <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/node-configuration.md>`_
+* `GUI overview <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/gui-overview/overview.md>`_
+
+Additional topics:
+
+* `Build RTView from sources <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/building-rt-view-from-sources.md>`_
+* `Learn more about RTView configuration <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/rt-view-configuration.md>`_
+* `Understanding node's metrics <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/technical-details/understanding-metrics.md>`_
+
+Use cases:
+
+* `Distributed mode: step by step <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/use-cases/different-machines.md>`_
 
 .. raw:: html
 
