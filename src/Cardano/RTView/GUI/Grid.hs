@@ -7,11 +7,11 @@ module Cardano.RTView.GUI.Grid
     , allMetricsNames
     ) where
 
-import           Cardano.Prelude
-import           Prelude (String)
-
+import           Control.Monad (forM)
 import           Data.Map.Strict ((!))
 import qualified Data.Map.Strict as Map
+import           Data.String (String)
+import           Data.Text (Text)
 import qualified Data.Text as T
 
 import qualified Graphics.UI.Threepenny as UI

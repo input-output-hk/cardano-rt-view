@@ -19,8 +19,8 @@ module Cardano.RTView.GUI.Charts
     , updateNetworkUsageChartJS
     ) where
 
-import           Cardano.Prelude
-import           Prelude (String)
+import           Data.List (concat)
+import           Data.String (String)
 
 prepareChartsJS :: String
 prepareChartsJS = concat

@@ -5,18 +5,18 @@ module Cardano.RTView.GUI.CSS.Style
     ( ownCSS
     ) where
 
-import           Cardano.Prelude hiding (Selector, link, (**))
-import qualified Prelude as P hiding ((**))
+import           Prelude hiding ((**))
 
 import           Clay
 import qualified Clay.Media as M
 import           Clay.Selector (Selector, selectorFromText)
+import           Data.Monoid ((<>))
 import           Data.Text (pack, unpack)
 import qualified Data.Text.Lazy as TL
 
 import           Cardano.RTView.GUI.Elements (HTMLClass (..), HTMLW3Class (..))
 
-ownCSS :: P.String
+ownCSS :: String
 ownCSS = unpack . TL.toStrict . render $ do
   importUrl "'http://fonts.googleapis.com/css?family=Roboto Condensed'"
 

@@ -5,11 +5,11 @@ module Cardano.RTView.GUI.Pane
     ( mkNodePane
     ) where
 
-import           Cardano.Prelude
+import           Control.Monad (forM, forM_, void)
 import qualified Data.Map.Strict as Map
+import           Data.String (String)
+import           Data.Text (Text)
 import qualified Data.Text as T
-import           Prelude (String)
-
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, ( # ), ( #+ ),
                                               ( #. ))

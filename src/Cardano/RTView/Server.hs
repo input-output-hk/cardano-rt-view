@@ -5,9 +5,9 @@ module Cardano.RTView.Server
     ( launchServer
     ) where
 
-import           Cardano.Prelude hiding (readMVar)
-
 import           Control.Concurrent.MVar.Strict (MVar, readMVar)
+import           Control.Monad (void)
+import           Control.Monad.IO.Class (liftIO)
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (UI, onEvent, set, ( # ), ( #+ ))
 import           Graphics.UI.Threepenny.Timer (interval, start, tick, timer)

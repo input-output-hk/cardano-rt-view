@@ -9,11 +9,11 @@ module Cardano.RTView.ErrorBuffer
     , unrealize
     ) where
 
-import           Cardano.Prelude hiding (modifyMVar, newMVar, readMVar)
-
 import           Control.Concurrent.MVar (MVar, modifyMVar, newMVar, readMVar)
 import qualified Control.Concurrent.STM.TBQueue as TBQ
-
+import           Control.Monad (when)
+import           Control.Monad.STM (atomically)
+import           Numeric.Natural (Natural)
 import           Data.Aeson (FromJSON)
 import qualified Data.Text.IO as TIO
 import           System.IO (stderr)

@@ -16,7 +16,18 @@ module Cardano.RTView.NodeState.Updater
     ( launchNodeStateUpdater
     ) where
 
-import           Cardano.Prelude hiding (modifyMVar_)
+import           Control.Concurrent (threadDelay)
+import           Control.Concurrent.MVar.Strict (MVar, modifyMVar_)
+import           Control.Monad (forever, forM_)
+import qualified Data.Aeson as A
+import           Data.List ((!!))
+import           Data.Map.Strict ((!?))
+import qualified Data.Map.Strict as Map
+import           Data.Text (Text)
+import qualified Data.Text as T
+import           Data.Time.Clock (NominalDiffTime, diffUTCTime)
+import           Data.Word (Word64)
+import           GHC.Clock (getMonotonicTimeNSec)
 
 import           Cardano.BM.Backend.Switchboard (Switchboard, readLogBuffer)
 import           Cardano.BM.Data.Aggregated (Measurable (..))
@@ -24,14 +35,6 @@ import           Cardano.BM.Data.Counter (Platform (..))
 import           Cardano.BM.Data.LogItem (LOContent (..), LOMeta (..), LogObject (..),
                                           MonitorAction (..), utc2ns)
 import           Cardano.BM.Trace (Trace)
-import           Control.Concurrent.MVar.Strict (MVar, modifyMVar_)
-import qualified Data.Aeson as A
-import           Data.List ((!!))
-import           Data.Map.Strict ((!?))
-import qualified Data.Map.Strict as Map
-import qualified Data.Text as T
-import           Data.Time.Clock (NominalDiffTime, diffUTCTime)
-import           GHC.Clock (getMonotonicTimeNSec)
 
 import           Cardano.RTView.ErrorBuffer (ErrorBuffer, readErrorBuffer)
 import           Cardano.RTView.NodeState.Parsers (extractPeersInfo)

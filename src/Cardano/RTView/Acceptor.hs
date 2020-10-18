@@ -4,12 +4,14 @@ module Cardano.RTView.Acceptor
     ( launchMetricsAcceptor
     ) where
 
-import           Cardano.Prelude
+import           Control.Concurrent (threadDelay)
+import           Control.Monad (forever)
+import           Data.Text (Text)
 
 import           Cardano.BM.Backend.Switchboard (Switchboard)
 import qualified Cardano.BM.Backend.TraceAcceptor as TraceAcceptor
 import           Cardano.BM.Configuration (Configuration)
-import           Cardano.BM.IOManager
+import           Cardano.BM.IOManager (withIOManager)
 import           Cardano.BM.Plugin (loadPlugin)
 import           Cardano.BM.Trace (Trace)
 

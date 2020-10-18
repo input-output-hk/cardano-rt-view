@@ -14,9 +14,7 @@ module Cardano.RTView.CLI
     , parseRTViewParams
     ) where
 
-import           Cardano.Prelude hiding (option)
-import           Prelude (String)
-
+import           Data.Word (Word64)
 import           Data.Yaml (FromJSON, ToJSON)
 import           GHC.Generics (Generic)
 

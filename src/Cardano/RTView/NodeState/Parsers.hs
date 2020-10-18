@@ -5,10 +5,9 @@ module Cardano.RTView.NodeState.Parsers
     ( extractPeersInfo
     ) where
 
-import           Cardano.Prelude
-
 import           Data.Aeson (Object, (.:))
 import qualified Data.Aeson as A
+import           Data.Text (Text)
 import qualified Data.Text as T
 
 import           Cardano.RTView.NodeState.Types (PeerInfo (..))

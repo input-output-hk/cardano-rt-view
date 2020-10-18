@@ -6,19 +6,25 @@ module Cardano.RTView.GUI.Updater
     ( updateGUI
     ) where
 
-import           Cardano.Prelude hiding ((%))
+import           Control.Monad (void, forM, forM_)
+import           Control.Monad.IO.Class (liftIO)
 import qualified Data.List as L
+import           Data.Maybe (Maybe (..), isJust)
 import           Data.Map.Strict ((!))
-import           Data.Text (unpack)
+import           Data.String (String)
+import           Data.Text (Text, pack, unpack)
 import           Data.Time.Calendar (Day (..), diffDays)
 import           Data.Time.Clock (NominalDiffTime, UTCTime (..), addUTCTime)
 import           Data.Time.Format (defaultTimeLocale, formatTime)
+import           Data.Word (Word64)
 import           Formatting (fixed, sformat, (%))
 import           GHC.Clock (getMonotonicTimeNSec)
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, children, element, set, style, text,
                                               ( # ), ( #+ ), ( #. ))
-import           Prelude (String)
+
+import           Cardano.BM.Data.Configuration (RemoteAddr (..), RemoteAddrNamed (..))
+import           Cardano.BM.Data.Severity (Severity (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..))
 import qualified Cardano.RTView.GUI.Charts as Chart
@@ -31,8 +37,6 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..
 import           Cardano.RTView.NodeState.Types (NodeError (..), NodeInfo (..),
                                                  NodeMetrics (..), NodeState (..),
                                                  NodesState, PeerInfo (..))
-import           Cardano.BM.Data.Configuration (RemoteAddr (..), RemoteAddrNamed (..))
-import           Cardano.BM.Data.Severity (Severity (..))
 
 -- | This function is calling by the timer. It updates the node' state elements
 --   on the page automatically, because threepenny-gui is based on websockets.
@@ -454,14 +458,20 @@ updateCharts window nameOfNode ni nm = do
   timeInSec :: Double
   timeInSec = fromIntegral (niUpTime ni) / 1000000000
 
-  mN = show MemoryUsageChartId  <> nameOfNode
-  cN = show CPUUsageChartId     <> nameOfNode
-  dN = show DiskUsageChartId    <> nameOfNode
-  nN = show NetworkUsageChartId <> nameOfNode
+  mN = showt MemoryUsageChartId  <> nameOfNode
+  cN = showt CPUUsageChartId     <> nameOfNode
+  dN = showt DiskUsageChartId    <> nameOfNode
+  nN = showt NetworkUsageChartId <> nameOfNode
 
-  mGN = show GridMemoryUsageChartId  <> nameOfNode
-  cGN = show GridCPUUsageChartId     <> nameOfNode
-  dGN = show GridDiskUsageChartId    <> nameOfNode
-  nGN = show GridNetworkUsageChartId <> nameOfNode
+  mGN = showt GridMemoryUsageChartId  <> nameOfNode
+  cGN = showt GridCPUUsageChartId     <> nameOfNode
+  dGN = showt GridDiskUsageChartId    <> nameOfNode
+  nGN = showt GridNetworkUsageChartId <> nameOfNode
+
+  showt :: Show a => a -> Text
+  showt = pack . show
 
   elementExists anId = isJust <$> UI.getElementById window (unpack anId)
+
+  ifM :: Monad m => m Bool -> m a -> m a -> m a
+  ifM b t f = do b' <- b; if b' then t else f

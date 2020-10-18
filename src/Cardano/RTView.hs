@@ -4,10 +4,10 @@ module Cardano.RTView
     ( runCardanoRTView
     ) where
 
-import           Cardano.Prelude hiding (newMVar)
-
 import           Control.Concurrent.Async (async, waitAnyCancel)
 import           Control.Concurrent.MVar.Strict (MVar, newMVar)
+import           Control.Monad (void)
+import           Data.Text (Text)
 import qualified Data.Text.IO as TIO
 
 import           Cardano.BM.Backend.Switchboard (addUserDefinedBackend)

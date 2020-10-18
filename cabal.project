@@ -10,14 +10,6 @@ allow-newer: base
 -- always write GHC env files, because they are needed by the doctests.
 write-ghc-environment-files: always
 
-package cardano-config
-  ghc-options: -Werror -Wall -Wredundant-constraints -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields
-
-package cryptonite
-  -- Using RDRAND instead of /dev/urandom as an entropy source for key
-  -- generation is dubious. Set the flag so we use /dev/urandom by default.
-  flags: -support_rdrand
-
 -- ---------------------------------------------------------
 -- Disable all tests by default
 
@@ -32,41 +24,10 @@ package cardano-rt-view
 
 -- required for nix:
 
-package byron-spec-ledger
-  tests: False
-
-package ouroboros-consensus-test
-  tests: False
-
-package ouroboros-consensus-cardano-test
-  tests: False
-
 package ouroboros-network
   tests: False
 
-package ouroboros-network-framework
-  tests: False
-
-package small-steps
-  tests: False
-
-package small-steps-test
-  tests: False
-
 ---------- 8< -----------
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/cardano-prelude
-  tag: 0c5b0a6619fadf22f4d62a12154e181a6d035c1c
-  --sha256: 0qjn7xsw5py05zmq9935z91719v5i4apsizwhkwppi8dahbanrs4
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/cardano-prelude
-  tag: 0c5b0a6619fadf22f4d62a12154e181a6d035c1c
-  --sha256: 0qjn7xsw5py05zmq9935z91719v5i4apsizwhkwppi8dahbanrs4
-  subdir: test
-
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/iohk-monitoring-framework
@@ -80,13 +41,6 @@ source-repository-package
   tag: 86f2dfc8db25133c95494318fe656155ac6a5754
   --sha256: 0zbmpg5ircgy80ss57aa4nqfk0p0k01y3chdjqs41s52swiypss5
   subdir:   contra-tracer
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: 86f2dfc8db25133c95494318fe656155ac6a5754
-  --sha256: 0zbmpg5ircgy80ss57aa4nqfk0p0k01y3chdjqs41s52swiypss5
-  subdir:   plugins/scribe-systemd
 
 source-repository-package
   type: git
@@ -108,25 +62,3 @@ source-repository-package
   tag: 7cda58405b6ee0d335b11e88e5c9989c7a3a6e03
   --sha256: 0zxmp001mixrba1fzjgzcjf6vl6i5d3q837267njyvmkajdrxgx7
   subdir: Win32-network
-
-source-repository-package
-  type: git
-  location: https://github.com/snoyberg/http-client.git
-  tag: 1a75bdfca014723dd5d40760fad854b3f0f37156
-  --sha256: 0537bjhk9bzhvl76haswsv7xkkyzrmv5xfph3fydcd953q08hqdb
-  subdir: http-client
-
-constraints:
-  -- cardano-node's constraints:
-    hedgehog >= 1.0
-  , bimap >= 0.4.0
-  , brick >= 0.47
-  , libsystemd-journal >= 1.4.4
-  , systemd >= 2.3.0
-  -- Local extras over cardano-node:
-  , katip >= 0.8.4.0
-  , quiet >= 0.2
-  , vty < 5.27
-
-package comonad
-  flags: -test-doctests

@@ -1,7 +1,5 @@
-import           Cardano.Prelude
-
-import           Options.Applicative (ParserInfo, customExecParser, fullDesc, header, helper, info,
-                                      prefs, showHelpOnEmpty)
+import           Options.Applicative (ParserInfo, (<**>), customExecParser, fullDesc, header,
+                                      helper, info, prefs, showHelpOnEmpty)
 
 import           Cardano.RTView (runCardanoRTView)
 import           Cardano.RTView.CLI (RTViewParams, parseRTViewParams)

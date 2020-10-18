@@ -6,15 +6,15 @@ module Cardano.RTView.GUI.Markup
     ( mkPageBody
     ) where
 
-import           Cardano.Prelude
-import           Prelude (String)
-
+import           Control.Monad (forM, forM_, void, when)
+import           Data.String (String)
+import           Data.Text (Text)
 import qualified Data.Text as T
-
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, ( # ), ( #+ ),
                                               ( #. ))
 
+import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 import qualified Cardano.RTView.GUI.Charts as Chart
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
                                               HTMLId (..), HTMLW3Class (..),
@@ -23,7 +23,6 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
                                               showRow, ( ## ), (<+>))
 import           Cardano.RTView.GUI.Grid (allMetricsNames, metricLabel, mkNodesGrid)
 import           Cardano.RTView.GUI.Pane (mkNodePane)
-import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
 mkPageBody
   :: UI.Window
@@ -127,23 +126,26 @@ mkPageBody window acceptors = do
     toggleViewMode window "gridMode" panes [element gridNodes] panesAreas
     forElementWithId window (show SelectMetricButton) showIt
     forM_ acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
-      UI.runFunction $ UI.ffi Chart.gridMemoryUsageChartJS  (show GridMemoryUsageChartId  <> nameOfNode)
-      UI.runFunction $ UI.ffi Chart.gridCPUUsageChartJS     (show GridCPUUsageChartId     <> nameOfNode)
-      UI.runFunction $ UI.ffi Chart.gridDiskUsageChartJS    (show GridDiskUsageChartId    <> nameOfNode)
-      UI.runFunction $ UI.ffi Chart.gridNetworkUsageChartJS (show GridNetworkUsageChartId <> nameOfNode)
+      UI.runFunction $ UI.ffi Chart.gridMemoryUsageChartJS  (showt GridMemoryUsageChartId  <> nameOfNode)
+      UI.runFunction $ UI.ffi Chart.gridCPUUsageChartJS     (showt GridCPUUsageChartId     <> nameOfNode)
+      UI.runFunction $ UI.ffi Chart.gridDiskUsageChartJS    (showt GridDiskUsageChartId    <> nameOfNode)
+      UI.runFunction $ UI.ffi Chart.gridNetworkUsageChartJS (showt GridNetworkUsageChartId <> nameOfNode)
 
   forM_ acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
     -- Charts for different metrics.
-    UI.runFunction $ UI.ffi Chart.memoryUsageChartJS  (show MemoryUsageChartId  <> nameOfNode)
-    UI.runFunction $ UI.ffi Chart.cpuUsageChartJS     (show CPUUsageChartId     <> nameOfNode)
-    UI.runFunction $ UI.ffi Chart.diskUsageChartJS    (show DiskUsageChartId    <> nameOfNode)
-    UI.runFunction $ UI.ffi Chart.networkUsageChartJS (show NetworkUsageChartId <> nameOfNode)
+    UI.runFunction $ UI.ffi Chart.memoryUsageChartJS  (showt MemoryUsageChartId  <> nameOfNode)
+    UI.runFunction $ UI.ffi Chart.cpuUsageChartJS     (showt CPUUsageChartId     <> nameOfNode)
+    UI.runFunction $ UI.ffi Chart.diskUsageChartJS    (showt DiskUsageChartId    <> nameOfNode)
+    UI.runFunction $ UI.ffi Chart.networkUsageChartJS (showt NetworkUsageChartId <> nameOfNode)
 
   nodesStateElems
     <- forM nodePanesWithElems $ \(nameOfNode, _, nodeStateElems, peerInfoItems) ->
          return (nameOfNode, nodeStateElems, peerInfoItems)
 
   return (body, (nodesStateElems, gridNodesStateElems))
+ where
+  showt :: Show a => a -> Text
+  showt = T.pack . show
 
 topNavigation
   :: [UI Element]

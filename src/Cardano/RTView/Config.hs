@@ -7,12 +7,11 @@ module Cardano.RTView.Config
     ( prepareConfigAndParams
     ) where
 
-import           Cardano.Prelude
-import           Prelude (String)
-
 #if !defined(mingw32_HOST_OS)
 import           Control.Monad (forM_)
 #endif
+import           Control.Exception (IOException, catch)
+import           Control.Monad (unless, void, when)
 import           Data.List (nub, nubBy)
 import           Data.Maybe (fromJust)
 import           Data.Text (Text)
@@ -34,7 +33,7 @@ import           System.FilePath (dropDrive)
 import           System.FilePath (takeDirectory)
 #endif
 import qualified System.Exit as Ex
-import           System.IO (hFlush)
+import           System.IO (hFlush, stdout)
 import           Text.Read (readMaybe)
 
 import           Cardano.BM.Configuration (Configuration, getAcceptAt, setup)
@@ -160,9 +159,9 @@ startDialogToPrepareConfig = do
   colorize Green BoldIntensity $ do
     TIO.putStrLn ""
     TIO.putStr $ "How many nodes will you connect (1 - "
-               <> show maximumNode <> ", default is " <> show defaultNodesNumber <> "): "
+               <> showt maximumNode <> ", default is " <> showt defaultNodesNumber <> "): "
   nodesNumber <- askAboutNodesNumber
-  TIO.putStrLn $ "Ok, " <> show nodesNumber <> " nodes."
+  TIO.putStrLn $ "Ok, " <> showt nodesNumber <> " nodes."
 
   colorize Green BoldIntensity $ do
     TIO.putStrLn ""
@@ -176,12 +175,12 @@ startDialogToPrepareConfig = do
 
   colorize Green BoldIntensity $ do
     TIO.putStrLn ""
-    TIO.putStr $ "Indicate the port for the web server (" <> show minimumPort
-               <> " - " <> show maximumPort <> ", default is "
-               <> show defaultRTVPort <> "): "
+    TIO.putStr $ "Indicate the port for the web server (" <> showt minimumPort
+               <> " - " <> showt maximumPort <> ", default is "
+               <> showt defaultRTVPort <> "): "
   port <- askAboutWebPort
   TIO.putStrLn $ "Ok, the web-page will be available on http://"
-                 <> T.pack defaultRTVHost <> ":" <> show port
+                 <> T.pack defaultRTVHost <> ":" <> showt port
                  <> ", on the machine RTView will be launched on."
 
   colorize Green BoldIntensity $ do
@@ -197,8 +196,8 @@ startDialogToPrepareConfig = do
       return (addrs, defaultRTVHost)
     Socket -> do
       TIO.putStr $ "Ok, sockets will be used. Indicate the port base to listen for connections ("
-                   <> show minimumPort <> " - " <> show maximumPort <> ", default is "
-                   <> show defaultFirstPortForSockets <> "): "
+                   <> showt minimumPort <> " - " <> showt maximumPort <> ", default is "
+                   <> showt defaultFirstPortForSockets <> "): "
       hFlush stdout
       addrsWithDefaultHost <- askAboutFirstPortForSockets nodesNumber
       TIO.putStr $ "Now, indicate a host of machine RTView will be launched on (default is "
@@ -254,7 +253,7 @@ defaultNodeNamePrefix :: Text
 defaultNodeNamePrefix = "node-"
 
 defaultNodesNames :: Int -> [Text]
-defaultNodesNames nodesNum = map (\nNum -> defaultNodeNamePrefix <> show nNum) [1 .. nodesNum]
+defaultNodesNames nodesNum = map (\nNum -> defaultNodeNamePrefix <> showt nNum) [1 .. nodesNum]
 
 showDefaultNodesNames :: Int -> Text
 showDefaultNodesNames nodesNumber =
@@ -297,7 +296,7 @@ askAboutNodesNumber = do
     then do
       colorize Red NormalIntensity $
         TIO.putStrLn $ "Wrong number of nodes, please input the number from 1 to "
-                       <> show maximumNode <> ": "
+                       <> showt maximumNode <> ": "
       askAboutNodesNumber
     else
       return nodesNumber
@@ -313,12 +312,12 @@ askAboutNodesNames nodesNumber = askNodeNames 1
                            <> "\" will be used."
             return $ defaultNodesNames nodesNumber
         | i == nodesNumber -> do
-            let last :: Text
-                last = if nodesNumber == 1 then "" else "last "
-            TIO.putStrLn $ "Ok, the " <> last <> "node has name \"" <> aName <> "\"."
+            let theLast :: Text
+                theLast = if nodesNumber == 1 then "" else "last "
+            TIO.putStrLn $ "Ok, the " <> theLast <> "node has name \"" <> aName <> "\"."
             return [aName]
         | otherwise -> do
-            TIO.putStr $ "Ok, node " <> show i <> " has name \"" <> aName
+            TIO.putStr $ "Ok, node " <> showt i <> " has name \"" <> aName
                          <> "\", input the next one: "
             hFlush stdout
             names <- askNodeNames (i + 1)
@@ -357,8 +356,8 @@ askAboutWebPort = do
   if port < minimumPort || port > maximumPort
     then do
       colorize Red NormalIntensity $
-        TIO.putStr $ "Please choose the port between " <> show minimumPort <> " and "
-                     <> show maximumPort <> ": "
+        TIO.putStr $ "Please choose the port between " <> showt minimumPort <> " and "
+                     <> showt maximumPort <> ": "
       askAboutWebPort
     else
       return port
@@ -415,7 +414,7 @@ askAboutFirstPortForSockets nodesNumber = do
   return $ map (RemoteSocket defaultRTVHost . show) portsForAllNodes
  where
   showPorts :: [Int] -> Text
-  showPorts ports = T.intercalate ", " $ map (T.pack . show) ports
+  showPorts ports = T.intercalate ", " $ map showt ports
 
 askAboutFirstPort :: IO Int
 askAboutFirstPort = do
@@ -432,8 +431,8 @@ askAboutFirstPort = do
   if port < minimumPort || port > maximumPort
     then do
       colorize Red NormalIntensity $
-        TIO.putStr $ "Please choose the port between " <> show minimumPort <> " and "
-                     <> show maximumPort <> ": "
+        TIO.putStr $ "Please choose the port between " <> showt minimumPort <> " and "
+                     <> showt maximumPort <> ": "
       askAboutFirstPort
     else
       return port
@@ -513,8 +512,8 @@ showChangesInNodeConfiguration config rtViewMachineHost = do
     let num = length acceptors
         (nNodes :: Text, sections :: Text, its :: Text, nFiles :: Text) =
           if num == 1
-            then ("1 node",             "section",  "its",   "file")
-            else (show num <> " nodes", "sections", "their", "files")
+            then ("1 node",              "section",  "its",   "file")
+            else (showt num <> " nodes", "sections", "their", "files")
     TIO.putStrLn $ "4. Since you have "
                    <> nNodes <> ", add following traceForwardTo "
                    <> sections <> " in the root of "
@@ -618,3 +617,6 @@ colorize color intensity action = do
   action
   setSGR [Reset]
   hFlush stdout -- Truly resets text color to default one.
+
+showt :: Show a => a -> Text
+showt = T.pack . show

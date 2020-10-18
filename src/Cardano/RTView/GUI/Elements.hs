@@ -20,13 +20,13 @@ module Cardano.RTView.GUI.Elements
     , showCell
     ) where
 
-import           Cardano.Prelude hiding (unwords)
 import           Control.DeepSeq (NFData (..), rwhnf)
-import           Data.Map.Strict (Map)
-import           Prelude (Show (..), String, unwords)
-
+import           GHC.Generics (Generic)
 import qualified Graphics.UI.Threepenny as UI
-import           Graphics.UI.Threepenny.Core (Element, UI, ( # ))
+import           Graphics.UI.Threepenny.Core (Element, UI, (#))
+import           Data.Map.Strict (Map)
+import           Data.Text (Text)
+import           Data.Word (Word64)
 
 instance NFData Element where
   rnf = rwhnf
