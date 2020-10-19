@@ -420,7 +420,9 @@ updateCPUTicks ns ticks meta now = ns { nsMetrics = newNm }
   tdiff     = max 0.1 $ fromIntegral (tns - nmCPUNs currentNm) / 1000000000 :: Double
   cpuperc   = fromIntegral (ticks - nmCPULast currentNm) / fromIntegral clktck / tdiff
   clktck    = 100 :: Integer
+#endif
 
+#if defined(DARWIN) || defined(LINUX)
 updateNetworkIn :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
 updateNetworkIn ns inBytes meta now = ns { nsMetrics = newNm }
  where
@@ -464,8 +466,6 @@ updateNetworkOut ns outBytes meta now = ns { nsMetrics = newNm }
   bytesDiffInKB   = bytesDiff / 1024
   currentNetRate  = bytesDiffInKB / timeDiffInSecs
   maxNetRate      = max currentNetRate $ nmNetworkUsageOutMax currentNm
-
-
 #endif
 
 #if defined(DARWIN) || defined(WINDOWS)
