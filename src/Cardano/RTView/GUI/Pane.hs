@@ -43,8 +43,10 @@ mkNodePane nameOfNode = do
   elTxsProcessed            <- string "0"
   elTraceAcceptorEndpoint   <- string "0"
   elOpCertStartKESPeriod    <- string "0"
+  elOpCertExpiryKESPeriod   <- string "0"
   elCurrentKESPeriod        <- string "0"
   elRemainingKESPeriods     <- string "0"
+  elRemainingKESPeriodsInDays <- string "0"
   elMempoolTxsNumber        <- string "0"
   elMempoolTxsPercent       <- string "0"
   elMempoolBytes            <- string "0"
@@ -138,16 +140,20 @@ mkNodePane nameOfNode = do
     <- UI.div #. show TabContainer # hideIt #+
          [ UI.div #. show W3Row #+
              [ UI.div #. show W3Half #+
-                 [ UI.div #+ [string "Start KES period" # set UI.title__ "Certificate KES start period"]
-                 , UI.div #+ [string "KES period"       # set UI.title__ "Current KES period"]
-                 , UI.div #+ [string "KES remaining"    # set UI.title__ "KES periods until expiry"]
+                 [ UI.div #+ [string "Start KES period"    # set UI.title__ "Certificate KES start period"]
+                 , UI.div #+ [string "Expiry KES period"   # set UI.title__ "Certificate KES expiry period"]
+                 , UI.div #+ [string "KES period"          # set UI.title__ "Current KES period"]
+                 , UI.div #+ [string "KES remaining"       # set UI.title__ "KES periods until expiry"]
+                 , UI.div #+ [string "KES remaining, days" # set UI.title__ "KES periods until expiry, in days"]
                  , vSpacer NodeInfoVSpacer
                  ]
              , UI.div #. show W3Half #+
                  [ UI.div #. show NodeInfoValues #+
                      [ UI.div #+ [element elOpCertStartKESPeriod]
+                     , UI.div #+ [element elOpCertExpiryKESPeriod]
                      , UI.div #+ [element elCurrentKESPeriod]
                      , UI.div #+ [element elRemainingKESPeriods]
+                     , UI.div #+ [element elRemainingKESPeriodsInDays]
                      , vSpacer NodeInfoVSpacer
                      ]
                  ]
@@ -491,8 +497,10 @@ mkNodePane nameOfNode = do
           , (ElTxsProcessed,            elTxsProcessed)
           , (ElTraceAcceptorEndpoint,   elTraceAcceptorEndpoint)
           , (ElOpCertStartKESPeriod,    elOpCertStartKESPeriod)
+          , (ElOpCertExpiryKESPeriod,   elOpCertExpiryKESPeriod)
           , (ElCurrentKESPeriod,        elCurrentKESPeriod)
           , (ElRemainingKESPeriods,     elRemainingKESPeriods)
+          , (ElRemainingKESPeriodsInDays, elRemainingKESPeriodsInDays)
           , (ElNodeErrors,              elNodeErrorsList)
           , (ElNodeErrorsTab,           errorsTab)
           , (ElMempoolTxsNumber,        elMempoolTxsNumber)

@@ -88,9 +88,12 @@ data NodeInfo
       , niTraceAcceptorHost              :: !String
       , niTraceAcceptorPort              :: !String
       , niRemainingKESPeriods            :: !Integer
+      , niRemainingKESPeriodsInDays      :: !Integer
       , niRemainingKESPeriodsLastUpdate  :: !Word64
       , niOpCertStartKESPeriod           :: !Integer
       , niOpCertStartKESPeriodLastUpdate :: !Word64
+      , niOpCertExpiryKESPeriod           :: !Integer
+      , niOpCertExpiryKESPeriodLastUpdate :: !Word64
       , niCurrentKESPeriod               :: !Integer
       , niCurrentKESPeriodLastUpdate     :: !Word64
       , niNodeErrors                     :: ![NodeError]
@@ -206,9 +209,12 @@ defaultNodeInfo = NodeInfo
   , niTraceAcceptorHost             = "-"
   , niTraceAcceptorPort             = "-"
   , niRemainingKESPeriods           = 9999999999
+  , niRemainingKESPeriodsInDays     = 9999999999
   , niRemainingKESPeriodsLastUpdate = 0
   , niOpCertStartKESPeriod          = 9999999999
   , niOpCertStartKESPeriodLastUpdate = 0
+  , niOpCertExpiryKESPeriod          = 9999999999
+  , niOpCertExpiryKESPeriodLastUpdate = 0
   , niCurrentKESPeriod              = 9999999999
   , niCurrentKESPeriodLastUpdate    = 0
   , niNodeErrors                    = []

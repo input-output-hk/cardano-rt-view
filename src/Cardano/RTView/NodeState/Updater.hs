@@ -36,6 +36,7 @@ import           Cardano.BM.Data.LogItem (LOContent (..), LOMeta (..), LogObject
                                           MonitorAction (..), utc2ns)
 import           Cardano.BM.Trace (Trace)
 
+import           Cardano.RTView.CLI (RTViewParams (..))
 import           Cardano.RTView.ErrorBuffer (ErrorBuffer, readErrorBuffer)
 import           Cardano.RTView.NodeState.Parsers (extractPeersInfo)
 import           Cardano.RTView.NodeState.Types (NodeError (..), NodeInfo (..),
@@ -48,11 +49,12 @@ import           Cardano.RTView.NodeState.Types (NodeError (..), NodeInfo (..),
 --   in the |NodesState|.
 launchNodeStateUpdater
   :: Trace IO Text
+  -> RTViewParams
   -> Switchboard Text
   -> ErrorBuffer Text
   -> MVar NodesState
   -> IO ()
-launchNodeStateUpdater _tr switchBoard errBuff nsMVar = forever $ do
+launchNodeStateUpdater _tr params switchBoard errBuff nsMVar = forever $ do
   -- logDebug tr "Try to update nodes' state..."
   -- Take current |LogObject|s from the |ErrorBuffer|.
   currentErrLogObjects <- readErrorBuffer errBuff
@@ -61,7 +63,7 @@ launchNodeStateUpdater _tr switchBoard errBuff nsMVar = forever $ do
   -- Take current |LogObject|s from the |LogBuffer|.
   currentLogObjects <- readLogBuffer switchBoard
   forM_ currentLogObjects $ \(loggerName, logObject) ->
-    updateNodesState nsMVar loggerName logObject
+    updateNodesState params nsMVar loggerName logObject
   -- Check for updates in the |LogBuffer| every second.
   threadDelay 1000000
 
@@ -95,11 +97,12 @@ updateNodesStateErrors nsMVar loggerName (LogObject _ aMeta aContent) = do
 
 -- | Update NodeState for particular node based on loggerName.
 updateNodesState
-  :: MVar NodesState
+  :: RTViewParams
+  -> MVar NodesState
   -> Text
   -> LogObject Text
   -> IO ()
-updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
+updateNodesState params nsMVar loggerName (LogObject aName aMeta aContent) = do
   -- Check the name of the node this logObject came from.
   -- It is assumed that configuration contains correct names of remote nodes and
   -- loggers for them, for example:
@@ -193,10 +196,12 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
             case aContent of
               LogValue "operationalCertificateStartKESPeriod" (PureI oCertStartKesPeriod) ->
                 nodesStateWith $ updateCertStartKESPeriod ns oCertStartKesPeriod now
+              LogValue "operationalCertificateExpiryKESPeriod" (PureI oCertExpiryKesPeriod) ->
+                nodesStateWith $ updateCertExpiryKESPeriod ns oCertExpiryKesPeriod now
               LogValue "currentKESPeriod" (PureI currentKesPeriod) ->
                 nodesStateWith $ updateCurrentKESPeriod ns currentKesPeriod now
               LogValue "remainingKESPeriods" (PureI kesPeriodsUntilExpiry) ->
-                nodesStateWith $ updateRemainingKESPeriods ns kesPeriodsUntilExpiry now
+                nodesStateWith $ updateRemainingKESPeriods ns params kesPeriodsUntilExpiry now
               _ -> return currentNodesState
            | "cardano.node.release" `T.isInfixOf` aName ->
             case aContent of
@@ -628,6 +633,16 @@ updateCertStartKESPeriod ns oCertStartKesPeriod now = ns { nsInfo = newNi }
       }
   currentNi = nsInfo ns
 
+updateCertExpiryKESPeriod :: NodeState -> Integer -> Word64 -> NodeState
+updateCertExpiryKESPeriod ns oCertExpiryKesPeriod now = ns { nsInfo = newNi }
+ where
+  newNi =
+    currentNi
+      { niOpCertExpiryKESPeriod = oCertExpiryKesPeriod
+      , niOpCertExpiryKESPeriodLastUpdate = now
+      }
+  currentNi = nsInfo ns
+
 updateCurrentKESPeriod :: NodeState -> Integer -> Word64 -> NodeState
 updateCurrentKESPeriod ns currentKesPeriod now = ns { nsInfo = newNi }
  where
@@ -638,15 +653,21 @@ updateCurrentKESPeriod ns currentKesPeriod now = ns { nsInfo = newNi }
       }
   currentNi = nsInfo ns
 
-updateRemainingKESPeriods :: NodeState -> Integer -> Word64 -> NodeState
-updateRemainingKESPeriods ns kesPeriodsUntilExpiry now = ns { nsInfo = newNi }
+updateRemainingKESPeriods :: NodeState -> RTViewParams -> Integer -> Word64 -> NodeState
+updateRemainingKESPeriods ns params kesPeriodsUntilExpiry now = ns { nsInfo = newNi }
  where
   newNi =
     currentNi
       { niRemainingKESPeriods = kesPeriodsUntilExpiry
+      , niRemainingKESPeriodsInDays = floor remainingInDays
       , niRemainingKESPeriodsLastUpdate = now
       }
   currentNi = nsInfo ns
+  remainingInSeconds =   fromIntegral kesPeriodsUntilExpiry
+                       * rtvSlotLength params
+                       * rtvSlotsPerKESPeriod params
+  remainingInDays :: Double
+  remainingInDays = fromIntegral remainingInSeconds / 3600 / 24
 
 updateChainDensity :: NodeState -> Double -> Word64 -> NodeState
 updateChainDensity ns density now = ns { nsInfo = newNi }
