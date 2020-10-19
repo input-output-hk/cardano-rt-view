@@ -7,11 +7,8 @@ module Cardano.RTView.Config
     ( prepareConfigAndParams
     ) where
 
-#if !defined(mingw32_HOST_OS)
-import           Control.Monad (forM_)
-#endif
 import           Control.Exception (IOException, catch)
-import           Control.Monad (unless, void, when)
+import           Control.Monad (forM_, unless, void, when)
 import           Data.List (nub, nubBy)
 import           Data.Maybe (fromJust)
 import           Data.Text (Text)

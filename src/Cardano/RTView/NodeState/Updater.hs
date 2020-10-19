@@ -293,6 +293,7 @@ updateNodePlatform ns platfid = ns { nsInfo = newNi }
   newNi = currentNi { niNodePlatform = show platform }
   currentNi = nsInfo ns
 
+#ifdef LINUX
 updateMemoryPages :: NodeState -> Integer -> Word64 -> NodeState
 updateMemoryPages ns pages now = ns { nsMetrics = newNm }
  where
@@ -310,6 +311,7 @@ updateMemoryPages ns pages now = ns { nsMetrics = newNm }
   newMaxTotal = max newMax 200.0
   mBytes      = fromIntegral (pages * pageSize) / 1024 / 1024 :: Double
   pageSize    = 4096 :: Integer
+#endif
 
 #ifdef DARWIN
 updateMemoryBytes :: NodeState -> Word64 -> Word64 -> NodeState
@@ -330,6 +332,7 @@ updateMemoryBytes ns bytes now = ns { nsMetrics = newNm }
   mBytes      = fromIntegral bytes / 1024 / 1024 :: Double
 #endif
 
+#ifdef LINUX
 updateDiskRead :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
 updateDiskRead ns bytesWereRead meta now = ns { nsMetrics = newNm }
  where
@@ -418,24 +421,6 @@ updateCPUTicks ns ticks meta now = ns { nsMetrics = newNm }
   cpuperc   = fromIntegral (ticks - nmCPULast currentNm) / fromIntegral clktck / tdiff
   clktck    = 100 :: Integer
 
-#if defined(DARWIN) || defined(WINDOWS)
-updateCPUSecs :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
-updateCPUSecs ns nanosecs meta now = ns { nsMetrics = newNm }
- where
-  newNm =
-    currentNm
-      { nmCPUPercent    = if cpuperc < 0 then 0 else if cpuperc > 20.0 then nmCPUPercent currentNm else cpuperc * 100.0
-      , nmCPULast       = fromIntegral nanosecs
-      , nmCPUNs         = tns
-      , nmCPULastUpdate = now
-      }
-  currentNm = nsMetrics ns
-  tns       = utc2ns $ tstamp meta
-  tdiff     = max 0.1 $ fromIntegral (tns - nmCPUNs currentNm) / 1000000000 :: Double
-  deltacpu  = fromIntegral nanosecs - nmCPULast currentNm
-  cpuperc   = fromIntegral deltacpu / 100000000 / tdiff
-#endif
-
 updateNetworkIn :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
 updateNetworkIn ns inBytes meta now = ns { nsMetrics = newNm }
  where
@@ -479,6 +464,27 @@ updateNetworkOut ns outBytes meta now = ns { nsMetrics = newNm }
   bytesDiffInKB   = bytesDiff / 1024
   currentNetRate  = bytesDiffInKB / timeDiffInSecs
   maxNetRate      = max currentNetRate $ nmNetworkUsageOutMax currentNm
+
+
+#endif
+
+#if defined(DARWIN) || defined(WINDOWS)
+updateCPUSecs :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
+updateCPUSecs ns nanosecs meta now = ns { nsMetrics = newNm }
+ where
+  newNm =
+    currentNm
+      { nmCPUPercent    = if cpuperc < 0 then 0 else if cpuperc > 20.0 then nmCPUPercent currentNm else cpuperc * 100.0
+      , nmCPULast       = fromIntegral nanosecs
+      , nmCPUNs         = tns
+      , nmCPULastUpdate = now
+      }
+  currentNm = nsMetrics ns
+  tns       = utc2ns $ tstamp meta
+  tdiff     = max 0.1 $ fromIntegral (tns - nmCPUNs currentNm) / 1000000000 :: Double
+  deltacpu  = fromIntegral nanosecs - nmCPULast currentNm
+  cpuperc   = fromIntegral deltacpu / 100000000 / tdiff
+#endif
 
 updateMempoolTxs :: NodeState -> Integer -> NodeState
 updateMempoolTxs ns txsInMempool = ns { nsMetrics = newNm }
