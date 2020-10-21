@@ -106,6 +106,24 @@ Now, indicate a host of machine RTView will be launched on (default is 0.0.0.0):
 
 If your nodes are launched on the same machine with RTView, you can choose the default address. But if RTView will be launched on another machine, please specify its reachable public IP address. It will allow your nodes to connect with RTView. In this case, it is assumed that a machine with RTView is accessible using that IP address.
 
+The next question is:
+
+```
+Indicate the number of slots in a KES period (default is 129600):
+```
+
+The number of slots in a KES period is a constant which is taken from your genesis file, please see `slotsPerKESPeriod` value.
+
+The next question is:
+
+```
+Indicate the length of slot, in seconds (default is 1):
+```
+
+The length of slot, in seconds, is a constant which is taken from your genesis file as well, please see `slotLength` value.
+
+These two KES-related values are required to calculate remaining KES periods in days (this value will be shown in `KES` tab in Pane view mode).
+
 The last question is:
 
 ```
