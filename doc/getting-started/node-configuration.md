@@ -11,40 +11,48 @@ After you finished the RTView configuration dialog, it displayed all the changes
 ```
 1. Find setupBackends and add TraceForwarderBK in it:
 
-   setupBackends:
-     - TraceForwarderBK
+   "setupBackends": [
+     "TraceForwarderBK"
+   ]
 
 2. Find TurnOnLogMetrics and set it to True:
 
-   TurnOnLogMetrics: True
+   "TurnOnLogMetrics": true
 
 3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:
 
-   options:
-     mapBackends:
-       cardano.node.metrics:
-         - TraceForwarderBK
-       cardano.node.Forge.metrics:
-         - TraceForwarderBK
+   "options": {
+     "mapBackends": {
+       "cardano.node-metrics": [
+         "TraceForwarderBK"
+       ],
+       "cardano.node.Forge.metrics": [
+         "TraceForwarderBK"
+       ],
+       ...
+     }
 
    For more info about supported metrics please read the documentation.
 
 4. Since you have 3 nodes, add following traceForwardTo sections in the root of their configuration files:
 
-   traceForwardTo:
-     tag: RemotePipe
-     contents: "/run/user/1000/rt-view-pipes/node-1"
+   "traceForwardTo": {
+     "tag": "RemotePipe",
+     "contents": "/run/user/1000/rt-view-pipes/node-1"
+   }
 
-   traceForwardTo:
-     tag: RemotePipe
-     contents: "/run/user/1000/rt-view-pipes/node-2"
+   "traceForwardTo": {
+     "tag": "RemotePipe",
+     "contents": "/run/user/1000/rt-view-pipes/node-2"
+   }
 
-   traceForwardTo:
-     tag: RemotePipe
-     contents: "/run/user/1000/rt-view-pipes/node-3"
+   "traceForwardTo": {
+     "tag": "RemotePipe",
+     "contents": "/run/user/1000/rt-view-pipes/node-3"
+   }
 ```
 
-## Cardano node configuration file: example
+## Cardano node configuration file: YAML example
 
 This is an example of the node's configuration file prepared for working with RTView on Linux:
 
@@ -328,6 +336,147 @@ traceForwardTo:
 
 This configuration file is based on [lite/configuration/shelley-1.yaml](https://github.com/input-output-hk/cardano-node/blob/6229d7c6aef8af0f36abea30227b864453be3b5e/scripts/lite/configuration/shelley-1.yaml) from `cardano-node` repository.
 
+## Cardano node configuration file: JSON example
+
+This is the same configuration file in JSON format:
+
+```
+{
+  "GenesisFile": "genesis/genesis.json",
+  "SocketPath": "db/node.socket",
+  "MaxConcurrencyBulkSync": 1,
+  "MaxConcurrencyDeadline": 2,
+  "Protocol": "Shelley",
+  "RequiresNetworkMagic": "RequiresMagic",
+  "LastKnownBlockVersion-Major": 0,
+  "LastKnownBlockVersion-Minor": 2,
+  "LastKnownBlockVersion-Alt": 0,
+  "ApplicationName": "cardano-sl",
+  "ApplicationVersion": 1,
+  "ViewMode": "SimpleView",
+  "TurnOnLogging": true,
+  "TurnOnLogMetrics": true,
+  "minSeverity": "Debug",
+  "TracingVerbosity": "NormalVerbosity",
+  "setupBackends": [
+    "KatipBK",
+    "TraceForwarderBK"
+  ],
+  "defaultBackends": [
+    "KatipBK"
+  ],
+  "setupScribes": [
+    {
+      "scKind": "FileSK",
+      "scName": "logs/mainnet.log",
+      "scFormat": "ScText"
+    },
+    {
+      "scKind": "StdoutSK",
+      "scName": "stdout",
+      "scFormat": "ScText"
+    }
+  ],
+  "defaultScribes": [
+    [
+      "FileSK",
+      "logs/mainnet.log"
+    ],
+    [
+      "StdoutSK",
+      "stdout"
+    ]
+  ],
+  "rotation": {
+    "rpLogLimitBytes": 5000000,
+    "rpKeepFilesNum": 3,
+    "rpMaxAgeHours": 24
+  },
+  "TraceBlockchainTime": true,
+  "TraceBlockFetchClient": true,
+  "TraceBlockFetchDecisions": true,
+  "TraceBlockFetchProtocol": true,
+  "TraceBlockFetchProtocolSerialised": true,
+  "TraceBlockFetchServer": true,
+  "TraceChainDb": true,
+  "TraceChainSyncClient": true,
+  "TraceChainSyncBlockServer": true,
+  "TraceChainSyncHeaderServer": true,
+  "TraceChainSyncProtocol": true,
+  "TraceDNSResolver": true,
+  "TraceDNSSubscription": true,
+  "TraceErrorPolicy": true,
+  "TraceLocalErrorPolicy": true,
+  "TraceForge": true,
+  "TraceHandshake": true,
+  "TraceIpSubscription": true,
+  "TraceLocalChainSyncProtocol": true,
+  "TraceLocalHandshake": true,
+  "TraceLocalTxSubmissionProtocol": true,
+  "TraceLocalTxSubmissionServer": true,
+  "TraceMempool": true,
+  "TraceMux": true,
+  "TraceTxInbound": true,
+  "TraceTxOutbound": true,
+  "TraceTxSubmissionProtocol": true,
+  "options": {
+    "mapBackends": {
+      "cardano.node.BlockFetchDecision.peers": [
+        "TraceForwarderBK",
+        "EKGViewBK",
+        {
+          "kind": "UserDefinedBK",
+          "name": "LiveViewBackend"
+        }
+      ],
+      "cardano.node.ChainDB.metrics": [
+        "TraceForwarderBK",
+        "EKGViewBK",
+        {
+          "kind": "UserDefinedBK",
+          "name": "LiveViewBackend"
+        }
+      ],
+      "cardano.node-metrics": [
+        "TraceForwarderBK"
+      ],
+      "cardano.node.metrics": [
+        "TraceForwarderBK",
+        "EKGViewBK",
+        {
+          "kind": "UserDefinedBK",
+          "name": "LiveViewBackend"
+        }
+      ],
+      "cardano.node.Forge.metrics": [
+        "TraceForwarderBK",
+        "EKGViewBK"
+      ],
+      "cardano.node.release": [
+        "TraceForwarderBK",
+        "KatipBK"
+      ],
+      "cardano.node.version": [
+        "TraceForwarderBK",
+        "KatipBK"
+      ],
+      "cardano.node.commit": [
+        "TraceForwarderBK",
+        "KatipBK"
+      ]
+    },
+    "mapSeverity": {
+      "cardano.node.ChainDB": "Notice",
+      "cardano.node.DnsSubscription": "Debug"
+    }
+  },
+  "traceForwardTo": {
+    "tag": "RemotePipe",
+    "contents": "/run/user/1000/rt-view-pipes/node-1"
+  }
+}
+```
+
 ## Metrics routing
 
 After you finished the RTView configuration, you saw a few changes that should be made in the node's configuration file. Particularly, the step `3` said:
@@ -335,12 +484,16 @@ After you finished the RTView configuration, you saw a few changes that should b
 ```
 3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:
 
-   options:
-     mapBackends:
-       cardano.node.metrics:
-         - TraceForwarderBK
-       cardano.node.Forge.metrics:
-         - TraceForwarderBK
+   "options": {
+     "mapBackends": {
+       "cardano.node-metrics": [
+         "TraceForwarderBK"
+       ],
+       "cardano.node.Forge.metrics": [
+         "TraceForwarderBK"
+       ],
+       ...
+     }
 ```
 
 These two lines, `cardano.node.metrics` and `cardano.node.Forge.metrics`, are tracers' names. You can think of tracers as points inside of Cardano node, and the node can send different values in these points. When you map the tracer `cardano.node.metrics` on the `TraceForwarderBK`, all the metrics from `cardano.node.metrics` will be sent to `TraceForwarderBK`. But if you remove `TraceForwarderBK` from `cardano.node.metrics`, all the metrics sent to this tracer will never be forwarded to RTView.

@@ -538,27 +538,32 @@ showChangesInNodeConfiguration config rtViewMachineHost = do
     TIO.putStrLn "1. Find setupBackends and add TraceForwarderBK in it:"
     TIO.putStrLn ""
     colorize Yellow BoldIntensity $ do
-      TIO.putStrLn "   setupBackends:"
-      TIO.putStrLn "     - TraceForwarderBK"
+      TIO.putStrLn "   \"setupBackends\": ["
+      TIO.putStrLn "     \"TraceForwarderBK\""
+      TIO.putStrLn "   ]"
     TIO.putStrLn ""
 
   enableMetricsTracing = do
     TIO.putStrLn "2. Find TurnOnLogMetrics and set it to True:"
     TIO.putStrLn ""
     colorize Yellow BoldIntensity $
-      TIO.putStrLn "   TurnOnLogMetrics: True"
+      TIO.putStrLn "   \"TurnOnLogMetrics\": true"
     TIO.putStrLn ""
 
   mapBackendsExamples = do
     TIO.putStrLn "3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:"
     TIO.putStrLn ""
     colorize Yellow BoldIntensity $ do
-      TIO.putStrLn "   options:"
-      TIO.putStrLn "     mapBackends:"
-      TIO.putStrLn "       cardano.node.metrics:"
-      TIO.putStrLn "         - TraceForwarderBK"
-      TIO.putStrLn "       cardano.node.Forge.metrics:"
-      TIO.putStrLn "         - TraceForwarderBK"
+      TIO.putStrLn "   \"options\": {"
+      TIO.putStrLn "     \"mapBackends\": {"
+      TIO.putStrLn "       \"cardano.node-metrics\": ["
+      TIO.putStrLn "         \"TraceForwarderBK\""
+      TIO.putStrLn "       ],"
+      TIO.putStrLn "       \"cardano.node.Forge.metrics\": ["
+      TIO.putStrLn "         \"TraceForwarderBK\""
+      TIO.putStrLn "       ],"
+      TIO.putStrLn "       ..."
+      TIO.putStrLn "     }"
       TIO.putStrLn ""
     TIO.putStrLn "   For more info about supported metrics please read the documentation."
     TIO.putStrLn ""
@@ -577,21 +582,23 @@ showChangesInNodeConfiguration config rtViewMachineHost = do
                    <> nFiles <> ":"
     TIO.putStrLn ""
     forM_ acceptors $ \(RemoteAddrNamed _ addr) -> colorize Yellow BoldIntensity $ do
-      TIO.putStrLn       "   traceForwardTo:"
+      TIO.putStrLn       "   \"traceForwardTo\": {"
       case addr of
         RemoteSocket _ port -> do
-          TIO.putStrLn   "     tag: RemoteSocket"
-          TIO.putStrLn   "     contents:"
-          TIO.putStrLn $ "       - \"" <> T.pack rtViewMachineHost <> "\""
-          TIO.putStrLn $ "       - \"" <> T.pack port <> "\""
+          TIO.putStrLn   "     \"tag\": \"RemoteSocket\","
+          TIO.putStrLn   "     \"contents\": ["
+          TIO.putStrLn $ "       \"" <> T.pack rtViewMachineHost <> "\","
+          TIO.putStrLn $ "       \"" <> T.pack port <> "\""
+          TIO.putStrLn $ "     ]"
         RemotePipe path -> do
-          TIO.putStrLn   "     tag: RemotePipe"
+          TIO.putStrLn   "     \"tag\": \"RemotePipe\","
 #if defined(mingw32_HOST_OS)
           -- We have to escape backslashes on Windows, to avoid an error in the configuration.
-          TIO.putStrLn $ "     contents: \"" <> prepareForWindows (T.pack path) <> "\""
+          TIO.putStrLn $ "     \"contents\": \"" <> prepareForWindows (T.pack path) <> "\""
 #else
-          TIO.putStrLn $ "     contents: \"" <> T.pack path <> "\""
+          TIO.putStrLn $ "     \"contents\": \"" <> T.pack path <> "\""
 #endif
+      TIO.putStrLn       "   }"
       TIO.putStrLn ""
 
 #if defined(mingw32_HOST_OS)
