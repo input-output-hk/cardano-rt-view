@@ -10,7 +10,6 @@ module Cardano.RTView.GUI.Markup.Grid
 import           Control.Monad (forM)
 import           Data.Map.Strict ((!))
 import qualified Data.Map.Strict as Map
-import           Data.String (String)
 import           Data.Text (Text)
 import qualified Data.Text as T
 

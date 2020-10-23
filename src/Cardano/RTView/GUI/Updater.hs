@@ -9,9 +9,8 @@ module Cardano.RTView.GUI.Updater
 import           Control.Monad (void, forM, forM_)
 import           Control.Monad.IO.Class (liftIO)
 import qualified Data.List as L
-import           Data.Maybe (Maybe (..), isJust)
+import           Data.Maybe (isJust)
 import           Data.Map.Strict ((!))
-import           Data.String (String)
 import           Data.Text (Text, pack, unpack)
 import           Data.Time.Calendar (Day (..), diffDays)
 import           Data.Time.Clock (NominalDiffTime, UTCTime (..), addUTCTime)

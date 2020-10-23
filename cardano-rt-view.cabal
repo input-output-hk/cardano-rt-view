@@ -41,7 +41,6 @@ library
                      , ansi-terminal
                      , async
                      , base >=4.12 && <5
-                     , bytestring
                      , clay
                      , containers
                      , deepseq
@@ -61,7 +60,7 @@ library
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings
 
-  ghc-options:         -Weverything
+  ghc-options:         -Wall
                        -fno-warn-all-missed-specialisations
                        -fno-warn-implicit-prelude
                        -fno-warn-missing-import-lists

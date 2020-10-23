@@ -8,7 +8,6 @@ import           Control.Monad (forM_)
 
 import           Data.Text (pack)
 import           Test.WebDriver
-import           Test.WebDriver.Monad (closeOnException)
 
 import           Cardano.RTView.GUI.Elements (HTMLId (..))
 

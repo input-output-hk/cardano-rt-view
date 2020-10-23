@@ -19,9 +19,6 @@ module Cardano.RTView.GUI.JS.Charts
     , updateNetworkUsageChartJS
     ) where
 
-import           Data.List (concat)
-import           Data.String (String)
-
 prepareChartsJS :: String
 prepareChartsJS = concat
   [ "window.charts = new Map();"

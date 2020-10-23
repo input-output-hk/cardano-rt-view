@@ -20,14 +20,13 @@ let
     # These programs will be available inside the nix-shell.
     buildInputs = with haskellPackages; [
       cabal-install
-      stack
       stylish-haskell
       nix
       niv
       pkgconfig
     ] ++ lib.optionals (! minimal) [
       ghcid
-      git
+      pkgs.git
       hlint
       stylish-haskell
       weeder
