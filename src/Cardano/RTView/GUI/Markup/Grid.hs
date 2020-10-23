@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.RTView.GUI.Grid
+module Cardano.RTView.GUI.Markup.Grid
     ( mkNodesGrid
     , metricLabel
     , allMetricsNames

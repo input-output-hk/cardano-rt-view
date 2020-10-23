@@ -20,7 +20,7 @@ import           System.Exit (die)
 import           Test.WebDriver
 
 import           Cardano.RTView.GUI.Elements (HTMLId (..))
-import           Cardano.RTView.GUI.Grid (allMetricsNames)
+import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames)
 
 data Units = Seconds | Milliseconds
 

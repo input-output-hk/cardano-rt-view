@@ -21,19 +21,19 @@ library
 
                        Cardano.RTView.ErrorBuffer
 
-                       Cardano.RTView.GUI.Charts
-                       Cardano.RTView.GUI.Elements
-                       Cardano.RTView.GUI.Grid
-                       Cardano.RTView.GUI.Markup
-                       Cardano.RTView.GUI.Pane
-                       Cardano.RTView.GUI.Updater
                        Cardano.RTView.GUI.CSS.Style
+                       Cardano.RTView.GUI.Elements
+                       Cardano.RTView.GUI.JS.Charts
+                       Cardano.RTView.GUI.Markup.Grid
+                       Cardano.RTView.GUI.Markup.PageBody
+                       Cardano.RTView.GUI.Markup.Pane
+                       Cardano.RTView.GUI.Updater
 
                        Cardano.RTView.NodeState.Parsers
                        Cardano.RTView.NodeState.Types
                        Cardano.RTView.NodeState.Updater
 
-                       Cardano.RTView.Server
+                       Cardano.RTView.WebServer
 
   other-modules:       Paths_cardano_rt_view
 

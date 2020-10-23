@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.RTView.GUI.Markup
+module Cardano.RTView.GUI.Markup.PageBody
     ( mkPageBody
     ) where
 
@@ -15,14 +15,14 @@ import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string,
                                               ( #. ))
 
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
-import qualified Cardano.RTView.GUI.Charts as Chart
+import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
                                               HTMLId (..), HTMLW3Class (..),
                                               NodeStateElements, NodesStateElements,
                                               PeerInfoItem, hideIt, showCell, showIt,
                                               showRow, ( ## ), (<+>))
-import           Cardano.RTView.GUI.Grid (allMetricsNames, metricLabel, mkNodesGrid)
-import           Cardano.RTView.GUI.Pane (mkNodePane)
+import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames, metricLabel, mkNodesGrid)
+import           Cardano.RTView.GUI.Markup.Pane (mkNodePane)
 
 mkPageBody
   :: UI.Window
