@@ -20,7 +20,6 @@ import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.MVar.Strict (MVar, modifyMVar_)
 import           Control.Monad (forever, forM_)
 import qualified Data.Aeson as A
-import           Data.List ((!!))
 import           Data.Map.Strict ((!?))
 import qualified Data.Map.Strict as Map
 import           Data.Text (Text)

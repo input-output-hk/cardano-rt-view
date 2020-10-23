@@ -7,7 +7,6 @@ module Cardano.RTView.GUI.Markup.PageBody
     ) where
 
 import           Control.Monad (forM, forM_, void, when)
-import           Data.String (String)
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Graphics.UI.Threepenny as UI

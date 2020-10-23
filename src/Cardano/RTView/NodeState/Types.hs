@@ -16,7 +16,6 @@ module Cardano.RTView.NodeState.Types
 import           Control.DeepSeq (NFData (..))
 import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import           Data.String (String)
 import           Data.Text (Text)
 import           Data.Time.Calendar (Day (..))
 import           Data.Time.Clock (UTCTime (..))

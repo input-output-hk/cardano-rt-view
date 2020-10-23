@@ -7,7 +7,6 @@ module Cardano.RTView.GUI.Markup.Pane
 
 import           Control.Monad (forM, forM_, void)
 import qualified Data.Map.Strict as Map
-import           Data.String (String)
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Graphics.UI.Threepenny as UI

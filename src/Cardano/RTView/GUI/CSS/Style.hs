@@ -9,8 +9,7 @@ import           Prelude hiding ((**))
 
 import           Clay
 import qualified Clay.Media as M
-import           Clay.Selector (Selector, selectorFromText)
-import           Data.Monoid ((<>))
+import           Clay.Selector (selectorFromText)
 import           Data.Text (pack, unpack)
 import qualified Data.Text.Lazy as TL
 

@@ -8,7 +8,7 @@
 , buildPackages
 , config ? {}
 # GHC attribute name
-, compiler ? config.haskellNix.compiler or "ghc865"
+, compiler ? config.haskellNix.compiler or "ghc8102"
 # Enable profiling
 , profiling ? config.haskellNix.profiling or false
 # Enable asserts for given packages
@@ -27,7 +27,7 @@ let
   projectPackages = lib.attrNames (haskell-nix.haskellLib.selectProjectPackages
     (haskell-nix.cabalProject {
       inherit src;
-      compiler-nix-name = compiler;
+      compiler-nix-name = "ghc8102";
     }));
 
   # This creates the Haskell package set.
