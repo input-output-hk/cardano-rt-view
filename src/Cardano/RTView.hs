@@ -27,9 +27,8 @@ import           Cardano.RTView.WebServer (launchWebServer)
 -- | Run the service.
 runCardanoRTView :: RTViewParams -> IO ()
 runCardanoRTView params' = do
-  TIO.putStrLn "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  TIO.putStrLn " RTView: real-time watching for Cardano nodes "
-  TIO.putStrLn "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  TIO.putStrLn "RTView: real-time watching for Cardano nodes"
+  TIO.putStrLn ""
 
   (config, params, acceptors) <- prepareConfigAndParams params'
 
