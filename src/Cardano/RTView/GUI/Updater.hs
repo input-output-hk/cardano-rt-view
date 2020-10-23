@@ -27,13 +27,13 @@ import           Cardano.BM.Data.Configuration (RemoteAddr (..), RemoteAddrNamed
 import           Cardano.BM.Data.Severity (Severity (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..))
-import qualified Cardano.RTView.GUI.Charts as Chart
 import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..),
                                               HTMLClass (..), HTMLId (..),
                                               HTMLW3Class (..), NodeStateElements,
                                               NodesStateElements,
                                               PeerInfoElements (..), PeerInfoItem (..),
                                               (<+>))
+import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.NodeState.Types (NodeError (..), NodeInfo (..),
                                                  NodeMetrics (..), NodeState (..),
                                                  NodesState, PeerInfo (..))

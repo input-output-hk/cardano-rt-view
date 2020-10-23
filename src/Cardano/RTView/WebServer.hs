@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.RTView.Server
-    ( launchServer
+module Cardano.RTView.WebServer
+    ( launchWebServer
     ) where
 
 import           Control.Concurrent.MVar.Strict (MVar, readMVar)
@@ -16,17 +16,16 @@ import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..))
 import           Cardano.RTView.GUI.CSS.Style (ownCSS)
-import           Cardano.RTView.GUI.Markup (mkPageBody)
+import           Cardano.RTView.GUI.Markup.PageBody (mkPageBody)
 import           Cardano.RTView.GUI.Updater (updateGUI)
 import           Cardano.RTView.NodeState.Types (NodesState)
 
--- | Launch web server.
-launchServer
+launchWebServer
   :: MVar NodesState
   -> RTViewParams
   -> [RemoteAddrNamed]
   -> IO ()
-launchServer nsMVar params acceptors =
+launchWebServer nsMVar params acceptors =
   UI.startGUI config $ mainPage nsMVar params acceptors
  where
   config = UI.defaultConfig
@@ -41,7 +40,7 @@ mainPage
   -> UI.Window
   -> UI ()
 mainPage nsMVar params acceptors window = do
-  void $ return window # set UI.title "Cardano Node RTView"
+  void $ return window # set UI.title "Cardano RTView"
 
   -- It is assumed that CSS files are available at 'pathToStatic/css/'.
   UI.addStyleSheet window "w3.css"

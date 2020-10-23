@@ -22,7 +22,7 @@ import           Cardano.RTView.Config (prepareConfigAndParams)
 import           Cardano.RTView.ErrorBuffer (ErrorBuffer, effectuate, realize, unrealize)
 import           Cardano.RTView.NodeState.Types (NodesState, defaultNodesState)
 import           Cardano.RTView.NodeState.Updater (launchNodeStateUpdater)
-import           Cardano.RTView.Server (launchServer)
+import           Cardano.RTView.WebServer (launchWebServer)
 
 -- | Run the service.
 runCardanoRTView :: RTViewParams -> IO ()
@@ -55,6 +55,6 @@ runCardanoRTView params' = do
   --   3. server (it serves requests from user's browser and shows nodes' metrics in the real time).
   acceptorThr <- async $ launchMetricsAcceptor config accTr switchBoard
   updaterThr  <- async $ launchNodeStateUpdater tr params switchBoard be nodesStateMVar
-  serverThr   <- async $ launchServer nodesStateMVar params acceptors
+  serverThr   <- async $ launchWebServer nodesStateMVar params acceptors
 
   void $ waitAnyCancel [acceptorThr, updaterThr, serverThr]

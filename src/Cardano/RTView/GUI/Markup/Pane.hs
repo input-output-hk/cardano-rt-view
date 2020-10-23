@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Cardano.RTView.GUI.Pane
+module Cardano.RTView.GUI.Markup.Pane
     ( mkNodePane
     ) where
 
