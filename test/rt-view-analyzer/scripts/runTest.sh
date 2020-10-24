@@ -3,20 +3,19 @@
 
 # preparation
 BASEDIR=$(realpath $(dirname "$0"))
-. "${BASEDIR}"/../../scripts/common.sh
 
 prebuild 'cardano-rt-view' || exit 1
 prebuild 'rt-view-analyzer' || exit 1
 
 set -e
 
-readonly JSON_WITH_LOG_OBJECTS=logObjects.json
+readonly JSON_WITH_LOG_OBJECTS=../logObjects.json
 readonly UNIX_SOCKET=./logs/rt-view-pipe-0
 readonly SELENIUM_SERVER_JAR=$1
 
 readonly RT_VIEW_EXE=cardano-rt-view
-readonly RT_VIEW_CONFIG=rt-view-config.yaml
-readonly RT_VIEW_STATIC_DIR=../static
+readonly RT_VIEW_CONFIG=../configuration/rt-view-config.yaml
+readonly RT_VIEW_STATIC_DIR=../../../static
 readonly RT_VIEW_WEB_PORT=8024
 
 echo "Remove old UNIX-socket..."
@@ -24,8 +23,8 @@ rm -f "${UNIX_SOCKET}"
 
 echo "Launch cardano-rt-view..."
 run "${RT_VIEW_EXE}" --config "${RT_VIEW_CONFIG}" \
-                           --static "${RT_VIEW_STATIC_DIR}" \
-                           --port "${RT_VIEW_WEB_PORT}" &
+                     --static "${RT_VIEW_STATIC_DIR}" \
+                     --port "${RT_VIEW_WEB_PORT}" &
 sleep 2
 
 test -e ${UNIX_SOCKET}
