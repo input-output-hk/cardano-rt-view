@@ -20,7 +20,7 @@ import           Formatting (fixed, sformat, (%))
 import           GHC.Clock (getMonotonicTimeNSec)
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, children, element, set, style, text,
-                                              ( # ), ( #+ ), ( #. ))
+                                              (#), (#+))
 
 import           Cardano.BM.Data.Configuration (RemoteAddr (..), RemoteAddrNamed (..))
 import           Cardano.BM.Data.Severity (Severity (..))
@@ -28,10 +28,10 @@ import           Cardano.BM.Data.Severity (Severity (..))
 import           Cardano.RTView.CLI (RTViewParams (..))
 import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..),
                                               HTMLClass (..), HTMLId (..),
-                                              HTMLW3Class (..), NodeStateElements,
+                                              NodeStateElements,
                                               NodesStateElements,
                                               PeerInfoElements (..), PeerInfoItem (..),
-                                              (<+>))
+                                              (#.))
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.NodeState.Types (NodeError (..), NodeInfo (..),
                                                  NodeMetrics (..), NodeState (..),
@@ -299,19 +299,19 @@ updateErrorsList
   -> UI Element
 updateErrorsList nodeErrors errorsList = do
   errors <- forM nodeErrors $ \(NodeError utcTimeStamp sev msg) -> do
-    let className :: String
-        className = case sev of
-                      Warning   -> show WarningMessage
-                      Error     -> show ErrorMessage
-                      Critical  -> show CriticalMessage
-                      Alert     -> show AlertMessage
-                      Emergency -> show EmergencyMessage
-                      _         -> ""
+    let aClass :: HTMLClass
+        aClass = case sev of
+                      Warning   -> WarningMessage
+                      Error     -> ErrorMessage
+                      Critical  -> CriticalMessage
+                      Alert     -> AlertMessage
+                      Emergency -> EmergencyMessage
+                      _         -> NoClass
     let timeStamp = formatTime defaultTimeLocale "%F %T" utcTimeStamp
 
-    UI.div #. show W3Row #+
-      [ UI.div #. [W3Third, W3Theme] <+> [] #+ [UI.div #+ [UI.string timeStamp]]
-      , UI.div #. [W3TwoThird, W3Theme] <+> [] #+ [UI.div #. className #+ [UI.string msg]]
+    UI.div #. [W3Row] #+
+      [ UI.div #. [W3Third, W3Theme] #+ [UI.div #+ [UI.string timeStamp]]
+      , UI.div #. [W3TwoThird, W3Theme] #+ [UI.div #. [aClass] #+ [UI.string msg]]
       ]
   element errorsList # set children errors
 

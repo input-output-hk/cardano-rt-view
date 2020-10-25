@@ -13,7 +13,7 @@ import           Clay.Selector (selectorFromText)
 import           Data.Text (pack, unpack)
 import qualified Data.Text.Lazy as TL
 
-import           Cardano.RTView.GUI.Elements (HTMLClass (..), HTMLW3Class (..))
+import           Cardano.RTView.GUI.Elements (HTMLClass (..)) 
 
 ownCSS :: String
 ownCSS = unpack . TL.toStrict . render $ do
@@ -51,27 +51,27 @@ ownCSS = unpack . TL.toStrict . render $ do
     paddingTopPx      18
     paddingBottomPx   15
 
-  cl TopBar ** w3 W3DropdownHover ? do
+  cl TopBar ** cl W3DropdownHover ? do
     paddingTopPx      10
     fontSizePct       110
 
-  cl TopBar ** w3 W3DropdownHover ** w3 W3Button # hover ? do
+  cl TopBar ** cl W3DropdownHover ** cl W3Button # hover ? do
     important $
       color           cardanoLight
 
-  w3 W3DropdownHover # hover |> w3 W3Button # firstChild ? do
-    important $
-      color           cardanoLight
-    important $
-      backgroundColor "#1b2238"
-
-  w3 W3BarItem # hover ? do
+  cl W3DropdownHover # hover |> cl W3Button # firstChild ? do
     important $
       color           cardanoLight
     important $
       backgroundColor "#1b2238"
 
-  w3 W3DropdownContent ? do
+  cl W3BarItem # hover ? do
+    important $
+      color           cardanoLight
+    important $
+      backgroundColor "#1b2238"
+
+  cl W3DropdownContent ? do
     important $
       maxHeightPx     500
     overflow          auto
@@ -99,7 +99,7 @@ ownCSS = unpack . TL.toStrict . render $ do
     important $
       color           whitesmoke
 
-  cl NodeBar ** w3 W3Button # hover ? do
+  cl NodeBar ** cl W3Button # hover ? do
     important $
       color           cardanoLight
 
@@ -296,8 +296,5 @@ ownCSS = unpack . TL.toStrict . render $ do
     important $ color c
 
 -- | Convert class name as a constructor to 'Selector'.
-w3 :: HTMLW3Class -> Selector
-w3 className = selectorFromText $ "." <> pack (show className)
-
 cl :: HTMLClass -> Selector
 cl className = selectorFromText $ "." <> pack (show className)
