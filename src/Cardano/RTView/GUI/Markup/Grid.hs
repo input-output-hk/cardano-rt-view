@@ -14,13 +14,12 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 
 import qualified Graphics.UI.Threepenny as UI
-import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, ( # ), ( #+ ),
-                                              ( #. ))
+import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, (#), (#+))
 
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
-                                              HTMLId (..), HTMLW3Class (..),
-                                              NodeStateElements, NodesStateElements,
-                                              PeerInfoItem (..), ( ## ), (<+>))
+                                              HTMLId (..), NodeStateElements,
+                                              NodesStateElements, PeerInfoItem (..),
+                                              (##), (#.))
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
 mkNodesGrid
@@ -42,9 +41,9 @@ mkNodesGrid _window acceptors = do
   let allRows = UI.tr #+ nodesRowCells : metricRows
 
   nodesGrid
-    <- UI.div #. [W3Container, W3Margin] <+> [] #+
-         [ UI.div #. show W3Responsive #+
-             [ UI.table #. [W3Table, W3Bordered] <+> [] #+
+    <- UI.div #. [W3Container, W3Margin] #+
+         [ UI.div #. [W3Responsive] #+
+             [ UI.table #. [W3Table, W3Bordered] #+
                  allRows
              ]
          ]
@@ -127,7 +126,7 @@ mkNodesRowCells acceptors = do
   nodesRowCells
     <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) ->
          element <$> UI.th ## (show GridNodeTH <> T.unpack nameOfNode) #+
-                       [ UI.span #. show GridNodeNameLabel #+ [string "Node: "]
+                       [ UI.span #. [GridNodeNameLabel] #+ [string "Node: "]
                        , string $ T.unpack nameOfNode
                        ]
   -- To keep top-left corner cell empty.
@@ -145,7 +144,7 @@ mkRowCells nodesElements elemName = do
   -- It can be used to hide/show the whole column.
   tds <- forM nodesElements $ \(nameOfNode, nodeElements, _) ->
            element <$> UI.td ## (show elemName <> "-" <> T.unpack nameOfNode)
-                             #. show GridRowCell
+                             #. [GridRowCell]
                              #+ [element $ nodeElements ! elemName]
   return $ tagTd : tds
 
@@ -172,19 +171,19 @@ mkNodeElements nameOfNode = do
 
   elMemoryUsageChart
     <- UI.canvas ## (show GridMemoryUsageChartId <> T.unpack nameOfNode)
-                 #. show GridMemoryUsageChart
+                 #. [GridMemoryUsageChart]
                  #+ []
   elCPUUsageChart
     <- UI.canvas ## (show GridCPUUsageChartId <> T.unpack nameOfNode)
-                 #. show GridCPUUsageChart
+                 #. [GridCPUUsageChart]
                  #+ []
   elDiskUsageChart
     <- UI.canvas ## (show GridDiskUsageChartId <> T.unpack nameOfNode)
-                 #. show GridDiskUsageChart
+                 #. [GridDiskUsageChart]
                  #+ []
   elNetworkUsageChart
     <- UI.canvas ## (show GridNetworkUsageChartId <> T.unpack nameOfNode)
-                 #. show GridNetworkUsageChart
+                 #. [GridNetworkUsageChart]
                  #+ []
 
   elEpoch              <- string "0"

@@ -10,16 +10,15 @@ import           Control.Monad (forM, forM_, void, when)
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Graphics.UI.Threepenny as UI
-import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, ( # ), ( #+ ),
-                                              ( #. ))
+import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, (#), (#+))
 
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
-                                              HTMLId (..), HTMLW3Class (..),
+                                              HTMLId (..),
                                               NodeStateElements, NodesStateElements,
                                               PeerInfoItem, hideIt, showCell, showIt,
-                                              showRow, ( ## ), (<+>))
+                                              showRow, (##), (#.))
 import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames, metricLabel, mkNodesGrid)
 import           Cardano.RTView.GUI.Markup.Pane (mkNodePane)
 
@@ -39,17 +38,17 @@ mkPageBody window acceptors = do
   -- Create panes areas on the page.
   panesAreas
     <- forM nodePanesWithElems $ \(_, pane, _, _) ->
-         return $ UI.div #. [W3Col, W3L6, W3M12, W3S12] <+> [] #+ [element pane]
+         return $ UI.div #. [W3Col, W3L6, W3M12, W3S12] #+ [element pane]
 
   -- Register clickable selector for nodes (to be able to show only one or all of them).
   nodesSelector <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
     nodeCheckbox
-      <- UI.input #. [W3Check] <+> [SelectNodeCheck]
+      <- UI.input #. [W3Check, SelectNodeCheck]
                   # set UI.type_ "checkbox"
                   # set UI.checked True
                   #+ []
     nodeButton <-
-      UI.div #. show SelectNodeCheckArea #+
+      UI.div #. [SelectNodeCheckArea] #+
         [ element nodeCheckbox
         , UI.label #+ [UI.string $ T.unpack nameOfNode]
         ]
@@ -79,8 +78,8 @@ mkPageBody window acceptors = do
                  "paneMode" -> showAllNodes window nodePanesWithElems
                  _ -> showAllNodesColumns window nodePanesWithElems
                Nothing -> return ()
-             void $ element showAllNodesButton # set UI.class_ ([W3BarItem, W3Button, W3Disabled] <+> [])
-             void $ element hideAllNodesButton # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom] <+> [])
+             void $ element showAllNodesButton #. [W3BarItem, W3Button, W3Disabled]
+             void $ element hideAllNodesButton #. [W3BarItem, W3Button, W3BorderBottom]
 
            void $ UI.onEvent (UI.click hideAllNodesButton) $ \_ -> do
              UI.getElementById window (show ViewModeButton) >>= \case
@@ -88,8 +87,8 @@ mkPageBody window acceptors = do
                  "paneMode" -> hideAllNodes window nodePanesWithElems
                  _ -> hideAllNodesColumns window nodePanesWithElems
                Nothing -> return ()
-             void $ element showAllNodesButton # set UI.class_ ([W3BarItem, W3Button] <+> [])
-             void $ element hideAllNodesButton # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom, W3Disabled] <+> [])
+             void $ element showAllNodesButton #. [W3BarItem, W3Button]
+             void $ element hideAllNodesButton #. [W3BarItem, W3Button, W3BorderBottom, W3Disabled]
 
            return [element showAllNodesButton, element hideAllNodesButton]
          else
@@ -98,8 +97,8 @@ mkPageBody window acceptors = do
   let allSelectors = showAndHideAllNodesButtons ++ nodesSelector
 
   -- View mode buttons.
-  paneViewButton <- UI.anchor #. [W3BarItem, W3Button] <+> [] # set UI.href "#" #+ [UI.string "Pane view"]
-  gridViewButton <- UI.anchor #. [W3BarItem, W3Button] <+> [] # set UI.href "#" #+ [UI.string "Grid view"]
+  paneViewButton <- UI.anchor #. [W3BarItem, W3Button] # set UI.href "#" #+ [UI.string "Pane view"]
+  gridViewButton <- UI.anchor #. [W3BarItem, W3Button] # set UI.href "#" #+ [UI.string "Grid view"]
   let viewModeSelector :: [UI Element]
       viewModeSelector = [ element paneViewButton
                          , element gridViewButton
@@ -109,7 +108,7 @@ mkPageBody window acceptors = do
 
   -- Make page body.
   (gridNodes, gridNodesStateElems) <- mkNodesGrid window acceptors
-  panes <- UI.div #. show W3Row #+ panesAreas
+  panes <- UI.div #. [W3Row] #+ panesAreas
   body
     <- UI.getBody window #+
          [ topNavigation allSelectors viewModeSelector metricsSelector
@@ -152,26 +151,26 @@ topNavigation
   -> [UI Element]
   -> UI Element
 topNavigation nodesSelector viewModeSelector metricsSelector =
-  UI.div #. [W3Bar, W3Large] <+> [TopBar] #+
-    [ UI.anchor #. [W3BarItem, W3Mobile] <+> [] # set UI.href "https://cardano.org/" #+
-        [ UI.img #. show CardanoLogo # set UI.src "/static/images/cardano-logo.svg"
+  UI.div #. [W3Bar, W3Large, TopBar] #+
+    [ UI.anchor #. [W3BarItem, W3Mobile] # set UI.href "https://cardano.org/" #+
+        [ UI.img #. [CardanoLogo] # set UI.src "/static/images/cardano-logo.svg"
         ]
-    , UI.div #. [W3DropdownHover, W3Mobile] <+> [] #+
+    , UI.div #. [W3DropdownHover, W3Mobile] #+
         [ UI.button ## show ViewModeButton
-                    #. show W3Button
+                    #. [W3Button]
                     # set UI.value "paneMode"
                     #+ [string "View mode ▾"]
-        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] <+> [] #+ viewModeSelector
+        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] #+ viewModeSelector
         ]
-    , UI.div #. [W3DropdownHover, W3Mobile] <+> [] #+
-        [ UI.button #. show W3Button #+ [string "Select node ▾"]
-        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] <+> [] #+ nodesSelector
+    , UI.div #. [W3DropdownHover, W3Mobile] #+
+        [ UI.button #. [W3Button] #+ [string "Select node ▾"]
+        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] #+ nodesSelector
         ]
-    , UI.div ## show SelectMetricButton #. [W3DropdownHover, W3Mobile] <+> [] # hideIt #+
-        [ UI.button #. show W3Button #+ [string "Select metric ▾"]
-        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] <+> [MetricsArea] #+ metricsSelector
+    , UI.div ## show SelectMetricButton #. [W3DropdownHover, W3Mobile] # hideIt #+
+        [ UI.button #. [W3Button] #+ [string "Select metric ▾"]
+        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4, MetricsArea] #+ metricsSelector
         ]
-    , UI.span #. [W3Right, W3HideMedium, W3HideSmall] <+> [ServiceName] #+
+    , UI.span #. [W3Right, W3HideMedium, W3HideSmall, ServiceName] #+
         [ string "Cardano Node Real-time View"
         ]
     ]
@@ -266,8 +265,8 @@ changeStatusOfShowAllButton window anId aClass =
       checkboxes <- UI.getElementsByClassName window (show aClass)
       statuses <- mapM (UI.get UI.checked) checkboxes
       if all (True ==) statuses
-        then void $ element button # set UI.class_ ([W3BarItem, W3Button, W3Disabled] <+> [])
-        else void $ element button # set UI.class_ ([W3BarItem, W3Button] <+> [])
+        then void $ element button #. [W3BarItem, W3Button, W3Disabled]
+        else void $ element button #. [W3BarItem, W3Button]
     Nothing -> return ()
 
 -- | If all checkboxes are unchecked - "Hide all" button should be disabled.
@@ -283,8 +282,8 @@ changeStatusOfHideAllButton window anId aClass =
       checkboxes <- UI.getElementsByClassName window (show aClass)
       statuses <- mapM (UI.get UI.checked) checkboxes
       if all (False ==) statuses
-        then void $ element button # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom, W3Disabled] <+> [])
-        else void $ element button # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom] <+> [])
+        then void $ element button #. [W3BarItem, W3Button, W3BorderBottom, W3Disabled]
+        else void $ element button #. [W3BarItem, W3Button, W3BorderBottom]
     Nothing -> return ()
 
 mkMetricsSelector
@@ -296,13 +295,13 @@ mkMetricsSelector window = do
 
   void $ UI.onEvent (UI.click showAllMetricsButton) $ \_ -> do
     showAllMetrics window allMetricsNames
-    void $ element showAllMetricsButton # set UI.class_ ([W3BarItem, W3Button, W3Disabled] <+> [])
-    void $ element hideAllMetricsButton # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom] <+> [])
+    void $ element showAllMetricsButton #. [W3BarItem, W3Button, W3Disabled]
+    void $ element hideAllMetricsButton #. [W3BarItem, W3Button, W3BorderBottom]
 
   void $ UI.onEvent (UI.click hideAllMetricsButton) $ \_ -> do
     hideAllMetrics window allMetricsNames
-    void $ element showAllMetricsButton # set UI.class_ ([W3BarItem, W3Button] <+> [])
-    void $ element hideAllMetricsButton # set UI.class_ ([W3BarItem, W3Button, W3BorderBottom, W3Disabled] <+> [])
+    void $ element showAllMetricsButton #. [W3BarItem, W3Button]
+    void $ element hideAllMetricsButton #. [W3BarItem, W3Button, W3BorderBottom, W3Disabled]
 
   checkboxes <-
     forM allMetricsNames $ \aName ->
@@ -318,7 +317,7 @@ mkCheckbox
   -> UI Element
 mkCheckbox window elemName = do
   metricCheckbox
-    <- UI.input #. [W3Check] <+> [SelectMetricCheck]
+    <- UI.input #. [W3Check, SelectMetricCheck]
                 # set UI.type_ "checkbox"
                 # set UI.checked True
                 #+ []
@@ -328,7 +327,7 @@ mkCheckbox window elemName = do
     changeStatusOfShowAllButton window ShowAllMetricsButton SelectMetricCheck
     changeStatusOfHideAllButton window HideAllMetricsButton SelectMetricCheck
 
-  UI.div #. show SelectMetricCheckArea #+
+  UI.div #. [SelectMetricCheckArea] #+
     [ element metricCheckbox
     , UI.label #+ [UI.string $ fst $ metricLabel elemName]
     ]
@@ -368,12 +367,12 @@ hideAllButton anId = mkButton anId [W3BarItem, W3Button, W3BorderBottom] "hide.s
 
 mkButton
   :: HTMLId
-  -> [HTMLW3Class]
+  -> [HTMLClass]
   -> String
   -> String
   -> UI Element
-mkButton anId w3Classes icon label =
-  UI.anchor ## show anId #. w3Classes <+> [] # set UI.href "#" #+
-    [ UI.img #. show ShowHideIcon # set UI.src ("/static/images/" <> icon)
+mkButton anId classes icon label =
+  UI.anchor ## show anId #. classes # set UI.href "#" #+
+    [ UI.img #. [ShowHideIcon] # set UI.src ("/static/images/" <> icon)
     , string label
     ]

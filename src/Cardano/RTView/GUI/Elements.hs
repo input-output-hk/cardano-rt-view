@@ -4,7 +4,6 @@
 
 module Cardano.RTView.GUI.Elements
     ( HTMLClass (..)
-    , HTMLW3Class (..)
     , HTMLId (..)
     , NodesStateElements
     , NodeStateElements
@@ -12,7 +11,7 @@ module Cardano.RTView.GUI.Elements
     , ElementValue (..)
     , PeerInfoItem (..)
     , PeerInfoElements (..)
-    , (<+>)
+    , (#.)
     , (##)
     , showIt
     , hideIt
@@ -143,7 +142,8 @@ data PeerInfoElements
 -- | HTML elements identifiers, we use them in HTML, CSS and JS FFI.
 
 data HTMLClass
-  = ActiveTab
+  = NoClass
+  | ActiveTab
   | BarValueUnit
   | CardanoLogo
   | CommitLink
@@ -198,10 +198,8 @@ data HTMLClass
   | CriticalMessage
   | AlertMessage
   | EmergencyMessage
-  deriving Show
-
-data HTMLW3Class
-  = W3Bar
+  -- W3C classes
+  | W3Bar
   | W3BarBlock
   | W3BarItem
   | W3Border
@@ -237,9 +235,62 @@ data HTMLW3Class
   | W3M12
   | W3S12
 
--- | We have to provide explicit Show-instance,
---   because all these classes are taken from W3C-library.
-instance Show HTMLW3Class where
+instance Show HTMLClass where
+  show NoClass                = ""
+  show ActiveTab              = "ActiveTab"
+  show BarValueUnit           = "BarValueUnit"
+  show CardanoLogo            = "CardanoLogo"
+  show CommitLink             = "CommitLink"
+  show DensityPercent         = "DensityPercent"
+  show ErrorsTabContainer     = "ErrorsTabContainer"
+  show GridNodeNameLabel      = "GridNodeNameLabel"
+  show GridRowCell            = "GridRowCell"
+  show HSpacer                = "HSpacer"
+  show InfoMark               = "InfoMark"
+  show InfoMarkImg            = "InfoMarkImg"
+  show MetricsArea            = "MetricsArea"
+  show NodeContainer          = "NodeContainer"
+  show NodeBar                = "NodeBar"
+  show NodeInfoValues         = "NodeInfoValues"
+  show NodeInfoVSpacer        = "NodeInfoVSpacer"
+  show NodeMetricsValues      = "NodeMetricsValues"
+  show NodeMetricsVSpacer     = "NodeMetricsVSpacer"
+  show NodeMenuIcon           = "NodeMenuIcon"
+  show NodeName               = "NodeName"
+  show NodeNameArea           = "NodeNameArea"
+  show OutdatedValue          = "OutdatedValue"
+  show PercentsSlashHSpacer   = "PercentsSlashHSpacer"
+  show PercentsSlashHRSpacer  = "PercentsSlashHRSpacer"
+  show ProgressBar            = "ProgressBar"
+  show ProgressBarOutdated    = "ProgressBarOutdated"
+  show ProgressBarBox         = "ProgressBarBox"
+  show ProgressBarBoxOutdated = "ProgressBarBoxOutdated"
+  show ReleaseName            = "ReleaseName"
+  show ResourcesIcon          = "ResourcesIcon"
+  show SelectMetricCheck      = "SelectMetricCheck"
+  show SelectMetricCheckArea  = "SelectMetricCheckArea"
+  show SelectNodeCheck        = "SelectNodeCheck"
+  show SelectNodeCheckArea    = "SelectNodeCheckArea"
+  show ServiceName            = "ServiceName"
+  show ShowHideIcon           = "ShowHideIcon"
+  show TabContainer           = "TabContainer"
+  show TopBar                 = "TopBar"
+  show ValueUnit              = "ValueUnit"
+  show ValueUnitPercent       = "ValueUnitPercent"
+  show CPUUsageChart          = "CPUUsageChart"
+  show MemoryUsageChart       = "MemoryUsageChart"
+  show DiskUsageChart         = "DiskUsageChart"
+  show NetworkUsageChart      = "NetworkUsageChart"
+  show GridCPUUsageChart      = "GridCPUUsageChart"
+  show GridMemoryUsageChart   = "GridMemoryUsageChart"
+  show GridDiskUsageChart     = "GridDiskUsageChart"
+  show GridNetworkUsageChart  = "GridNetworkUsageChart"
+  show WarningMessage         = "WarningMessage"
+  show ErrorMessage           = "ErrorMessage"
+  show CriticalMessage        = "CriticalMessage"
+  show AlertMessage           = "AlertMessage"
+  show EmergencyMessage       = "EmergencyMessage"
+  -- Names of these classes are taken from W3C-library.
   show W3Bar             = "w3-bar"
   show W3BarBlock        = "w3-bar-block"
   show W3BarItem         = "w3-bar-item"
@@ -276,14 +327,6 @@ instance Show HTMLW3Class where
   show W3M12             = "m12"
   show W3S12             = "s12"
 
--- | Operator for class names concatenation. Please note
---   that w3-classes should be the first, because our
---   own classes override some of them.
-(<+>) :: [HTMLW3Class] -> [HTMLClass] -> String
-(<+>) w3Classes ownClasses = unwords allClasses
- where
-  allClasses = map Prelude.show w3Classes ++ map Prelude.show ownClasses
-
 data HTMLId
   = SelectMetricButton
   | HideAllMetricsButton
@@ -305,6 +348,11 @@ data HTMLId
 
 (##) :: UI Element -> String  -> UI Element
 (##) el i = el # UI.set UI.id_ i
+
+(#.) :: UI Element -> [HTMLClass] -> UI Element
+(#.) el []   = el # UI.set UI.class_ ""
+(#.) el [cl] = el # UI.set UI.class_ (show cl)
+(#.) el cls  = el # UI.set UI.class_ (unwords $ map show cls)
 
 showIt, hideIt, showRow, showCell :: UI Element -> UI Element
 showIt   = UI.set UI.style [("display", "block")]
