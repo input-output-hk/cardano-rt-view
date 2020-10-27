@@ -24,52 +24,43 @@ mkNodePane nameOfNode = do
   -- Create |Element|s containing node state (info, metrics).
   -- These elements will be part of the complete page,
   -- later they will be updated by acceptor thread.
-  elNodeProtocol            <- string ""
-  elNodeVersion             <- string ""
-  elNodePlatform            <- string ""
-  elActiveNode              <- string "-"
-  elUptime                  <- string "00:00:00"
-  elEpoch                   <- string "0"
-  elSlot                    <- string "0"
-  elBlocksNumber            <- string "0"
-  elBlocksForgedNumber      <- string "0"
-  elNodeCannotForge         <- string "0"
-  elChainDensity            <- string "0"
-  elNodeIsLeaderNumber      <- string "0"
-  elSlotsMissedNumber       <- string "0"
-  elTxsProcessed            <- string "0"
-  elTraceAcceptorEndpoint   <- string "0"
-  elOpCertStartKESPeriod    <- string "0"
-  elOpCertExpiryKESPeriod   <- string "0"
-  elCurrentKESPeriod        <- string "0"
-  elRemainingKESPeriods     <- string "0"
+  elNodeProtocol              <- string ""
+  elNodeVersion               <- string ""
+  elNodePlatform              <- string ""
+  elActiveNode                <- string "-"
+  elUptime                    <- string "00:00:00"
+  elEpoch                     <- string "0"
+  elSlot                      <- string "0"
+  elBlocksNumber              <- string "0"
+  elBlocksForgedNumber        <- string "0"
+  elNodeCannotForge           <- string "0"
+  elChainDensity              <- string "0"
+  elNodeIsLeaderNumber        <- string "0"
+  elSlotsMissedNumber         <- string "0"
+  elTxsProcessed              <- string "0"
+  elTraceAcceptorEndpoint     <- string "0"
+  elOpCertStartKESPeriod      <- string "0"
+  elOpCertExpiryKESPeriod     <- string "0"
+  elCurrentKESPeriod          <- string "0"
+  elRemainingKESPeriods       <- string "0"
   elRemainingKESPeriodsInDays <- string "0"
-  elMempoolTxsNumber        <- string "0"
-  elMempoolTxsPercent       <- string "0"
-  elMempoolBytes            <- string "0"
-  elMempoolBytesPercent     <- string "0"
-  elMempoolMaxTxs           <- string "0"
-  elMempoolMaxBytes         <- string "0"
-  elMemory                  <- string "0"
-  elMemoryMax               <- string "0"
-  elMemoryMaxTotal          <- string "0"
-  elMemoryPercent           <- string "0"
-  elCPUPercent              <- string "0"
-  elDiskUsageR              <- string "0"
-  elDiskUsageRMaxTotal      <- string "0"
-  elDiskUsageW              <- string "0"
-  elDiskUsageWMaxTotal      <- string "0"
-  elNetworkUsageIn          <- string "0"
-  elNetworkUsageInMaxTotal  <- string "0"
-  elNetworkUsageOut         <- string "0"
-  elNetworkUsageOutMaxTotal <- string "0"
-  elRTSMemoryAllocated      <- string "0"
-  elRTSMemoryUsed           <- string "0"
-  elRTSMemoryUsedPercent    <- string "0"
-  elRTSGcCpu                <- string "0"
-  elRTSGcElapsed            <- string "0"
-  elRTSGcNum                <- string "0"
-  elRTSGcMajorNum           <- string "0"
+  elMempoolTxsNumber          <- string "0"
+  elMempoolTxsPercent         <- string "0"
+  elMempoolBytes              <- string "0"
+  elMempoolBytesPercent       <- string "0"
+  elMempoolMaxTxs             <- string "0"
+  elMempoolMaxBytes           <- string "0"
+  elDiskUsageR                <- string "0"
+  elDiskUsageW                <- string "0"
+  elNetworkUsageIn            <- string "0"
+  elNetworkUsageOut           <- string "0"
+  elRTSMemoryAllocated        <- string "0"
+  elRTSMemoryUsed             <- string "0"
+  elRTSMemoryUsedPercent      <- string "0"
+  elRTSGcCpu                  <- string "0"
+  elRTSGcElapsed              <- string "0"
+  elRTSGcNum                  <- string "0"
+  elRTSGcMajorNum             <- string "0"
 
   -- Progress bars.
   elMempoolBytesProgress    <- UI.div #. [ProgressBar] #+
@@ -511,19 +502,10 @@ mkNodePane nameOfNode = do
           , (ElMempoolBytesPercent,     elMempoolBytesPercent)
           , (ElMempoolMaxTxs,           elMempoolMaxTxs)
           , (ElMempoolMaxBytes,         elMempoolMaxBytes)
-          , (ElMemory,                  elMemory)
-          , (ElMemoryMax,               elMemoryMax)
-          , (ElMemoryMaxTotal,          elMemoryMaxTotal)
-          , (ElMemoryPercent,           elMemoryPercent)
-          , (ElCPUPercent,              elCPUPercent)
           , (ElDiskUsageR,              elDiskUsageR)
-          , (ElDiskUsageRMaxTotal,      elDiskUsageRMaxTotal)
           , (ElDiskUsageW,              elDiskUsageW)
-          , (ElDiskUsageWMaxTotal,      elDiskUsageWMaxTotal)
           , (ElNetworkUsageIn,          elNetworkUsageIn)
-          , (ElNetworkUsageInMaxTotal,  elNetworkUsageInMaxTotal)
           , (ElNetworkUsageOut,         elNetworkUsageOut)
-          , (ElNetworkUsageOutMaxTotal, elNetworkUsageOutMaxTotal)
           , (ElRTSMemoryAllocated,      elRTSMemoryAllocated)
           , (ElRTSMemoryUsed,           elRTSMemoryUsed)
           , (ElRTSMemoryUsedPercent,    elRTSMemoryUsedPercent)

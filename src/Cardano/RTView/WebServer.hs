@@ -54,7 +54,7 @@ mainPage nsMVar params acceptors window = do
 
   -- Start the timer for GUI update. Every second it will
   -- call a function which updates node state elements on the page.
-  guiUpdateTimer <- timer # set interval 2000 -- Every 2 s.
+  guiUpdateTimer <- timer # set interval 1000
   void $ onEvent (tick guiUpdateTimer) $ \_ -> do
     newState <- liftIO $ readMVar nsMVar
     updateGUI window newState params acceptors (nodesStateElems, gridNodesStateElems)
