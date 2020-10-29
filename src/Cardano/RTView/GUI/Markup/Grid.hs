@@ -16,17 +16,17 @@ import qualified Data.Text as T
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, (#), (#+))
 
+import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
+
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
                                               HTMLId (..), NodeStateElements,
                                               NodesStateElements, PeerInfoItem (..),
                                               (##), (#.))
-import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
 mkNodesGrid
-  :: UI.Window
-  -> [RemoteAddrNamed]
+  :: [RemoteAddrNamed]
   -> UI (Element, NodesStateElements)
-mkNodesGrid _window acceptors = do
+mkNodesGrid acceptors = do
   nodesEls
     <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
          nodeEls <- mkNodeElements nameOfNode

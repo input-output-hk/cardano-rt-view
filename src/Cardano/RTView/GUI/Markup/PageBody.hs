@@ -15,30 +15,18 @@ import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string,
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
-                                              HTMLId (..),
-                                              NodeStateElements, NodesStateElements,
-                                              PeerInfoItem, hideIt, showCell, showIt,
-                                              showRow, (##), (#.))
+                                              HTMLId (..), NodesStateElements,
+                                              hideIt, showCell, showIt, showRow, (##), (#.))
 import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames, metricLabel, mkNodesGrid)
-import           Cardano.RTView.GUI.Markup.Pane (mkNodePane)
+import           Cardano.RTView.GUI.Markup.Pane (mkNodesPanes)
 
 mkPageBody
   :: UI.Window
   -> [RemoteAddrNamed]
-  -> UI ( Element
-        , (NodesStateElements, NodesStateElements)
-        )
+  -> UI (Element, (NodesStateElements, NodesStateElements))
 mkPageBody window acceptors = do
-  -- Create panes for each node (corresponding to acceptors).
-  nodePanesWithElems
-    <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
-         (pane, nodeStateElems, peerInfoItems) <- mkNodePane nameOfNode
-         return (nameOfNode, pane, nodeStateElems, peerInfoItems)
-
-  -- Create panes areas on the page.
-  panesAreas
-    <- forM nodePanesWithElems $ \(_, pane, _, _) ->
-         return $ UI.div #. [W3Col, W3L6, W3M12, W3S12] #+ [element pane]
+  (paneNodesRootElem, paneNodesElems, panesWithNames) <- mkNodesPanes acceptors
+  (gridNodesRootElem, gridNodesElems) <- mkNodesGrid acceptors
 
   -- Register clickable selector for nodes (to be able to show only one or all of them).
   nodesSelector <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
@@ -57,7 +45,7 @@ mkPageBody window acceptors = do
         Just btn -> UI.get UI.value btn >>= \case
           "paneMode" -> do
             let action = if isChecked then showIt else hideIt
-            forNode nameOfNode nodePanesWithElems action
+            forNodePane nameOfNode panesWithNames action
           _ -> do
             let action = if isChecked then showCell else hideIt
             forNodeColumn window nameOfNode action
@@ -75,8 +63,8 @@ mkPageBody window acceptors = do
            void $ UI.onEvent (UI.click showAllNodesButton) $ \_ -> do
              UI.getElementById window (show ViewModeButton) >>= \case
                Just btn -> UI.get UI.value btn >>= \case
-                 "paneMode" -> showAllNodes window nodePanesWithElems
-                 _ -> showAllNodesColumns window nodePanesWithElems
+                 "paneMode" -> showAllNodes window panesWithNames
+                 _ -> showAllNodesColumns window panesWithNames
                Nothing -> return ()
              void $ element showAllNodesButton #. [W3BarItem, W3Button, W3Disabled]
              void $ element hideAllNodesButton #. [W3BarItem, W3Button, W3BorderBottom]
@@ -84,8 +72,8 @@ mkPageBody window acceptors = do
            void $ UI.onEvent (UI.click hideAllNodesButton) $ \_ -> do
              UI.getElementById window (show ViewModeButton) >>= \case
                Just btn -> UI.get UI.value btn >>= \case
-                 "paneMode" -> hideAllNodes window nodePanesWithElems
-                 _ -> hideAllNodesColumns window nodePanesWithElems
+                 "paneMode" -> hideAllNodes window panesWithNames
+                 _ -> hideAllNodesColumns window panesWithNames
                Nothing -> return ()
              void $ element showAllNodesButton #. [W3BarItem, W3Button]
              void $ element hideAllNodesButton #. [W3BarItem, W3Button, W3BorderBottom, W3Disabled]
@@ -106,22 +94,21 @@ mkPageBody window acceptors = do
 
   metricsSelector <- mkMetricsSelector window
 
-  -- Make page body.
-  (gridNodes, gridNodesStateElems) <- mkNodesGrid window acceptors
-  panes <- UI.div #. [W3Row] #+ panesAreas
+  bodyRootElem <- UI.div #+ [element paneNodesRootElem] -- Pane view mode is the default now.
+
   body
     <- UI.getBody window #+
          [ topNavigation allSelectors viewModeSelector metricsSelector
-         , element panes
+         , element bodyRootElem
          ]
 
   UI.runFunction $ UI.ffi Chart.prepareChartsJS
 
   void $ UI.onEvent (UI.click paneViewButton) $ \_ -> do
-    toggleViewMode window "paneMode" panes panesAreas [element gridNodes]
+    toggleViewMode window "paneMode" bodyRootElem [element paneNodesRootElem] [element gridNodesRootElem]
     forElementWithId window (show SelectMetricButton) hideIt
   void $ UI.onEvent (UI.click gridViewButton) $ \_ -> do
-    toggleViewMode window "gridMode" panes [element gridNodes] panesAreas
+    toggleViewMode window "gridMode" bodyRootElem [element gridNodesRootElem] [element paneNodesRootElem]
     forElementWithId window (show SelectMetricButton) showIt
     forM_ acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
       UI.runFunction $ UI.ffi Chart.gridMemoryUsageChartJS  (showt GridMemoryUsageChartId  <> nameOfNode)
@@ -136,11 +123,7 @@ mkPageBody window acceptors = do
     UI.runFunction $ UI.ffi Chart.diskUsageChartJS    (showt DiskUsageChartId    <> nameOfNode)
     UI.runFunction $ UI.ffi Chart.networkUsageChartJS (showt NetworkUsageChartId <> nameOfNode)
 
-  nodesStateElems
-    <- forM nodePanesWithElems $ \(nameOfNode, _, nodeStateElems, peerInfoItems) ->
-         return (nameOfNode, nodeStateElems, peerInfoItems)
-
-  return (body, (nodesStateElems, gridNodesStateElems))
+  return (body, (paneNodesElems, gridNodesElems))
  where
   showt :: Show a => a -> Text
   showt = T.pack . show
@@ -175,13 +158,13 @@ topNavigation nodesSelector viewModeSelector metricsSelector =
         ]
     ]
 
-forNode
+forNodePane
   :: Text
-  -> [(Text, Element, NodeStateElements, [PeerInfoItem])]
+  -> [(Text, Element)]
   -> (UI Element -> UI Element)
   -> UI ()
-forNode nameOfNode nodePanesWithElems action =
-  forM_ nodePanesWithElems $ \(aName, pane, _, _) ->
+forNodePane nameOfNode panesWithNames' action =
+  forM_ panesWithNames' $ \(aName, pane) ->
     when (aName == nameOfNode) $
       void $ element pane # action
 
@@ -200,7 +183,7 @@ forNodeColumn window nameOfNode action = do
 
 showAllNodes, hideAllNodes
   :: UI.Window
-  -> [(Text, Element, NodeStateElements, [PeerInfoItem])]
+  -> [(Text, Element)]
   -> UI ()
 showAllNodes = changeNodesVisibility True
 hideAllNodes = changeNodesVisibility False
@@ -208,10 +191,10 @@ hideAllNodes = changeNodesVisibility False
 changeNodesVisibility
   :: Bool
   -> UI.Window
-  -> [(Text, Element, NodeStateElements, [PeerInfoItem])]
+  -> [(Text, Element)]
   -> UI ()
-changeNodesVisibility showThem window nodePanesWithElems = do
-  forM_ nodePanesWithElems $ \(_, pane, _, _) ->
+changeNodesVisibility showThem window panesWithNames' = do
+  forM_ panesWithNames' $ \(_, pane) ->
     void $ element pane # if showThem then showIt else hideIt
   nodesCheckboxes <- UI.getElementsByClassName window (show SelectNodeCheck)
   forM_ nodesCheckboxes $ \checkbox ->
@@ -219,7 +202,7 @@ changeNodesVisibility showThem window nodePanesWithElems = do
 
 showAllNodesColumns, hideAllNodesColumns
   :: UI.Window
-  -> [(Text, Element, NodeStateElements, [PeerInfoItem])]
+  -> [(Text, Element)]
   -> UI ()
 showAllNodesColumns = changeNodesColumnsVisibility True
 hideAllNodesColumns = changeNodesColumnsVisibility False
@@ -227,10 +210,10 @@ hideAllNodesColumns = changeNodesColumnsVisibility False
 changeNodesColumnsVisibility
   :: Bool
   -> UI.Window
-  -> [(Text, Element, NodeStateElements, [PeerInfoItem])]
+  -> [(Text, Element)]
   -> UI ()
-changeNodesColumnsVisibility showThem window nodePanesWithElems = do
-  forM_ nodePanesWithElems $ \(nameOfNode, _, _, _) ->
+changeNodesColumnsVisibility showThem window panesWithNames' = do
+  forM_ panesWithNames' $ \(nameOfNode, _) ->
     forNodeColumn window nameOfNode $ if showThem then showCell else hideIt
   nodesCheckboxes <- UI.getElementsByClassName window (show SelectNodeCheck)
   forM_ nodesCheckboxes $ \checkbox ->

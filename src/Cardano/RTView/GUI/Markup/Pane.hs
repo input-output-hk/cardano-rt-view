@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.RTView.GUI.Markup.Pane
-    ( mkNodePane
+    ( mkNodesPanes
     ) where
 
 import           Control.Monad (forM, forM_, void)
@@ -12,10 +12,32 @@ import qualified Data.Text as T
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, (#), (#+))
 
+import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
+
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
-                                              HTMLId (..), NodeStateElements, PeerInfoElements (..),
-                                              PeerInfoItem (..), hideIt, showIt,
-                                              (##), (#.))
+                                              HTMLId (..), NodeStateElements, NodesStateElements,
+                                              PeerInfoElements (..), PeerInfoItem (..), hideIt,
+                                              showIt, (##), (#.))
+
+mkNodesPanes
+  :: [RemoteAddrNamed]
+  -> UI (Element, NodesStateElements, [(Text, Element)])
+mkNodesPanes acceptors = do
+  nodePanesWithElems
+    <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
+         (pane, nodeStateElems, peerInfoItems) <- mkNodePane nameOfNode
+         return (nameOfNode, pane, nodeStateElems, peerInfoItems)
+
+  panesAreas
+    <- forM nodePanesWithElems $ \(_, pane, _, _) ->
+         return $ UI.div #. [W3Col, W3L6, W3M12, W3S12] #+ [element pane]
+
+  let nodesEls       = [(name, elems, piItems) | (name, _,    elems, piItems) <- nodePanesWithElems]
+      panesWithNames = [(name, pane)           | (name, pane, _,     _)       <- nodePanesWithElems]
+
+  panes <- UI.div #. [W3Row] #+ panesAreas
+
+  return (panes, nodesEls, panesWithNames)
 
 mkNodePane
   :: Text
