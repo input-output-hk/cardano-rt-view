@@ -71,25 +71,16 @@ data ElementName
   | ElMempoolBytesPercent
   | ElMempoolMaxTxs
   | ElMempoolMaxBytes
-  | ElMemory
-  | ElMemoryMax
-  | ElMemoryMaxTotal
-  | ElMemoryPercent
-  | ElCPUPercent
   | ElCPULast
   | ElCPUNs
   | ElDiskUsageR
   | ElDiskUsageRMax
-  | ElDiskUsageRMaxTotal
   | ElDiskUsageRPercent
   | ElDiskUsageW
   | ElDiskUsageWMax
-  | ElDiskUsageWMaxTotal
   | ElDiskUsageWPercent
   | ElNetworkUsageIn
-  | ElNetworkUsageInMaxTotal
   | ElNetworkUsageOut
-  | ElNetworkUsageOutMaxTotal
   | ElRTSMemoryAllocated
   | ElRTSMemoryUsed
   | ElRTSMemoryUsedPercent
@@ -117,27 +108,24 @@ data ElementValue
   | ElementWord64  !Word64
   | ElementDouble  !Double
   | ElementString  !String
+  | ElementText    !Text
   deriving (Generic, NFData)
 
 -- | An item for each connected peer, contains a parent element
 --   and list of child elements.
-data PeerInfoItem
-  = PeerInfoItem
-      { piItem      :: !Element
-      , piItemElems :: !PeerInfoElements
-      }
-  deriving (Generic, NFData)
+data PeerInfoItem = PeerInfoItem
+  { piItem      :: !Element
+  , piItemElems :: !PeerInfoElements
+  } deriving (Generic, NFData)
 
-data PeerInfoElements
-  = PeerInfoElements
-      { pieEndpoint   :: !Element
-      , pieBytesInF   :: !Element
-      , pieReqsInF    :: !Element
-      , pieBlocksInF  :: !Element
-      , pieSlotNumber :: !Element
-      , pieStatus     :: !Element
-      }
-  deriving (Generic, NFData)
+data PeerInfoElements = PeerInfoElements
+  { pieEndpoint   :: !Element
+  , pieBytesInF   :: !Element
+  , pieReqsInF    :: !Element
+  , pieBlocksInF  :: !Element
+  , pieSlotNumber :: !Element
+  , pieStatus     :: !Element
+  } deriving (Generic, NFData)
 
 -- | HTML elements identifiers, we use them in HTML, CSS and JS FFI.
 

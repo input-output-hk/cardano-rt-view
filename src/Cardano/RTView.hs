@@ -51,7 +51,7 @@ runCardanoRTView params' = do
   -- Launch 3 threads:
   --   1. acceptor plugin (it launches |TraceAcceptor| plugin),
   --   2. node state updater (it gets metrics from |LogBuffer| and updates NodeState),
-  --   3. server (it serves requests from user's browser and shows nodes' metrics in the real time).
+  --   3. web server (it serves requests from user's browser and shows nodes' metrics in the real time).
   acceptorThr <- async $ launchMetricsAcceptor config accTr switchBoard
   updaterThr  <- async $ launchNodeStateUpdater tr params switchBoard be nodesStateMVar
   serverThr   <- async $ launchWebServer nodesStateMVar params acceptors

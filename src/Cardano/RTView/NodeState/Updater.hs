@@ -38,9 +38,7 @@ import           Cardano.BM.Trace (Trace)
 import           Cardano.RTView.CLI (RTViewParams (..))
 import           Cardano.RTView.ErrorBuffer (ErrorBuffer, readErrorBuffer)
 import           Cardano.RTView.NodeState.Parsers (extractPeersInfo)
-import           Cardano.RTView.NodeState.Types (NodeError (..), NodeInfo (..),
-                                                 NodeMetrics (..), NodeState (..),
-                                                 NodesState)
+import           Cardano.RTView.NodeState.Types
 
 -- | This function is running in a separate thread.
 --   It takes |LogObject|s with nodes' metrics from |LogBuffer|,
@@ -94,6 +92,26 @@ updateNodesStateErrors nsMVar loggerName (LogObject _ aMeta aContent) = do
       Just ns -> nodesStateWith $ updateNodeErrors ns aMeta aContent
       Nothing -> return currentNodesState
 
+updateNodeErrors :: Show a => NodeState -> LOMeta -> LOContent a -> NodeState
+updateNodeErrors ns (LOMeta timeStamp _ _ sev _) aContent = ns { nodeErrors = newMetrics }
+ where
+  newMetrics = currentMetrics
+    { errors = newErrors
+    , errorsChanged = True -- Every error message changes current list of errors by definition.
+    }
+  newErrors = NodeError timeStamp sev errorMessage : currentErrors
+  currentMetrics = nodeErrors ns
+  currentErrors = errors currentMetrics
+  errorMessage =
+    case aContent of
+      LogMessage msg -> show msg
+      LogError eMsg -> T.unpack eMsg
+      LogStructured obj -> show obj
+      LogStructuredText _ txt -> T.unpack txt
+      MonitoringEffect (MonitorAlert msg) -> "Monitor alert: " <> T.unpack msg
+      MonitoringEffect _ -> ""
+      _ -> "UNPARSED_ERROR_MESSAGE"
+
 -- | Update NodeState for particular node based on loggerName.
 updateNodesState
   :: RTViewParams
@@ -124,8 +142,8 @@ updateNodesState params nsMVar loggerName (LogObject aName aMeta aContent) = do
       Just ns ->
         if | "cardano.node.metrics.peersFromNodeKernel" `T.isInfixOf` aName ->
             case aContent of
-              LogStructured peersInfo ->
-                nodesStateWith $ updatePeersInfo ns peersInfo
+              LogStructured newPeersInfo ->
+                nodesStateWith $ updatePeersInfo ns newPeersInfo
               _ -> return currentNodesState
            | "cardano.node.metrics" `T.isInfixOf` aName ->
             case aContent of
@@ -133,8 +151,8 @@ updateNodesState params nsMVar loggerName (LogObject aName aMeta aContent) = do
                 nodesStateWith $ updateNodeUpTime ns upTimeInNs now
               LogValue "txsInMempool" (PureI txsInMempool) ->
                 nodesStateWith $ updateMempoolTxs ns txsInMempool
-              LogValue "mempoolBytes" (PureI mempoolBytes) ->
-                nodesStateWith $ updateMempoolBytes ns mempoolBytes
+              LogValue "mempoolBytes" (PureI mempoolBytes') ->
+                nodesStateWith $ updateMempoolBytes ns mempoolBytes'
               LogValue "txsProcessedNum" (PureI processedTxsNum) ->
                 nodesStateWith $ updateTxsProcessed ns processedTxsNum
               LogValue "blocksForgedNum" (PureI forgedBlocksNum) ->
@@ -225,92 +243,91 @@ updateNodesState params nsMVar loggerName (LogObject aName aMeta aContent) = do
                 nodesStateWith $ updateBlocksNumber ns blockNum now
               LogValue "slotInEpoch" (PureI slotNum) ->
                 nodesStateWith $ updateSlotInEpoch ns slotNum now
-              LogValue "epoch" (PureI epoch) ->
-                nodesStateWith $ updateEpoch ns epoch now
+              LogValue "epoch" (PureI epoch') ->
+                nodesStateWith $ updateEpoch ns epoch' now
               _ -> return currentNodesState
       Nothing ->
         -- This is a problem, because it means that configuration is unexpected one:
         -- name of node in getAcceptAt doesn't correspond to the name of loggerName.
         return currentNodesState
 
+  -- Update elements of GUI iff the new corresponding values were received.
+  -- probablyUpdatedState <- readMVar nsMVar
+  return ()
+
 -- Updaters for particular node state's fields.
 
 updateNodeUpTime :: NodeState -> Word64 -> Word64 -> NodeState
-updateNodeUpTime ns upTimeInNs now = ns { nsInfo = newNi }
+updateNodeUpTime ns upTimeInNs now = ns { nodeMetrics = newNodeMetrics }
  where
-  newNi =
-    currentNi
-      { niUpTime = upTimeInNs
-      , niUpTimeLastUpdate = now
-      }
-  currentNi = nsInfo ns
-
-updateNodeErrors :: Show a => NodeState -> LOMeta -> LOContent a -> NodeState
-updateNodeErrors ns (LOMeta timeStamp _ _ sev _) aContent = ns { nsInfo = newNi }
- where
-  newNi = currentNi { niNodeErrors = NodeError timeStamp sev errorMessage : currentErrors }
-  currentNi = nsInfo ns
-  currentErrors = niNodeErrors currentNi
-  errorMessage =
-    case aContent of
-      LogMessage msg -> show msg
-      LogError eMsg -> T.unpack eMsg
-      LogStructured obj -> show obj
-      LogStructuredText _ txt -> T.unpack txt
-      MonitoringEffect (MonitorAlert msg) -> "Monitor alert: " <> T.unpack msg
-      MonitoringEffect _ -> ""
-      _ -> "UNPARSED_ERROR_MESSAGE"
+  newNodeMetrics = (nodeMetrics ns)
+    { upTime = upTimeInNs
+    , upTimeLastUpdate = now
+    }
 
 updatePeersInfo :: NodeState -> A.Object -> NodeState
-updatePeersInfo ns peersInfo = ns { nsInfo = newNi }
+updatePeersInfo ns newPeersInfo = ns { peersMetrics = newPeersMetrics }
  where
-  newNi = currentNi { niPeersInfo = newPeersInfo }
-  currentNi = nsInfo ns
-  newPeersInfo = extractPeersInfo peersInfo
+  newPeersMetrics = currentMetrics
+    { peersInfo = newPeersInfo'
+    , peersInfoChanged = peersInfo currentMetrics /= newPeersInfo'
+    }
+  currentMetrics = peersMetrics ns
+  newPeersInfo' = extractPeersInfo newPeersInfo
 
 updateNodeProtocol :: NodeState -> Text -> NodeState
-updateNodeProtocol ns protocol = ns { nsInfo = newNi }
+updateNodeProtocol ns protocol = ns { nodeMetrics = newNodeMetrics }
  where
-  newNi = currentNi { niNodeProtocol = T.unpack protocol }
-  currentNi = nsInfo ns
+  newNodeMetrics = currentMetrics
+    { nodeProtocol = protocol
+    , nodeProtocolChanged = nodeProtocol currentMetrics /= protocol
+    }
+  currentMetrics = nodeMetrics ns
 
 updateNodeVersion :: NodeState -> Text -> NodeState
-updateNodeVersion ns version = ns { nsInfo = newNi }
+updateNodeVersion ns version = ns { nodeMetrics = newNodeMetrics }
  where
-  newNi = currentNi { niNodeVersion = T.unpack version }
-  currentNi = nsInfo ns
+  newNodeMetrics = currentMetrics
+    { nodeVersion = version
+    , nodeVersionChanged = nodeVersion currentMetrics /= version
+    }
+  currentMetrics = nodeMetrics ns
 
 updateNodeCommit :: NodeState -> Text -> NodeState
-updateNodeCommit ns commit = ns { nsInfo = newNi }
+updateNodeCommit ns commit = ns { nodeMetrics = newNodeMetrics }
  where
-  newNi =
-    currentNi
-      { niNodeCommit      = T.unpack commit
-      , niNodeShortCommit = take 7 $ T.unpack commit
-      }
-  currentNi = nsInfo ns
+  newNodeMetrics = currentMetrics
+    { nodeCommit = commit
+    , nodeCommitChanged = nodeCommit currentMetrics /= commit
+    , nodeShortCommit = T.take 7 commit
+    }
+  currentMetrics = nodeMetrics ns
 
 updateNodePlatform :: NodeState -> Int -> NodeState
-updateNodePlatform ns platfid = ns { nsInfo = newNi }
+updateNodePlatform ns platfId = ns { nodeMetrics = newNodeMetrics }
  where
-  platform = toEnum platfid :: Platform
-  newNi = currentNi { niNodePlatform = show platform }
-  currentNi = nsInfo ns
+  newNodeMetrics = currentMetrics
+    { nodePlatform = platformName
+    , nodePlatformChanged = True -- nodePlatform currentMetrics /= platformName
+    }
+  currentMetrics = nodeMetrics ns
+  platformName = T.pack . show $ (toEnum platfId :: Platform)
 
 #ifdef LINUX
 updateMemoryPages :: NodeState -> Integer -> Word64 -> NodeState
-updateMemoryPages ns pages now = ns { nsMetrics = newNm }
+updateMemoryPages ns pages now = ns { resourcesMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmMemory         = mBytes
-      , nmMemoryMax      = newMax
-      , nmMemoryMaxTotal = newMaxTotal
-      , nmMemoryPercent  = mBytes / newMaxTotal * 100.0
-      , nmMemoryLastUpdate = now
+  newMetrics =
+    currentMetrics
+      { memory           = mBytes
+      , memoryChanged    = memory currentMetrics /= mBytes
+      , memoryMax        = newMax
+      , memoryMaxTotal   = newMaxTotal
+      , memoryPercent    = mBytes / newMaxTotal * 100.0
+      , memoryLastUpdate = now
       }
-  currentNm   = nsMetrics ns
-  prevMax     = nmMemoryMax currentNm
+  currentMetrics   = resourcesMetrics ns
+  prevMax     = memoryMax currentMetrics
   newMax      = max prevMax mBytes
   newMaxTotal = max newMax 200.0
   mBytes      = fromIntegral (pages * pageSize) / 1024 / 1024 :: Double
@@ -319,18 +336,20 @@ updateMemoryPages ns pages now = ns { nsMetrics = newNm }
 
 #ifdef DARWIN
 updateMemoryBytes :: NodeState -> Word64 -> Word64 -> NodeState
-updateMemoryBytes ns bytes now = ns { nsMetrics = newNm }
+updateMemoryBytes ns bytes now = ns { resourcesMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmMemory         = mBytes
-      , nmMemoryMax      = newMax
-      , nmMemoryMaxTotal = newMaxTotal
-      , nmMemoryPercent  = mBytes / newMaxTotal * 100.0
-      , nmMemoryLastUpdate = now
+  newMetrics =
+    currentMetrics
+      { memory           = mBytes
+      , memoryChanged    = currentMemory /= mBytes
+      , memoryMax        = newMax
+      , memoryMaxTotal   = newMaxTotal
+      , memoryPercent    = mBytes / newMaxTotal * 100.0
+      , memoryLastUpdate = now
       }
-  currentNm   = nsMetrics ns
-  prevMax     = nmMemoryMax currentNm
+  currentMetrics   = resourcesMetrics ns
+  currentMemory = memory currentMetrics
+  prevMax     = memoryMax currentMetrics
   newMax      = max prevMax mBytes
   newMaxTotal = max newMax 200.0
   mBytes      = fromIntegral bytes / 1024 / 1024 :: Double
@@ -338,70 +357,72 @@ updateMemoryBytes ns bytes now = ns { nsMetrics = newNm }
 
 #ifdef LINUX
 updateDiskRead :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
-updateDiskRead ns bytesWereRead meta now = ns { nsMetrics = newNm }
+updateDiskRead ns bytesWereRead meta now = ns { resourcesMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmDiskUsageR           = currentDiskRate
-      , nmDiskUsageRPercent    = diskUsageRPercent
-      , nmDiskUsageRLast       = bytesWereRead
-      , nmDiskUsageRNs         = currentTimeInNs
-      , nmDiskUsageRMax        = maxDiskRate
-      , nmDiskUsageRMaxTotal   = max maxDiskRate 1.0
-      , nmDiskUsageRAdaptTime  = newAdaptTime
-      , nmDiskUsageRLastUpdate = now
+  newMetrics =
+    currentMetrics
+      { diskUsageR           = currentDiskRate
+      , diskUsageRChanged    = diskUsageR currentMetrics /= currentDiskRate
+      , diskUsageRPercent    = diskUsageRPercent'
+      , diskUsageRLast       = bytesWereRead
+      , diskUsageRNs         = currentTimeInNs
+      , diskUsageRMax        = maxDiskRate
+      , diskUsageRMaxTotal   = max maxDiskRate 1.0
+      , diskUsageRAdaptTime  = newAdaptTime
+      , diskUsageRLastUpdate = now
       }
-  currentNm         = nsMetrics ns
+  currentMetrics         = resourcesMetrics ns
   currentTimeInNs   = utc2ns (tstamp meta)
-  timeDiff          = fromIntegral (currentTimeInNs - nmDiskUsageRNs currentNm) :: Double
+  timeDiff          = fromIntegral (currentTimeInNs - diskUsageRNs currentMetrics) :: Double
   timeDiffInSecs    = timeDiff / 1000000000
-  bytesDiff         = fromIntegral (bytesWereRead - nmDiskUsageRLast currentNm) :: Double
+  bytesDiff         = fromIntegral (bytesWereRead - diskUsageRLast currentMetrics) :: Double
   bytesDiffInKB'    = bytesDiff / 1024
   bytesDiffInKB     = if bytesDiffInKB' > 500.0 -- To prevent an overflow if the node was restarted.
                         then 1.0
                         else bytesDiffInKB'
   currentDiskRate   = bytesDiffInKB / timeDiffInSecs
-  lastAdaptTime     = nmDiskUsageRAdaptTime currentNm
+  lastAdaptTime     = diskUsageRAdaptTime currentMetrics
   timeElapsed       = diffUTCTime (tstamp meta) lastAdaptTime
   ( maxDiskRate
     , newAdaptTime ) =
         if timeElapsed >= adaptPeriod
-          then ((nmDiskUsageRMax currentNm + currentDiskRate) / 2, tstamp meta)
-          else (max currentDiskRate $ nmDiskUsageRMax currentNm, lastAdaptTime)
-  diskUsageRPercent = currentDiskRate / (maxDiskRate / 100.0)
+          then ((diskUsageRMax currentMetrics + currentDiskRate) / 2, tstamp meta)
+          else (max currentDiskRate $ diskUsageRMax currentMetrics, lastAdaptTime)
+  diskUsageRPercent' = currentDiskRate / (maxDiskRate / 100.0)
 
 updateDiskWrite :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
-updateDiskWrite ns bytesWereWritten meta now = ns { nsMetrics = newNm }
+updateDiskWrite ns bytesWereWritten meta now = ns { resourcesMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmDiskUsageW           = currentDiskRate
-      , nmDiskUsageWPercent    = diskUsageWPercent
-      , nmDiskUsageWLast       = bytesWereWritten
-      , nmDiskUsageWNs         = currentTimeInNs
-      , nmDiskUsageWMax        = maxDiskRate
-      , nmDiskUsageWMaxTotal   = max maxDiskRate 1.0
-      , nmDiskUsageWAdaptTime  = newAdaptTime
-      , nmDiskUsageWLastUpdate = now
+  newMetrics =
+    currentMetrics
+      { diskUsageW           = currentDiskRate
+      , diskUsageWChanged    = diskUsageW currentMetrics /= currentDiskRate
+      , diskUsageWPercent    = diskUsageWPercent'
+      , diskUsageWLast       = bytesWereWritten
+      , diskUsageWNs         = currentTimeInNs
+      , diskUsageWMax        = maxDiskRate
+      , diskUsageWMaxTotal   = max maxDiskRate 1.0
+      , diskUsageWAdaptTime  = newAdaptTime
+      , diskUsageWLastUpdate = now
       }
-  currentNm         = nsMetrics ns
+  currentMetrics         = resourcesMetrics ns
   currentTimeInNs   = utc2ns (tstamp meta)
-  timeDiff          = fromIntegral (currentTimeInNs - nmDiskUsageWNs currentNm) :: Double
+  timeDiff          = fromIntegral (currentTimeInNs - diskUsageWNs currentMetrics) :: Double
   timeDiffInSecs    = timeDiff / 1000000000
-  bytesDiff         = fromIntegral (bytesWereWritten - nmDiskUsageWLast currentNm) :: Double
+  bytesDiff         = fromIntegral (bytesWereWritten - diskUsageWLast currentMetrics) :: Double
   bytesDiffInKB'    = bytesDiff / 1024
   bytesDiffInKB     = if bytesDiffInKB' > 500.0 -- To prevent an overflow if the node was restarted.
                         then 1.0
                         else bytesDiffInKB'
   currentDiskRate   = bytesDiffInKB / timeDiffInSecs
-  lastAdaptTime     = nmDiskUsageWAdaptTime currentNm
+  lastAdaptTime     = diskUsageWAdaptTime currentMetrics
   timeElapsed       = diffUTCTime (tstamp meta) lastAdaptTime
   ( maxDiskRate
     , newAdaptTime ) =
         if timeElapsed >= adaptPeriod
-          then ((nmDiskUsageWMax currentNm + currentDiskRate) / 2, tstamp meta)
-          else (max currentDiskRate $ nmDiskUsageWMax currentNm, lastAdaptTime)
-  diskUsageWPercent = currentDiskRate / (maxDiskRate / 100.0)
+          then ((diskUsageWMax currentMetrics + currentDiskRate) / 2, tstamp meta)
+          else (max currentDiskRate $ diskUsageWMax currentMetrics, lastAdaptTime)
+  diskUsageWPercent' = currentDiskRate / (maxDiskRate / 100.0)
 
 -- | Adaptaion period for disk usage max values.
 --   We have to adapt the max value to the new situation periodically,
@@ -410,258 +431,281 @@ adaptPeriod :: NominalDiffTime
 adaptPeriod = fromInteger $ 60 * 2 -- 2 minutes.
 
 updateCPUTicks :: NodeState -> Integer -> LOMeta -> Word64 -> NodeState
-updateCPUTicks ns ticks meta now = ns { nsMetrics = newNm }
+updateCPUTicks ns ticks meta now = ns { resourcesMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmCPUPercent    = cpuperc * 100.0
-      , nmCPULast       = ticks
-      , nmCPUNs         = tns
-      , nmCPULastUpdate = now
+  newMetrics =
+    currentMetrics
+      { cpuPercent    = newCPUPercent
+      , cpuPercentChanged = cpuPercent currentMetrics /= newCPUPercent
+      , cpuLast       = ticks
+      , cpuNs         = tns
+      , cpuLastUpdate = now
       }
-  currentNm = nsMetrics ns
+  currentMetrics = resourcesMetrics ns
+  newCPUPercent = cpuperc * 100.0
   tns       = utc2ns $ tstamp meta
-  tdiff     = max 0.1 $ fromIntegral (tns - nmCPUNs currentNm) / 1000000000 :: Double
-  cpuperc   = fromIntegral (ticks - nmCPULast currentNm) / fromIntegral clktck / tdiff
+  tdiff     = max 0.1 $ fromIntegral (tns - cpuNs currentMetrics) / 1000000000 :: Double
+  cpuperc   = fromIntegral (ticks - cpuLast currentMetrics) / fromIntegral clktck / tdiff
   clktck    = 100 :: Integer
 #endif
 
 #if defined(DARWIN) || defined(LINUX)
 updateNetworkIn :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
-updateNetworkIn ns inBytes meta now = ns { nsMetrics = newNm }
+updateNetworkIn ns inBytes meta now = ns { resourcesMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmNetworkUsageIn           = currentNetRate
-      , nmNetworkUsageInPercent    = currentNetRate / (maxNetRate / 100.0)
-      , nmNetworkUsageInLast       = inBytes
-      , nmNetworkUsageInNs         = currentTimeInNs
-      , nmNetworkUsageInMax        = maxNetRate
-      , nmNetworkUsageInMaxTotal   = max maxNetRate 1.0
-      , nmNetworkUsageInLastUpdate = now
+  newMetrics =
+    currentMetrics
+      { networkUsageIn           = currentNetRate
+      , networkUsageInChanged    = networkUsageIn currentMetrics /= currentNetRate
+      , networkUsageInPercent    = currentNetRate / (maxNetRate / 100.0)
+      , networkUsageInLast       = inBytes
+      , networkUsageInNs         = currentTimeInNs
+      , networkUsageInMax        = maxNetRate
+      , networkUsageInMaxTotal   = max maxNetRate 1.0
+      , networkUsageInLastUpdate = now
       }
-  currentNm       = nsMetrics ns
+  currentMetrics       = resourcesMetrics ns
   currentTimeInNs = utc2ns (tstamp meta)
-  timeDiff        = fromIntegral (currentTimeInNs - nmNetworkUsageInNs currentNm) :: Double
+  timeDiff        = fromIntegral (currentTimeInNs - networkUsageInNs currentMetrics) :: Double
   timeDiffInSecs  = timeDiff / 1000000000
-  bytesDiff       = fromIntegral (inBytes - nmNetworkUsageInLast currentNm) :: Double
+  bytesDiff       = fromIntegral (inBytes - networkUsageInLast currentMetrics) :: Double
   bytesDiffInKB   = bytesDiff / 1024
   currentNetRate  = bytesDiffInKB / timeDiffInSecs
-  maxNetRate      = max currentNetRate $ nmNetworkUsageInMax currentNm
+  maxNetRate      = max currentNetRate $ networkUsageInMax currentMetrics
 
 updateNetworkOut :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
-updateNetworkOut ns outBytes meta now = ns { nsMetrics = newNm }
+updateNetworkOut ns outBytes meta now = ns { resourcesMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmNetworkUsageOut           = currentNetRate
-      , nmNetworkUsageOutPercent    = currentNetRate / (maxNetRate / 100.0)
-      , nmNetworkUsageOutLast       = outBytes
-      , nmNetworkUsageOutNs         = currentTimeInNs
-      , nmNetworkUsageOutMax        = maxNetRate
-      , nmNetworkUsageOutMaxTotal   = max maxNetRate 1.0
-      , nmNetworkUsageOutLastUpdate = now
+  newMetrics =
+    currentMetrics
+      { networkUsageOut           = currentNetRate
+      , networkUsageOutChanged    = networkUsageOut currentMetrics /= currentNetRate
+      , networkUsageOutPercent    = currentNetRate / (maxNetRate / 100.0)
+      , networkUsageOutLast       = outBytes
+      , networkUsageOutNs         = currentTimeInNs
+      , networkUsageOutMax        = maxNetRate
+      , networkUsageOutMaxTotal   = max maxNetRate 1.0
+      , networkUsageOutLastUpdate = now
       }
-  currentNm       = nsMetrics ns
+  currentMetrics       = resourcesMetrics ns
   currentTimeInNs = utc2ns (tstamp meta)
-  timeDiff        = fromIntegral (currentTimeInNs - nmNetworkUsageOutNs currentNm) :: Double
+  timeDiff        = fromIntegral (currentTimeInNs - networkUsageOutNs currentMetrics) :: Double
   timeDiffInSecs  = timeDiff / 1000000000
-  bytesDiff       = fromIntegral (outBytes - nmNetworkUsageOutLast currentNm) :: Double
+  bytesDiff       = fromIntegral (outBytes - networkUsageOutLast currentMetrics) :: Double
   bytesDiffInKB   = bytesDiff / 1024
   currentNetRate  = bytesDiffInKB / timeDiffInSecs
-  maxNetRate      = max currentNetRate $ nmNetworkUsageOutMax currentNm
+  maxNetRate      = max currentNetRate $ networkUsageOutMax currentMetrics
 #endif
 
 #if defined(DARWIN) || defined(WINDOWS)
 updateCPUSecs :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
-updateCPUSecs ns nanosecs meta now = ns { nsMetrics = newNm }
+updateCPUSecs ns nanosecs meta now = ns { resourcesMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmCPUPercent    = if cpuperc < 0 then 0 else if cpuperc > 20.0 then nmCPUPercent currentNm else cpuperc * 100.0
-      , nmCPULast       = fromIntegral nanosecs
-      , nmCPUNs         = tns
-      , nmCPULastUpdate = now
+  newMetrics =
+    currentMetrics
+      { cpuPercent    = newCPUPercent
+      , cpuPercentChanged = cpuPercent currentMetrics /= newCPUPercent
+      , cpuLast       = fromIntegral nanosecs
+      , cpuNs         = tns
+      , cpuLastUpdate = now
       }
-  currentNm = nsMetrics ns
+  currentMetrics = resourcesMetrics ns
+  newCPUPercent = if cpuperc < 0
+                    then 0
+                    else if cpuperc > 20.0
+                           then nmCPUPercent currentMetrics
+                           else cpuperc * 100.0
   tns       = utc2ns $ tstamp meta
-  tdiff     = max 0.1 $ fromIntegral (tns - nmCPUNs currentNm) / 1000000000 :: Double
-  deltacpu  = fromIntegral nanosecs - nmCPULast currentNm
+  tdiff     = max 0.1 $ fromIntegral (tns - cpuNs currentMetrics) / 1000000000 :: Double
+  deltacpu  = fromIntegral nanosecs - cpuLast currentMetrics
   cpuperc   = fromIntegral deltacpu / 100000000 / tdiff
 #endif
 
 updateMempoolTxs :: NodeState -> Integer -> NodeState
-updateMempoolTxs ns txsInMempool = ns { nsMetrics = newNm }
+updateMempoolTxs ns txsInMempool = ns { mempoolMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmMempoolTxsNumber  = fromIntegral txsInMempool
-      , nmMempoolTxsPercent =   fromIntegral txsInMempool
-                              / fromIntegral maxTxs
-                              * 100.0
-      , nmMempoolMaxTxs = maxTxs
-      }
-  currentNm = nsMetrics ns
-  maxTxs = max txsInMempool (nmMempoolMaxTxs currentNm)
+  newMetrics = currentMetrics
+    { mempoolTxsNumber = fromIntegral txsInMempool
+    , mempoolTxsNumberChanged = currentMempoolTxsNumber /= fromIntegral txsInMempool
+    , mempoolTxsPercent =   fromIntegral txsInMempool
+                          / fromIntegral maxTxs
+                          * 100.0
+    , mempoolMaxTxs = maxTxs
+    }
+  currentMetrics = mempoolMetrics ns
+  currentMempoolTxsNumber = mempoolTxsNumber currentMetrics
+  maxTxs = max txsInMempool (mempoolMaxTxs currentMetrics)
 
 updateMempoolBytes :: NodeState -> Integer -> NodeState
-updateMempoolBytes ns mempoolBytes = ns { nsMetrics = newNm }
+updateMempoolBytes ns newMempoolBytes = ns { mempoolMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmMempoolBytes = fromIntegral mempoolBytes
-      , nmMempoolBytesPercent =   fromIntegral mempoolBytes
-                                / fromIntegral maxBytes
-                                * 100.0
-      , nmMempoolMaxBytes = maxBytes
-      }
-  currentNm = nsMetrics ns
-  maxBytes = max mempoolBytes (nmMempoolMaxBytes currentNm)
+  newMetrics = currentMetrics
+    { mempoolBytes = fromIntegral newMempoolBytes
+    , mempoolBytesChanged = currentMempoolBytes /= fromIntegral newMempoolBytes
+    , mempoolBytesPercent =   fromIntegral newMempoolBytes
+                            / fromIntegral maxBytes
+                            * 100.0
+    , mempoolMaxBytes = maxBytes
+    }
+  currentMetrics = mempoolMetrics ns
+  currentMempoolBytes = mempoolBytes currentMetrics
+  maxBytes = max newMempoolBytes (mempoolMaxBytes currentMetrics)
 
 updateTxsProcessed :: NodeState -> Integer -> NodeState
-updateTxsProcessed ns txsProcessed = ns { nsInfo = newNi }
+updateTxsProcessed ns txsProcNum = ns { mempoolMetrics = newMetrics }
  where
-  newNi = currentNi { niTxsProcessed = txsProcessed }
-  currentNi = nsInfo ns
+  newMetrics = currentMetrics
+    { txsProcessed = txsProcNum
+    , txsProcessedChanged = txsProcessed currentMetrics /= txsProcNum
+    }
+  currentMetrics = mempoolMetrics ns
 
 updateBlocksForged :: NodeState -> Integer -> Word64 -> NodeState
-updateBlocksForged ns blocksForged now = ns { nsInfo = newNi }
+updateBlocksForged ns blocksForged now = ns { forgeMetrics = newMetrics }
  where
-  newNi =
-    currentNi
-      { niBlocksForgedNumber = blocksForged
-      , niBlocksForgedNumberLastUpdate = now
-      }
-  currentNi = nsInfo ns
+  newMetrics = currentMetrics
+    { blocksForgedNumber = blocksForged
+    , blocksForgedNumberChanged = blocksForgedNumber currentMetrics /= blocksForged
+    , blocksForgedNumberLastUpdate = now
+    }
+  currentMetrics = forgeMetrics ns
 
 updateNodeCannotForge :: NodeState -> Integer -> NodeState
-updateNodeCannotForge ns cannotForge = ns { nsInfo = newNi }
+updateNodeCannotForge ns cannotForge = ns { forgeMetrics = newMetrics }
  where
-  newNi =
-    currentNi
-      { niNodeCannotForge = cannotForge
-      }
-  currentNi = nsInfo ns
+  newMetrics = currentMetrics
+    { nodeCannotForge = cannotForge
+    , nodeCannotForgeChanged = nodeCannotForge currentMetrics /= cannotForge
+    }
+  currentMetrics = forgeMetrics ns
 
 updateNodeIsLeader :: NodeState -> Integer -> Word64 -> NodeState
-updateNodeIsLeader ns nodeIsLeader now = ns { nsInfo = newNi }
+updateNodeIsLeader ns nodeIsLeader now = ns { forgeMetrics = newMetrics }
  where
-  newNi =
-    currentNi
-      { niNodeIsLeaderNum = nodeIsLeader
-      , niNodeIsLeaderNumLastUpdate = now
-      }
-  currentNi = nsInfo ns
+  newMetrics = currentMetrics
+    { nodeIsLeaderNum = nodeIsLeader
+    , nodeIsLeaderNumChanged = nodeIsLeaderNum currentMetrics /= nodeIsLeader
+    , nodeIsLeaderNumLastUpdate = now
+    }
+  currentMetrics = forgeMetrics ns
 
 updateSlotsMissed :: NodeState -> Integer -> Word64 -> NodeState
-updateSlotsMissed ns slotsMissed now = ns { nsInfo = newNi }
+updateSlotsMissed ns slotsMissed now = ns { forgeMetrics = newMetrics }
  where
-  newNi =
-    currentNi
-      { niSlotsMissedNumber = slotsMissed
-      , niSlotsMissedNumberLastUpdate = now
-      }
-  currentNi = nsInfo ns
+  newMetrics = currentMetrics
+    { slotsMissedNumber = slotsMissed
+    , slotsMissedNumberChanged = slotsMissedNumber currentMetrics /= slotsMissed
+    , slotsMissedNumberLastUpdate = now
+    }
+  currentMetrics = forgeMetrics ns
 
 updateRTSBytesAllocated :: NodeState -> Word64 -> Word64 -> NodeState
-updateRTSBytesAllocated ns bytesAllocated now = ns { nsMetrics = newNm }
+updateRTSBytesAllocated ns bytesAllocated now = ns { rtsMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmRTSMemoryAllocated = mBytes
-      , nmRTSMemoryLastUpdate = now
-      }
-  currentNm = nsMetrics ns
-  mBytes    = fromIntegral bytesAllocated / 1024 / 1024 :: Double
+  newMetrics = currentMetrics
+    { rtsMemoryAllocated  = newRTSMemoryAllocated
+    , rtsMemoryAllocatedChanged = rtsMemoryAllocated currentMetrics /= newRTSMemoryAllocated
+    , rtsMemoryLastUpdate = now
+    }
+  currentMetrics = rtsMetrics ns
+  newRTSMemoryAllocated = fromIntegral bytesAllocated / 1024 / 1024 :: Double
 
 updateRTSBytesUsed :: NodeState -> Word64 -> Word64 -> NodeState
-updateRTSBytesUsed ns usedMemBytes now = ns { nsMetrics = newNm }
+updateRTSBytesUsed ns usedMemBytes now = ns { rtsMetrics = newMetrics }
  where
-  newNm =
-    currentNm
-      { nmRTSMemoryUsed = mBytes
-      , nmRTSMemoryUsedPercent =   mBytes
-                                 / nmRTSMemoryAllocated currentNm
-                                 * 100.0
-      , nmRTSMemoryLastUpdate = now
-      }
-  currentNm = nsMetrics ns
+  newMetrics = currentMetrics
+    { rtsMemoryUsed = mBytes
+    , rtsMemoryUsedChanged = rtsMemoryUsed currentMetrics /= mBytes
+    , rtsMemoryUsedPercent =   mBytes
+                             / rtsMemoryAllocated currentMetrics
+                             * 100.0
+    , rtsMemoryLastUpdate = now
+    }
+  currentMetrics = rtsMetrics ns
   mBytes    = fromIntegral usedMemBytes / 1024 / 1024 :: Double
 
 updateGcCpuNs :: NodeState -> Word64 -> Word64 -> NodeState
-updateGcCpuNs ns gcCpuNs now = ns { nsMetrics = newNm }
+updateGcCpuNs ns gcCpuNs now = ns { rtsMetrics = newMetrics }
  where
-  newNm     = currentNm { nmRTSGcCpu = seconds
-                        , nmRTSGcCpuLastUpdate = now
-                        }
-  currentNm = nsMetrics ns
-  seconds   = fromIntegral gcCpuNs / 1000000000 :: Double
+  newMetrics = currentMetrics
+    { rtsGcCpu = newGcCpu
+    , rtsGcCpuChanged = rtsGcCpu currentMetrics /= newGcCpu
+    , rtsGcCpuLastUpdate = now
+    }
+  currentMetrics = rtsMetrics ns
+  newGcCpu = fromIntegral gcCpuNs / 1000000000 :: Double
 
 updateGcElapsedNs :: NodeState -> Word64 -> Word64 -> NodeState
-updateGcElapsedNs ns gcElapsedNs now = ns { nsMetrics = newNm }
+updateGcElapsedNs ns gcElapsedNs now = ns { rtsMetrics = newMetrics }
  where
-  newNm     = currentNm { nmRTSGcElapsed = seconds
-                        , nmRTSGcElapsedLastUpdate = now
-                        }
-  currentNm = nsMetrics ns
-  seconds   = fromIntegral gcElapsedNs / 1000000000 :: Double
+  newMetrics = currentMetrics
+    { rtsGcElapsed = newGcElapsed
+    , rtsGcElapsedChanged = rtsGcElapsed currentMetrics /= newGcElapsed
+    , rtsGcElapsedLastUpdate = now
+    }
+  currentMetrics = rtsMetrics ns
+  newGcElapsed = fromIntegral gcElapsedNs / 1000000000 :: Double
 
 updateGcNum :: NodeState -> Integer -> Word64 -> NodeState
-updateGcNum ns gcNum now = ns { nsMetrics = newNm }
+updateGcNum ns gcNum now = ns { rtsMetrics = newMetrics }
  where
-  newNm     = currentNm { nmRTSGcNum = gcNum
-                        , nmRTSGcNumLastUpdate = now
-                        }
-  currentNm = nsMetrics ns
+  newMetrics = currentMetrics
+    { rtsGcNum = gcNum
+    , rtsGcNumChanged = rtsGcNum currentMetrics /= gcNum
+    , rtsGcNumLastUpdate = now
+    }
+  currentMetrics = rtsMetrics ns
 
 updateGcMajorNum :: NodeState -> Integer -> Word64 -> NodeState
-updateGcMajorNum ns gcMajorNum now = ns { nsMetrics = newNm }
+updateGcMajorNum ns gcMajorNum now = ns { rtsMetrics = newMetrics }
  where
-  newNm     = currentNm { nmRTSGcMajorNum = gcMajorNum
-                        , nmRTSGcMajorNumLastUpdate = now
-                        }
-  currentNm = nsMetrics ns
+  newMetrics = currentMetrics
+    { rtsGcMajorNum = gcMajorNum
+    , rtsGcMajorNumChanged = rtsGcMajorNum currentMetrics /= gcMajorNum
+    , rtsGcMajorNumLastUpdate = now
+    }
+  currentMetrics = rtsMetrics ns
 
 updateCertStartKESPeriod :: NodeState -> Integer -> Word64 -> NodeState
-updateCertStartKESPeriod ns oCertStartKesPeriod now = ns { nsInfo = newNi }
+updateCertStartKESPeriod ns oCertStartKesPeriod now = ns { kesMetrics = newMetrics }
  where
-  newNi =
-    currentNi
-      { niOpCertStartKESPeriod = oCertStartKesPeriod
-      , niOpCertStartKESPeriodLastUpdate = now
-      }
-  currentNi = nsInfo ns
+  newMetrics = currentMetrics
+    { opCertStartKESPeriod = oCertStartKesPeriod
+    , opCertStartKESPeriodChanged = opCertStartKESPeriod currentMetrics /= oCertStartKesPeriod
+    , opCertStartKESPeriodLastUpdate = now
+    }
+  currentMetrics = kesMetrics ns
 
 updateCertExpiryKESPeriod :: NodeState -> Integer -> Word64 -> NodeState
-updateCertExpiryKESPeriod ns oCertExpiryKesPeriod now = ns { nsInfo = newNi }
+updateCertExpiryKESPeriod ns oCertExpiryKesPeriod now = ns { kesMetrics = newMetrics }
  where
-  newNi =
-    currentNi
-      { niOpCertExpiryKESPeriod = oCertExpiryKesPeriod
-      , niOpCertExpiryKESPeriodLastUpdate = now
-      }
-  currentNi = nsInfo ns
+  newMetrics = currentMetrics
+    { opCertExpiryKESPeriod = oCertExpiryKesPeriod
+    , opCertExpiryKESPeriodChanged = opCertExpiryKESPeriod currentMetrics /= oCertExpiryKesPeriod
+    , opCertExpiryKESPeriodLastUpdate = now
+    }
+  currentMetrics = kesMetrics ns
 
 updateCurrentKESPeriod :: NodeState -> Integer -> Word64 -> NodeState
-updateCurrentKESPeriod ns currentKesPeriod now = ns { nsInfo = newNi }
+updateCurrentKESPeriod ns currentKesPeriod now = ns { kesMetrics = newMetrics }
  where
-  newNi =
-    currentNi
-      { niCurrentKESPeriod = currentKesPeriod
-      , niCurrentKESPeriodLastUpdate = now
-      }
-  currentNi = nsInfo ns
+  newMetrics = currentMetrics
+    { currentKESPeriod = currentKesPeriod
+    , currentKESPeriodChanged = currentKESPeriod currentMetrics /= currentKesPeriod
+    , currentKESPeriodLastUpdate = now
+    }
+  currentMetrics = kesMetrics ns
 
 updateRemainingKESPeriods :: NodeState -> RTViewParams -> Integer -> Word64 -> NodeState
-updateRemainingKESPeriods ns params kesPeriodsUntilExpiry now = ns { nsInfo = newNi }
+updateRemainingKESPeriods ns params kesPeriodsUntilExpiry now = ns { kesMetrics = newMetrics }
  where
-  newNi =
-    currentNi
-      { niRemainingKESPeriods = kesPeriodsUntilExpiry
-      , niRemainingKESPeriodsInDays = floor remainingInDays
-      , niRemainingKESPeriodsLastUpdate = now
-      }
-  currentNi = nsInfo ns
+  newMetrics = currentMetrics
+    { remainingKESPeriods = kesPeriodsUntilExpiry
+    , remainingKESPeriodsChanged = remainingKESPeriods currentMetrics /= kesPeriodsUntilExpiry
+    , remainingKESPeriodsInDays = floor remainingInDays
+    , remainingKESPeriodsLastUpdate = now
+    }
+  currentMetrics = kesMetrics ns
   remainingInSeconds =   fromIntegral kesPeriodsUntilExpiry
                        * rtvSlotLength params
                        * rtvSlotsPerKESPeriod params
@@ -669,30 +713,42 @@ updateRemainingKESPeriods ns params kesPeriodsUntilExpiry now = ns { nsInfo = ne
   remainingInDays = fromIntegral remainingInSeconds / 3600 / 24
 
 updateChainDensity :: NodeState -> Double -> Word64 -> NodeState
-updateChainDensity ns density now = ns { nsInfo = newNi }
+updateChainDensity ns density now = ns { blockchainMetrics = newMetrics }
  where
-  newNi = (nsInfo ns) { niChainDensity = chainDensity
-                      , niChainDensityLastUpdate = now
-                      }
-  chainDensity = 0.05 + density * 100.0
+  newMetrics = currentMetrics
+    { chainDensity = newDencity
+    , chainDensityChanged = chainDensity currentMetrics /= newDencity
+    , chainDensityLastUpdate = now
+    }
+  currentMetrics = blockchainMetrics ns
+  newDencity = 0.05 + density * 100.0
 
 updateBlocksNumber :: NodeState -> Integer -> Word64 -> NodeState
-updateBlocksNumber ns blockNum now = ns { nsInfo = newNi }
+updateBlocksNumber ns blockNum now = ns { blockchainMetrics = newMetrics }
  where
-  newNi = (nsInfo ns) { niBlocksNumber = blockNum
-                      , niBlocksNumberLastUpdate = now
-                      }
+  newMetrics = currentMetrics
+    { blocksNumber = blockNum
+    , blocksNumberChanged = blocksNumber currentMetrics /= blockNum
+    , blocksNumberLastUpdate = now
+    }
+  currentMetrics = blockchainMetrics ns
 
 updateSlotInEpoch :: NodeState -> Integer -> Word64 -> NodeState
-updateSlotInEpoch ns slotNum now = ns { nsInfo = newNi }
+updateSlotInEpoch ns slotNum now = ns { blockchainMetrics = newMetrics }
  where
-  newNi = (nsInfo ns) { niSlot = slotNum
-                      , niSlotLastUpdate = now
-                      }
+  newMetrics = currentMetrics
+    { slot = slotNum
+    , slotChanged = slot currentMetrics /= slotNum
+    , slotLastUpdate = now
+    }
+  currentMetrics = blockchainMetrics ns
 
 updateEpoch :: NodeState -> Integer -> Word64 -> NodeState
-updateEpoch ns epoch now = ns { nsInfo = newNi }
+updateEpoch ns newEpoch now = ns { blockchainMetrics = newMetrics }
  where
-  newNi = (nsInfo ns) { niEpoch = epoch
-                      , niEpochLastUpdate = now
-                      }
+  newMetrics = currentMetrics
+    { epoch = newEpoch
+    , epochChanged = epoch currentMetrics /= newEpoch
+    , epochLastUpdate = now
+    }
+  currentMetrics = blockchainMetrics ns
