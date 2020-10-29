@@ -159,7 +159,6 @@ data HTMLClass
   | ProgressBarOutdated
   | ProgressBarBox
   | ProgressBarBoxOutdated
-  | ReleaseName
   | ResourcesIcon
   | SelectMetricCheck
   | SelectMetricCheckArea
@@ -169,6 +168,7 @@ data HTMLClass
   | ShowHideIcon
   | TabContainer
   | TopBar
+  | TXsProcessed
   | ValueUnit
   | ValueUnitPercent
   -- Charts
@@ -195,7 +195,6 @@ data HTMLClass
   | W3BorderBottom
   | W3BorderTop
   | W3Button
-  | W3Card4
   | W3Check
   | W3Col
   | W3Container
@@ -253,7 +252,6 @@ instance Show HTMLClass where
   show ProgressBarOutdated    = "ProgressBarOutdated"
   show ProgressBarBox         = "ProgressBarBox"
   show ProgressBarBoxOutdated = "ProgressBarBoxOutdated"
-  show ReleaseName            = "ReleaseName"
   show ResourcesIcon          = "ResourcesIcon"
   show SelectMetricCheck      = "SelectMetricCheck"
   show SelectMetricCheckArea  = "SelectMetricCheckArea"
@@ -263,6 +261,7 @@ instance Show HTMLClass where
   show ShowHideIcon           = "ShowHideIcon"
   show TabContainer           = "TabContainer"
   show TopBar                 = "TopBar"
+  show TXsProcessed           = "TXsProcessed"
   show ValueUnit              = "ValueUnit"
   show ValueUnitPercent       = "ValueUnitPercent"
   show CPUUsageChart          = "CPUUsageChart"
@@ -287,7 +286,6 @@ instance Show HTMLClass where
   show W3BorderBottom    = "w3-border-bottom"
   show W3BorderTop       = "w3-border-top"
   show W3Button          = "w3-button"
-  show W3Card4           = "w3-card-4"
   show W3Check           = "w3-check"
   show W3Col             = "w3-col"
   show W3Container       = "w3-container"

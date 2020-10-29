@@ -160,15 +160,15 @@ topNavigation nodesSelector viewModeSelector metricsSelector =
                     #. [W3Button]
                     # set UI.value "paneMode"
                     #+ [string "View mode ▾"]
-        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] #+ viewModeSelector
+        , UI.div #. [W3DropdownContent, W3BarBlock] #+ viewModeSelector
         ]
     , UI.div #. [W3DropdownHover, W3Mobile] #+
         [ UI.button #. [W3Button] #+ [string "Select node ▾"]
-        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] #+ nodesSelector
+        , UI.div #. [W3DropdownContent, W3BarBlock] #+ nodesSelector
         ]
     , UI.div ## show SelectMetricButton #. [W3DropdownHover, W3Mobile] # hideIt #+
         [ UI.button #. [W3Button] #+ [string "Select metric ▾"]
-        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4, MetricsArea] #+ metricsSelector
+        , UI.div #. [W3DropdownContent, W3BarBlock, MetricsArea] #+ metricsSelector
         ]
     , UI.span #. [W3Right, W3HideMedium, W3HideSmall, ServiceName] #+
         [ string "Cardano Node Real-time View"

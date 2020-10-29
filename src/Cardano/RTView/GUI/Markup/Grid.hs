@@ -126,7 +126,7 @@ mkNodesRowCells acceptors = do
   nodesRowCells
     <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) ->
          element <$> UI.th ## (show GridNodeTH <> T.unpack nameOfNode) #+
-                       [ UI.span #. [GridNodeNameLabel] #+ [string "Node: "]
+                       [ string "Node: " #. [GridNodeNameLabel]
                        , string $ T.unpack nameOfNode
                        ]
   -- To keep top-left corner cell empty.

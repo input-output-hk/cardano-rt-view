@@ -513,7 +513,7 @@ updateCPUSecs ns nanosecs meta now = ns { resourcesMetrics = newMetrics }
   newCPUPercent = if cpuperc < 0
                     then 0
                     else if cpuperc > 20.0
-                           then nmCPUPercent currentMetrics
+                           then cpuPercent currentMetrics
                            else cpuperc * 100.0
   tns       = utc2ns $ tstamp meta
   tdiff     = max 0.1 $ fromIntegral (tns - cpuNs currentMetrics) / 1000000000 :: Double
