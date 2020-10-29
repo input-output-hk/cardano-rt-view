@@ -139,9 +139,6 @@ ownCSS = unpack . TL.toStrict . render $ do
     minHeightPx       500
     backgroundColor   "#eeeeee"
 
-  cl ReleaseName ? do
-    fontWeight        bold
-
   cl NodeMenuIcon ? do
     widthPx           26
 
@@ -172,6 +169,10 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl ValueUnitPercent ? do
     color             gray40
+
+  cl TXsProcessed ? do
+    fontWeight        bold
+    paddingLeftPx     16
 
   cl BarValueUnit ? do
     color             whitesmoke
