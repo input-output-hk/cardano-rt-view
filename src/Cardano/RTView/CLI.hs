@@ -7,8 +7,6 @@ module Cardano.RTView.CLI
     , defaultRTVConfig
     , defaultRTVStatic
     , defaultRTVPort
-    , defaultRTVSlotsPerKESPeriod
-    , defaultRTVSlotLength
     , defaultRTVNodeInfoLife
     , defaultRTVBlockchainInfoLife
     , defaultRTVResourcesInfoLife
@@ -17,7 +15,7 @@ module Cardano.RTView.CLI
     ) where
 
 import           Data.Word (Word64)
-import           Data.Yaml (FromJSON (..), ToJSON, (.:), (.:?), (.!=), withObject)
+import           Data.Yaml (FromJSON (..), ToJSON, (.:), withObject)
 import           GHC.Generics (Generic)
 
 import           Options.Applicative (HasCompleter, HasMetavar, HasName, HasValue, Mod, Parser,
@@ -30,8 +28,6 @@ data RTViewParams
       { rtvConfig             :: !FilePath
       , rtvStatic             :: !FilePath
       , rtvPort               :: !Int
-      , rtvSlotsPerKESPeriod  :: !Int
-      , rtvSlotLength         :: !Int
       , rtvNodeInfoLife       :: !Word64
       , rtvBlockchainInfoLife :: !Word64
       , rtvResourcesInfoLife  :: !Word64
@@ -43,8 +39,6 @@ instance FromJSON RTViewParams where
     <$> v .:  "rtvConfig"
     <*> v .:  "rtvStatic"
     <*> v .:  "rtvPort"
-    <*> v .:? "rtvSlotsPerKESPeriod" .!= defaultRTVSlotsPerKESPeriod
-    <*> v .:? "rtvSlotLength"        .!= defaultRTVSlotLength
     <*> v .:  "rtvNodeInfoLife"
     <*> v .:  "rtvBlockchainInfoLife"
     <*> v .:  "rtvResourcesInfoLife"
@@ -55,8 +49,6 @@ defaultRTViewParams = RTViewParams
   { rtvConfig             = defaultRTVConfig
   , rtvStatic             = defaultRTVStatic
   , rtvPort               = defaultRTVPort
-  , rtvSlotsPerKESPeriod  = defaultRTVSlotsPerKESPeriod
-  , rtvSlotLength         = defaultRTVSlotLength
   , rtvNodeInfoLife       = defaultRTVNodeInfoLife
   , rtvBlockchainInfoLife = defaultRTVBlockchainInfoLife
   , rtvResourcesInfoLife  = defaultRTVResourcesInfoLife
@@ -69,12 +61,6 @@ defaultRTVStatic = "static"
 
 defaultRTVPort :: Int
 defaultRTVPort = 8024
-
-defaultRTVSlotsPerKESPeriod :: Int
-defaultRTVSlotsPerKESPeriod = 129600 -- Taken from the Mainnet genesis.
-
-defaultRTVSlotLength :: Int
-defaultRTVSlotLength = 1 -- Taken from the Mainnet genesis.
 
 defaultRTVNodeInfoLife
   , defaultRTVBlockchainInfoLife
@@ -106,16 +92,6 @@ parseRTViewParams =
           "The port number"
           "PORT"
           defaultRTVPort
-    <*> parseInt
-          "slots-per-kes"
-          "The number of slots in KES period"
-          "NUM"
-          defaultRTVSlotsPerKESPeriod
-    <*> parseInt
-          "slot-length"
-          "Slot length, in seconds"
-          "NUM"
-          defaultRTVSlotLength
     <*> parseDiffTime
           "node-info-life"
           "Lifetime of node info"

@@ -168,7 +168,9 @@ data RTSMetrics = RTSMetrics
   } deriving (Generic, NFData)
 
 data BlockchainMetrics = BlockchainMetrics
-  { epoch                  :: !Integer
+  { systemStartTime        :: !UTCTime
+  , systemStartTimeChanged :: !Bool
+  , epoch                  :: !Integer
   , epochChanged           :: !Bool
   , epochLastUpdate        :: !Word64
   , slot                   :: !Integer
@@ -199,17 +201,19 @@ data KESMetrics = KESMetrics
   } deriving (Generic, NFData)
 
 data NodeMetrics = NodeMetrics
-  { nodeProtocol        :: !Text
-  , nodeProtocolChanged :: !Bool
-  , nodeVersion         :: !Text
-  , nodeVersionChanged  :: !Bool
-  , nodeCommit          :: !Text
-  , nodeCommitChanged   :: !Bool
-  , nodeShortCommit     :: !Text
-  , nodePlatform        :: !Text
-  , nodePlatformChanged :: !Bool
-  , upTime              :: !Word64
-  , upTimeLastUpdate    :: !Word64
+  { nodeProtocol         :: !Text
+  , nodeProtocolChanged  :: !Bool
+  , nodeVersion          :: !Text
+  , nodeVersionChanged   :: !Bool
+  , nodeCommit           :: !Text
+  , nodeCommitChanged    :: !Bool
+  , nodeShortCommit      :: !Text
+  , nodePlatform         :: !Text
+  , nodePlatformChanged  :: !Bool
+  , nodeStartTime        :: !UTCTime
+  , nodeStartTimeChanged :: !Bool
+  , upTime               :: !Word64
+  , upTimeLastUpdate     :: !Word64
   } deriving (Generic, NFData)
 
 data ErrorsMetrics = ErrorsMetrics
@@ -334,7 +338,9 @@ defaultNodeState = NodeState
         }
   , blockchainMetrics =
       BlockchainMetrics
-        { epoch                  = 0
+        { systemStartTime        = UTCTime (ModifiedJulianDay 0) 0
+        , systemStartTimeChanged = True
+        , epoch                  = 0
         , epochChanged           = True
         , epochLastUpdate        = 0
         , slot                   = 0
@@ -365,17 +371,19 @@ defaultNodeState = NodeState
         }
   , nodeMetrics =
       NodeMetrics
-        { nodeProtocol        = "-"
-        , nodeProtocolChanged = True
-        , nodeVersion         = "-"
-        , nodeVersionChanged  = True
-        , nodeCommit          = "-"
-        , nodeCommitChanged   = True
-        , nodeShortCommit     = "-"
-        , nodePlatform        = "-"
-        , nodePlatformChanged = True
-        , upTime              = 0
-        , upTimeLastUpdate    = 0
+        { nodeProtocol         = "-"
+        , nodeProtocolChanged  = True
+        , nodeVersion          = "-"
+        , nodeVersionChanged   = True
+        , nodeCommit           = "-"
+        , nodeCommitChanged    = True
+        , nodeShortCommit      = "-"
+        , nodePlatform         = "-"
+        , nodePlatformChanged  = True
+        , nodeStartTime        = UTCTime (ModifiedJulianDay 0) 0
+        , nodeStartTimeChanged = True
+        , upTime               = 0
+        , upTimeLastUpdate     = 0
         }
   , nodeErrors =
       ErrorsMetrics

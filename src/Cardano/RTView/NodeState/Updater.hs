@@ -24,7 +24,7 @@ import           Data.Map.Strict ((!?))
 import qualified Data.Map.Strict as Map
 import           Data.Text (Text)
 import qualified Data.Text as T
-import           Data.Time.Clock (NominalDiffTime, diffUTCTime)
+import           Data.Time.Clock (NominalDiffTime, UTCTime, diffUTCTime)
 import           Data.Word (Word64)
 import           GHC.Clock (getMonotonicTimeNSec)
 
@@ -35,7 +35,6 @@ import           Cardano.BM.Data.LogItem (LOContent (..), LOMeta (..), LogObject
                                           MonitorAction (..), utc2ns)
 import           Cardano.BM.Trace (Trace)
 
-import           Cardano.RTView.CLI (RTViewParams (..))
 import           Cardano.RTView.ErrorBuffer (ErrorBuffer, readErrorBuffer)
 import           Cardano.RTView.NodeState.Parsers (extractPeersInfo)
 import           Cardano.RTView.NodeState.Types
@@ -46,12 +45,11 @@ import           Cardano.RTView.NodeState.Types
 --   in the |NodesState|.
 launchNodeStateUpdater
   :: Trace IO Text
-  -> RTViewParams
   -> Switchboard Text
   -> ErrorBuffer Text
   -> MVar NodesState
   -> IO ()
-launchNodeStateUpdater _tr params switchBoard errBuff nsMVar = forever $ do
+launchNodeStateUpdater _tr switchBoard errBuff nsMVar = forever $ do
   -- logDebug tr "Try to update nodes' state..."
   -- Take current |LogObject|s from the |ErrorBuffer|.
   currentErrLogObjects <- readErrorBuffer errBuff
@@ -60,7 +58,7 @@ launchNodeStateUpdater _tr params switchBoard errBuff nsMVar = forever $ do
   -- Take current |LogObject|s from the |LogBuffer|.
   currentLogObjects <- readLogBuffer switchBoard
   forM_ currentLogObjects $ \(loggerName, logObject) ->
-    updateNodesState params nsMVar loggerName logObject
+    updateNodesState nsMVar loggerName logObject
   -- Check for updates in the |LogBuffer| every second.
   threadDelay 1000000
 
@@ -85,11 +83,11 @@ updateNodesStateErrors nsMVar loggerName (LogObject _ aMeta aContent) = do
       nameOfNode = loggerNameParts !! 3
 
   modifyMVar_ nsMVar $ \currentNodesState -> do
-    let nodesStateWith :: NodeState -> IO NodesState
-        nodesStateWith newState = return $ Map.adjust (const newState) nameOfNode currentNodesState
+    let nsWith :: NodeState -> IO NodesState
+        nsWith newState = return $ Map.adjust (const newState) nameOfNode currentNodesState
 
     case currentNodesState !? nameOfNode of
-      Just ns -> nodesStateWith $ updateNodeErrors ns aMeta aContent
+      Just ns -> nsWith $ updateNodeErrors ns aMeta aContent
       Nothing -> return currentNodesState
 
 updateNodeErrors :: Show a => NodeState -> LOMeta -> LOContent a -> NodeState
@@ -114,12 +112,11 @@ updateNodeErrors ns (LOMeta timeStamp _ _ sev _) aContent = ns { nodeErrors = ne
 
 -- | Update NodeState for particular node based on loggerName.
 updateNodesState
-  :: RTViewParams
-  -> MVar NodesState
+  :: MVar NodesState
   -> Text
   -> LogObject Text
   -> IO ()
-updateNodesState params nsMVar loggerName (LogObject aName aMeta aContent) = do
+updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
   -- Check the name of the node this logObject came from.
   -- It is assumed that configuration contains correct names of remote nodes and
   -- loggers for them, for example:
@@ -135,125 +132,131 @@ updateNodesState params nsMVar loggerName (LogObject aName aMeta aContent) = do
   now <- getMonotonicTimeNSec
 
   modifyMVar_ nsMVar $ \currentNodesState -> do
-    let nodesStateWith :: NodeState -> IO NodesState
-        nodesStateWith newState = return $ Map.adjust (const newState) nameOfNode currentNodesState
+    let nsWith :: NodeState -> IO NodesState
+        nsWith newState = return $ Map.adjust (const newState) nameOfNode currentNodesState
+        itIs name' = name' `T.isInfixOf` aName
+        textValue updater =
+          case aContent of
+            LogMessage txtValue -> nsWith $ updater txtValue
+            _ -> return currentNodesState
 
     case currentNodesState !? nameOfNode of
       Just ns ->
-        if | "cardano.node.metrics.peersFromNodeKernel" `T.isInfixOf` aName ->
+        if | itIs "cardano.node.metrics.peersFromNodeKernel" ->
             case aContent of
               LogStructured newPeersInfo ->
-                nodesStateWith $ updatePeersInfo ns newPeersInfo
+                nsWith $ updatePeersInfo ns newPeersInfo
               _ -> return currentNodesState
-           | "cardano.node.metrics" `T.isInfixOf` aName ->
+           | itIs "cardano.node.metrics" ->
             case aContent of
               LogValue "upTime" (Nanoseconds upTimeInNs) ->
-                nodesStateWith $ updateNodeUpTime ns upTimeInNs now
+                nsWith $ updateNodeUpTime ns upTimeInNs now
               LogValue "txsInMempool" (PureI txsInMempool) ->
-                nodesStateWith $ updateMempoolTxs ns txsInMempool
+                nsWith $ updateMempoolTxs ns txsInMempool
               LogValue "mempoolBytes" (PureI mempoolBytes') ->
-                nodesStateWith $ updateMempoolBytes ns mempoolBytes'
+                nsWith $ updateMempoolBytes ns mempoolBytes'
               LogValue "txsProcessedNum" (PureI processedTxsNum) ->
-                nodesStateWith $ updateTxsProcessed ns processedTxsNum
+                nsWith $ updateTxsProcessed ns processedTxsNum
               LogValue "blocksForgedNum" (PureI forgedBlocksNum) ->
-                nodesStateWith $ updateBlocksForged ns forgedBlocksNum now
+                nsWith $ updateBlocksForged ns forgedBlocksNum now
               LogValue "nodeCannotForge" (PureI cannotForge) ->
-                nodesStateWith $ updateNodeCannotForge ns cannotForge
+                nsWith $ updateNodeCannotForge ns cannotForge
               LogValue "nodeIsLeaderNum" (PureI leaderNum) ->
-                nodesStateWith $ updateNodeIsLeader ns leaderNum now
+                nsWith $ updateNodeIsLeader ns leaderNum now
               LogValue "slotsMissedNum" (PureI missedSlotsNum) ->
-                nodesStateWith $ updateSlotsMissed ns missedSlotsNum now
+                nsWith $ updateSlotsMissed ns missedSlotsNum now
               _ -> return currentNodesState
-           | "cardano.node-metrics" `T.isInfixOf` aName ->
+           | itIs "cardano.node-metrics" ->
             case aContent of
 #ifdef WINDOWS
               LogValue "Stat.CPUTime" (Microseconds microsecs) ->
-                nodesStateWith $ updateCPUSecs ns (microsecs * 1000) aMeta now
+                nsWith $ updateCPUSecs ns (microsecs * 1000) aMeta now
 #endif
 #ifdef DARWIN
               LogValue "Mem.resident_size" (Bytes bytes) ->
-                nodesStateWith $ updateMemoryBytes ns bytes now
+                nsWith $ updateMemoryBytes ns bytes now
               LogValue "Sys.CPUTime" (Nanoseconds nanosecs) ->
-                nodesStateWith $ updateCPUSecs ns nanosecs aMeta now
+                nsWith $ updateCPUSecs ns nanosecs aMeta now
               LogValue "Net.ifd_0-ibytes" (Bytes inBytes) ->
-                nodesStateWith $ updateNetworkIn ns inBytes aMeta now
+                nsWith $ updateNetworkIn ns inBytes aMeta now
               LogValue "Net.ifd_0-obytes" (Bytes outBytes) ->
-                nodesStateWith $ updateNetworkOut ns outBytes aMeta now
+                nsWith $ updateNetworkOut ns outBytes aMeta now
 #endif
 #ifdef LINUX
               LogValue "Mem.resident" (PureI pages) ->
-                nodesStateWith $ updateMemoryPages ns pages now
+                nsWith $ updateMemoryPages ns pages now
               LogValue "IO.rchar" (Bytes bytesWereRead) ->
-                nodesStateWith $ updateDiskRead ns bytesWereRead aMeta now
+                nsWith $ updateDiskRead ns bytesWereRead aMeta now
               LogValue "IO.wchar" (Bytes bytesWereWritten) ->
-                nodesStateWith $ updateDiskWrite ns bytesWereWritten aMeta now
+                nsWith $ updateDiskWrite ns bytesWereWritten aMeta now
               LogValue "Stat.cputicks" (PureI ticks) ->
-                nodesStateWith $ updateCPUTicks ns ticks aMeta now
+                nsWith $ updateCPUTicks ns ticks aMeta now
               LogValue "Net.IpExt:InOctets" (Bytes inBytes) ->
-                nodesStateWith $ updateNetworkIn ns inBytes aMeta now
+                nsWith $ updateNetworkIn ns inBytes aMeta now
               LogValue "Net.IpExt:OutOctets" (Bytes outBytes) ->
-                nodesStateWith $ updateNetworkOut ns outBytes aMeta now
+                nsWith $ updateNetworkOut ns outBytes aMeta now
 #endif
               LogValue "Sys.Platform" (PureI pfid) ->
-                nodesStateWith $ updateNodePlatform ns (fromIntegral pfid)
+                nsWith $ updateNodePlatform ns (fromIntegral pfid)
               LogValue "RTS.maxUsedMemBytes" (Bytes bytesAllocated) ->
-                nodesStateWith $ updateRTSBytesAllocated ns bytesAllocated now
+                nsWith $ updateRTSBytesAllocated ns bytesAllocated now
               LogValue "RTS.gcLiveBytes" (Bytes usedMemBytes) ->
-                nodesStateWith $ updateRTSBytesUsed ns usedMemBytes now
+                nsWith $ updateRTSBytesUsed ns usedMemBytes now
               LogValue "RTS.gcCpuNs" (Nanoseconds gcCpuNs) ->
-                nodesStateWith $ updateGcCpuNs ns gcCpuNs now
+                nsWith $ updateGcCpuNs ns gcCpuNs now
               LogValue "RTS.gcElapsedNs" (Nanoseconds gcElapsedNs) ->
-                nodesStateWith $ updateGcElapsedNs ns gcElapsedNs now
+                nsWith $ updateGcElapsedNs ns gcElapsedNs now
               LogValue "RTS.gcNum" (PureI gcNum) ->
-                nodesStateWith $ updateGcNum ns gcNum now
+                nsWith $ updateGcNum ns gcNum now
               LogValue "RTS.gcMajorNum" (PureI gcMajorNum) ->
-                nodesStateWith $ updateGcMajorNum ns gcMajorNum now
+                nsWith $ updateGcMajorNum ns gcMajorNum now
               _ -> return currentNodesState
-           | "cardano.node.Forge.metrics" `T.isInfixOf` aName ->
+           | itIs "cardano.node.Forge.metrics" ->
             case aContent of
               LogValue "operationalCertificateStartKESPeriod" (PureI oCertStartKesPeriod) ->
-                nodesStateWith $ updateCertStartKESPeriod ns oCertStartKesPeriod now
+                nsWith $ updateCertStartKESPeriod ns oCertStartKesPeriod now
               LogValue "operationalCertificateExpiryKESPeriod" (PureI oCertExpiryKesPeriod) ->
-                nodesStateWith $ updateCertExpiryKESPeriod ns oCertExpiryKesPeriod now
+                nsWith $ updateCertExpiryKESPeriod ns oCertExpiryKesPeriod now
               LogValue "currentKESPeriod" (PureI currentKesPeriod) ->
-                nodesStateWith $ updateCurrentKESPeriod ns currentKesPeriod now
+                nsWith $ updateCurrentKESPeriod ns currentKesPeriod now
               LogValue "remainingKESPeriods" (PureI kesPeriodsUntilExpiry) ->
-                nodesStateWith $ updateRemainingKESPeriods ns params kesPeriodsUntilExpiry now
+                nsWith $ updateRemainingKESPeriods ns kesPeriodsUntilExpiry now
               _ -> return currentNodesState
-           | "cardano.node.release" `T.isInfixOf` aName ->
-            case aContent of
-              LogMessage protocol ->
-                nodesStateWith $ updateNodeProtocol ns protocol
-              _ -> return currentNodesState
-           | "cardano.node.version" `T.isInfixOf` aName ->
-            case aContent of
-              LogMessage version ->
-                nodesStateWith $ updateNodeVersion ns version
-              _ -> return currentNodesState
-           | "cardano.node.commit" `T.isInfixOf` aName ->
-            case aContent of
-              LogMessage commit ->
-                nodesStateWith $ updateNodeCommit ns commit
-              _ -> return currentNodesState
+           | itIs "cardano.node.release" ->
+             textValue $ updateNodeProtocol ns
+           | itIs "cardano.node.version" ->
+             textValue $ updateNodeVersion ns
+           | itIs "cardano.node.commit" ->
+             textValue $ updateNodeCommit ns
+           | itIs "basicInfo.protocol" ->
+             textValue $ updateNodeProtocol ns
+           | itIs "basicInfo.version" ->
+             textValue $ updateNodeVersion ns
+           | itIs "basicInfo.commit" ->
+             textValue $ updateNodeCommit ns
+           | itIs "basicInfo.nodeStartTime" ->
+             textValue $ updateNodeStartTime ns
+           | itIs "basicInfo.systemStartTime" ->
+             textValue $ updateSystemStartTime ns
+           -- | "basicInfo.slotLengthByron" `T.isInfixOf` aName ->
+           --   LogMessage slotLength ->
+           --     nsWith $ updateSlotLength ns slotLength
+           --   _ -> return currentNodesState
            | otherwise ->
             case aContent of
               LogValue "density" (PureD density) ->
-                nodesStateWith $ updateChainDensity ns density now
+                nsWith $ updateChainDensity ns density now
               LogValue "blockNum" (PureI blockNum) ->
-                nodesStateWith $ updateBlocksNumber ns blockNum now
+                nsWith $ updateBlocksNumber ns blockNum now
               LogValue "slotInEpoch" (PureI slotNum) ->
-                nodesStateWith $ updateSlotInEpoch ns slotNum now
+                nsWith $ updateSlotInEpoch ns slotNum now
               LogValue "epoch" (PureI epoch') ->
-                nodesStateWith $ updateEpoch ns epoch' now
+                nsWith $ updateEpoch ns epoch' now
               _ -> return currentNodesState
       Nothing ->
         -- This is a problem, because it means that configuration is unexpected one:
         -- name of node in getAcceptAt doesn't correspond to the name of loggerName.
         return currentNodesState
-
-  -- Update elements of GUI iff the new corresponding values were received.
-  -- probablyUpdatedState <- readMVar nsMVar
-  return ()
 
 -- Updaters for particular node state's fields.
 
@@ -302,6 +305,26 @@ updateNodeCommit ns commit = ns { nodeMetrics = newNodeMetrics }
     , nodeShortCommit = T.take 7 commit
     }
   currentMetrics = nodeMetrics ns
+
+updateNodeStartTime :: NodeState -> Text -> NodeState
+updateNodeStartTime ns startTime = ns { nodeMetrics = newNodeMetrics }
+ where
+  newNodeMetrics = currentMetrics
+    { nodeStartTime = startTimeUTC
+    , nodeStartTimeChanged = nodeStartTime currentMetrics /= startTimeUTC
+    }
+  currentMetrics = nodeMetrics ns
+  startTimeUTC = read (T.unpack startTime) :: UTCTime
+
+updateSystemStartTime :: NodeState -> Text -> NodeState
+updateSystemStartTime ns systemStart = ns { blockchainMetrics = newNodeMetrics }
+ where
+  newNodeMetrics = currentMetrics
+    { systemStartTime = systemStartTimeUTC
+    , systemStartTimeChanged = systemStartTime currentMetrics /= systemStartTimeUTC
+    }
+  currentMetrics = blockchainMetrics ns
+  systemStartTimeUTC = read (T.unpack systemStart) :: UTCTime
 
 updateNodePlatform :: NodeState -> Int -> NodeState
 updateNodePlatform ns platfId = ns { nodeMetrics = newNodeMetrics }
@@ -696,8 +719,8 @@ updateCurrentKESPeriod ns currentKesPeriod now = ns { kesMetrics = newMetrics }
     }
   currentMetrics = kesMetrics ns
 
-updateRemainingKESPeriods :: NodeState -> RTViewParams -> Integer -> Word64 -> NodeState
-updateRemainingKESPeriods ns params kesPeriodsUntilExpiry now = ns { kesMetrics = newMetrics }
+updateRemainingKESPeriods :: NodeState -> Integer -> Word64 -> NodeState
+updateRemainingKESPeriods ns kesPeriodsUntilExpiry now = ns { kesMetrics = newMetrics }
  where
   newMetrics = currentMetrics
     { remainingKESPeriods = kesPeriodsUntilExpiry
@@ -707,8 +730,8 @@ updateRemainingKESPeriods ns params kesPeriodsUntilExpiry now = ns { kesMetrics 
     }
   currentMetrics = kesMetrics ns
   remainingInSeconds =   fromIntegral kesPeriodsUntilExpiry
-                       * rtvSlotLength params
-                       * rtvSlotsPerKESPeriod params
+                       * (1 :: Int)      -- TODO: take from node basic info metric for current protocol.
+                       * (129600 :: Int) -- TODO: take from node basic info metric for current protocol.
   remainingInDays :: Double
   remainingInDays = fromIntegral remainingInSeconds / 3600 / 24
 

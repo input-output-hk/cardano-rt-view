@@ -51,6 +51,7 @@ mkNodePane nameOfNode = do
   elNodePlatform              <- string ""
   elActiveNode                <- string "-"
   elUptime                    <- string "00:00:00"
+  elSystemStartTime           <- string "00:00:00"
   elEpoch                     <- string "0"
   elSlot                      <- string "0"
   elBlocksNumber              <- string "0"
@@ -220,7 +221,10 @@ mkNodePane nameOfNode = do
   blockchainTabContent
     <- UI.div #. [TabContainer, W3Row] # hideIt #+
          [ UI.div #. [W3Half] #+
-             [ UI.div #+ [string "Epoch / Slot in epoch"
+             [ UI.div #+ [string "System start time"
+                          # set UI.title__ "The time when this blockchain has started"]
+             , vSpacer NodeInfoVSpacer
+             , UI.div #+ [string "Epoch / Slot in epoch"
                           # set UI.title__ "Number of current epoch / number of the current slot in this epoch"]
              , UI.div #+ [string "Blocks number"
                           # set UI.title__ "Total number of blocks in this blockchain"]
@@ -240,6 +244,9 @@ mkNodePane nameOfNode = do
              ]
          , UI.div #. [W3Half, NodeInfoValues] #+
              [ UI.div #+
+                 [element elSystemStartTime]
+             , vSpacer NodeInfoVSpacer
+             , UI.div #+
                  [ element elEpoch
                  , string " / "
                  , element elSlot
@@ -481,6 +488,7 @@ mkNodePane nameOfNode = do
           , (ElNodeCommitHref,          elNodeCommitHref)
           , (ElActiveNode,              elActiveNode)
           , (ElUptime,                  elUptime)
+          , (ElSystemStartTime,         elSystemStartTime)
           , (ElEpoch,                   elEpoch)
           , (ElSlot,                    elSlot)
           , (ElBlocksNumber,            elBlocksNumber)

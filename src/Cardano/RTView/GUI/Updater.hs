@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -14,7 +14,8 @@ import           Data.Maybe (isJust)
 import           Data.Map.Strict ((!))
 import           Data.Text (Text, pack, unpack)
 import           Data.Time.Calendar (Day (..), diffDays)
-import           Data.Time.Clock (NominalDiffTime, UTCTime (..), addUTCTime)
+import           Data.Time.Clock (NominalDiffTime, UTCTime (..), addUTCTime, getCurrentTime,
+                                  diffUTCTime)
 import           Data.Time.Format (defaultTimeLocale, formatTime)
 import           Data.Word (Word64)
 import           Formatting (fixed, sformat, (%))
@@ -106,9 +107,11 @@ updatePaneGUI window nodesState params acceptors nodesStateElems =
     updateElement (ElementInteger rtsGcNum)             rtsGcNumChanged           $ els ! ElRTSGcNum
     updateElement (ElementInteger rtsGcMajorNum)        rtsGcMajorNumChanged      $ els ! ElRTSGcMajorNum
 
+    updateSystemStart systemStartTime $ els ! ElSystemStartTime
+
     updateCharts window nameOfNode rm nm
 
-    updateNodeUpTime upTime               $ els ! ElUptime
+    updateNodeUpTime nodeStartTime upTime $ els ! ElUptime
     updateNodeCommit nodeCommit
                      nodeShortCommit
                      nodeCommitChanged    $ els ! ElNodeCommitHref
@@ -172,13 +175,15 @@ updateGridGUI window nodesState _params acceptors gridNodesStateElems =
     updateElement (ElementInteger rtsGcNum)           rtsGcNumChanged           $ els ! ElRTSGcNum
     updateElement (ElementInteger rtsGcMajorNum)      rtsGcMajorNumChanged      $ els ! ElRTSGcMajorNum
 
+    updateSystemStart systemStartTime $ els ! ElSystemStartTime
+
     updateCharts window nameOfNode rm nm
 
     updateEndpoint   acceptorEndpoint  $ els ! ElTraceAcceptorEndpoint
     updateNodeCommit nodeCommit
                      nodeShortCommit
                      nodeCommitChanged $ els ! ElNodeCommitHref
-    updateNodeUpTime upTime            $ els ! ElUptime
+    updateNodeUpTime nodeStartTime upTime $ els ! ElUptime
 
     updateKESInfo [ (opCertStartKESPeriod,      els ! ElOpCertStartKESPeriod)
                   , (opCertExpiryKESPeriod,     els ! ElOpCertExpiryKESPeriod)
@@ -245,26 +250,52 @@ updateEndpoint endpoint endpointLabel = void $
                 else endpoint
   fullEndpointTitle = if shortened == endpoint then "" else endpoint
 
-updateNodeUpTime
-  :: Word64
+updateSystemStart
+  :: UTCTime
   -> Element
   -> UI ()
-updateNodeUpTime upTimeInNs upTimeLabel =
-  void $ element upTimeLabel # set text upTimeWithDays
+updateSystemStart systemStart systemStartLabel =
+  void $ element systemStartLabel # set text systemStartFormatted
  where
-  upTimeInSec :: Double
-  upTimeInSec = fromIntegral upTimeInNs / 1000000000
-  -- We show up time as time with seconds, so we don't need fractions of second.
-  upTimeDiff :: NominalDiffTime
-  upTimeDiff = fromInteger $ round upTimeInSec
-  nullDay = UTCTime (ModifiedJulianDay 0) 0
-  upTime = upTimeDiff `addUTCTime` nullDay
-  upTimeFormatted = formatTime defaultTimeLocale "%X" upTime
-  daysNum = utctDay upTime `diffDays` utctDay nullDay
-  upTimeWithDays = if daysNum > 0
-                     -- Show days only if upTime is bigger than 23:59:59.
-                     then show daysNum <> "d " <> upTimeFormatted
-                     else upTimeFormatted
+  systemStartFormatted = formatTime defaultTimeLocale "%F %T %Z" systemStart
+
+updateNodeUpTime
+  :: UTCTime
+  -> Word64
+  -> Element
+  -> UI ()
+updateNodeUpTime startTime upTimeInNs upTimeLabel = do
+  let nullDay = UTCTime (ModifiedJulianDay 0) 0
+  -- For backward compatibility we keep both metrics: upTime and startTime.
+  upTimeDiff <-
+    if | upTimeInNs == 0 && startTime /= nullDay -> do
+         -- nodeStartTime received from the node.
+         now <- liftIO $ getCurrentTime
+         let upTimeDiff = now `diffUTCTime` startTime
+         return upTimeDiff
+       | upTimeInNs /= 0 && startTime == nullDay -> do
+         -- upTime received from the node (old version)
+         let upTimeInSec :: Double
+             upTimeInSec = fromIntegral upTimeInNs / 1000000000
+             -- We show up time as time with seconds, so we don't need fractions of second.
+             upTimeDiff :: NominalDiffTime
+             upTimeDiff = fromInteger $ round upTimeInSec
+         return upTimeDiff
+       | otherwise ->
+         -- No metrics (related to node running time) were received (yet).
+         return 0
+
+  if upTimeDiff == 0
+    then void $ element upTimeLabel # set text "00:00:00"
+    else do
+      let upTime = upTimeDiff `addUTCTime` nullDay
+          upTimeFormatted = formatTime defaultTimeLocale "%X" upTime
+          daysNum = utctDay upTime `diffDays` utctDay nullDay
+          upTimeWithDays = if daysNum > 0
+                             -- Show days only if upTime is bigger than 23:59:59.
+                             then show daysNum <> "d " <> upTimeFormatted
+                             else upTimeFormatted
+      void $ element upTimeLabel # set text upTimeWithDays
 
 -- | Since peers list will be changed dynamically, we need it
 --   to update corresponding HTML-murkup dynamically as well.
@@ -376,7 +407,7 @@ markOutdatedElements
   -> NodeStateElements
   -> UI ()
 markOutdatedElements params
-                     NodeMetrics {..}
+                     _nm
                      RTSMetrics {..}
                      KESMetrics {..}
                      BlockchainMetrics {..}
@@ -388,12 +419,6 @@ markOutdatedElements params
       bcLife  = rtvBlockchainInfoLife params
       rtsLife = rtvRTSInfoLife params
 
-  markValues now upTimeLastUpdate niLife [ els ! ElUptime
-                                         , els ! ElNodeProtocol
-                                         , els ! ElNodeVersion
-                                         , els ! ElNodePlatform
-                                         , els ! ElNodeCommitHref
-                                         ]
   markValues now epochLastUpdate bcLife [els ! ElEpoch]
   markValues now opCertStartKESPeriodLastUpdate  niLife [els ! ElOpCertStartKESPeriod]
   markValues now opCertExpiryKESPeriodLastUpdate niLife [els ! ElOpCertExpiryKESPeriod]
