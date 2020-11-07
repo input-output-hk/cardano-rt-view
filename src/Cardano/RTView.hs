@@ -53,7 +53,7 @@ runCardanoRTView params' = do
   --   2. node state updater (it gets metrics from |LogBuffer| and updates NodeState),
   --   3. web server (it serves requests from user's browser and shows nodes' metrics in the real time).
   acceptorThr <- async $ launchMetricsAcceptor config accTr switchBoard
-  updaterThr  <- async $ launchNodeStateUpdater tr params switchBoard be nodesStateMVar
+  updaterThr  <- async $ launchNodeStateUpdater tr switchBoard be nodesStateMVar
   serverThr   <- async $ launchWebServer nodesStateMVar params acceptors
 
   void $ waitAnyCancel [acceptorThr, updaterThr, serverThr]

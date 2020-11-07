@@ -42,7 +42,6 @@ import           Cardano.BM.Data.Output (ScribeDefinition (..), ScribeFormat (..
 import           Cardano.BM.Data.Severity (Severity (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..), defaultRTViewParams, defaultRTVPort,
-                                     defaultRTVSlotLength, defaultRTVSlotsPerKESPeriod,
                                      defaultRTVStatic)
 
 -- | There are few possible ways how we can prepare RTView configuration:
@@ -206,18 +205,6 @@ startDialogToPrepareConfig = do
 
   colorize Green BoldIntensity $ do
     TIO.putStrLn ""
-    TIO.putStr $ "Indicate the number of slots in a KES period (default is "
-                 <> showt defaultRTVSlotsPerKESPeriod <> "): "
-  slotsPerKESPeriod <- askAboutSlotsPerKESPeriod
-
-  colorize Green BoldIntensity $ do
-    TIO.putStrLn ""
-    TIO.putStr $ "Indicate the length of slot, in seconds (default is "
-                 <> showt defaultRTVSlotLength <> "): "
-  slotLength <- askAboutSlotLength
-
-  colorize Green BoldIntensity $ do
-    TIO.putStrLn ""
     TIO.putStr $ "Indicate the directory with static content for the web server (default is \""
                  <> T.pack defaultRTVStatic <> "\"): "
   staticDir <- askAboutStaticDir
@@ -246,8 +233,6 @@ startDialogToPrepareConfig = do
   CM.setAcceptAt config (Just remoteAddrsNamed)
 
   let params = defaultRTViewParams { rtvPort = port
-                                   , rtvSlotsPerKESPeriod = slotsPerKESPeriod
-                                   , rtvSlotLength = slotLength
                                    , rtvStatic = staticDir
                                    }
   -- Now show to the user the changes that should be done in node's configuration file.
@@ -459,50 +444,6 @@ askAboutRTViewMachineHost = do
     else do
       TIO.putStrLn $ "Ok, it is assumed that RTView will be launched on the host \"" <> host <> "\"."
       return $ T.unpack host
-
-askAboutSlotsPerKESPeriod :: IO Int
-askAboutSlotsPerKESPeriod = do
-  periodRaw <- TIO.getLine
-  period <-
-    if T.null periodRaw
-      then do
-        TIO.putStrLn $ "Ok, default value " <> showt defaultRTVSlotsPerKESPeriod <> " will be used."
-        return defaultRTVSlotsPerKESPeriod
-      else case readMaybe (T.unpack periodRaw) of
-             Just (n :: Int) -> return n
-             Nothing -> do
-               colorize Red NormalIntensity $
-                 TIO.putStr "It's not a number, please input the number instead: "
-               askAboutSlotsPerKESPeriod
-  if period < 0
-    then do
-      colorize Red NormalIntensity $
-        TIO.putStr "Please choose the positive number."
-      askAboutSlotsPerKESPeriod
-    else
-      return period
-
-askAboutSlotLength :: IO Int
-askAboutSlotLength = do
-  slotLengthRaw <- TIO.getLine
-  slotLength <-
-    if T.null slotLengthRaw
-      then do
-        TIO.putStrLn $ "Ok, default value " <> showt defaultRTVSlotLength <> " will be used."
-        return defaultRTVSlotLength
-      else case readMaybe (T.unpack slotLengthRaw) of
-             Just (n :: Int) -> return n
-             Nothing -> do
-               colorize Red NormalIntensity $
-                 TIO.putStr "It's not a number, please input the number instead: "
-               askAboutSlotLength
-  if slotLength < 0
-    then do
-      colorize Red NormalIntensity $
-        TIO.putStr "Please choose the positive number."
-      askAboutSlotLength
-    else
-      return slotLength
 
 askAboutStaticDir :: IO FilePath
 askAboutStaticDir = do

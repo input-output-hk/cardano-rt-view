@@ -67,6 +67,7 @@ metricLabel ElMemoryUsageChart      = ("Memory usage", "Memory used by the node,
 metricLabel ElCPUUsageChart         = ("CPU usage", "CPU used by the node, in percents")
 metricLabel ElDiskUsageChart        = ("Disk usage", "Node's disk operations, both READ and WRITE")
 metricLabel ElNetworkUsageChart     = ("Network usage", "Node's network operations, both IN and OUT")
+metricLabel ElSystemStartTime       = ("System start time", "The time when this blockchain has started")
 metricLabel ElEpoch                 = ("Epoch", "Number of current epoch")
 metricLabel ElSlot                  = ("Slot in epoch", "Number of the current slot in this epoch")
 metricLabel ElChainDensity          = ("Chain density", "Chain density, in percents")
@@ -102,6 +103,7 @@ allMetricsNames =
   , ElCPUUsageChart
   , ElDiskUsageChart
   , ElNetworkUsageChart
+  , ElSystemStartTime
   , ElEpoch
   , ElSlot
   , ElBlocksNumber
@@ -186,6 +188,7 @@ mkNodeElements nameOfNode = do
                  #. [GridNetworkUsageChart]
                  #+ []
 
+  elSystemStartTime    <- string "00:00:00"
   elEpoch              <- string "0"
   elSlot               <- string "0"
   elBlocksNumber       <- string "0"
@@ -220,6 +223,7 @@ mkNodeElements nameOfNode = do
       , (ElCPUUsageChart,         elCPUUsageChart)
       , (ElDiskUsageChart,        elDiskUsageChart)
       , (ElNetworkUsageChart,     elNetworkUsageChart)
+      , (ElSystemStartTime,       elSystemStartTime)
       , (ElEpoch,                 elEpoch)
       , (ElSlot,                  elSlot)
       , (ElBlocksNumber,          elBlocksNumber)

@@ -45,6 +45,7 @@ data ElementName
   | ElNodeCommitHref
   | ElActiveNode
   | ElUptime
+  | ElSystemStartTime
   | ElEpoch
   | ElSlot
   | ElBlocksNumber
