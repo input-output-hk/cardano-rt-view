@@ -71,6 +71,8 @@ executable cardano-rt-view
   hs-source-dirs:      app
   main-is:             cardano-rt-view.hs
 
+  other-modules:       Paths_cardano_rt_view
+
   build-depends:       base >=4.12 && <5
                      , cardano-rt-view
                      , optparse-applicative
