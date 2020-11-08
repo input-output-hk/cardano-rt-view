@@ -51,7 +51,6 @@ library
                      , lobemo-backend-trace-acceptor
                      , optparse-applicative
                      , stm
-                     , strict-concurrency
                      , text
                      , threepenny-gui
                      , time

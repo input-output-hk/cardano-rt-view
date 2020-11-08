@@ -5,7 +5,7 @@ module Cardano.RTView.WebServer
     ( launchWebServer
     ) where
 
-import           Control.Concurrent.MVar.Strict (MVar, readMVar)
+import           Control.Concurrent.STM.TVar (TVar, readTVarIO)
 import           Control.Monad (void)
 import           Control.Monad.IO.Class (liftIO)
 import qualified Graphics.UI.Threepenny as UI
@@ -21,12 +21,12 @@ import           Cardano.RTView.GUI.Updater (updateGUI)
 import           Cardano.RTView.NodeState.Types (NodesState)
 
 launchWebServer
-  :: MVar NodesState
+  :: TVar NodesState
   -> RTViewParams
   -> [RemoteAddrNamed]
   -> IO ()
-launchWebServer nsMVar params acceptors =
-  UI.startGUI config $ mainPage nsMVar params acceptors
+launchWebServer nsTVar params acceptors =
+  UI.startGUI config $ mainPage nsTVar params acceptors
  where
   config = UI.defaultConfig
     { UI.jsStatic = Just $ rtvStatic params
@@ -34,12 +34,12 @@ launchWebServer nsMVar params acceptors =
     }
 
 mainPage
-  :: MVar NodesState
+  :: TVar NodesState
   -> RTViewParams
   -> [RemoteAddrNamed]
   -> UI.Window
   -> UI ()
-mainPage nsMVar params acceptors window = do
+mainPage nsTVar params acceptors window = do
   void $ return window # set UI.title "Cardano RTView"
 
   -- It is assumed that CSS files are available at 'pathToStatic/css/'.
@@ -56,7 +56,7 @@ mainPage nsMVar params acceptors window = do
   -- call a function which updates node state elements on the page.
   guiUpdateTimer <- timer # set interval 1000
   void $ onEvent (tick guiUpdateTimer) $ \_ -> do
-    newState <- liftIO $ readMVar nsMVar
+    newState <- liftIO $ readTVarIO nsTVar
     updateGUI window newState params acceptors (nodesStateElems, gridNodesStateElems)
   start guiUpdateTimer
 

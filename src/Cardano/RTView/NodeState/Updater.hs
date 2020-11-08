@@ -17,8 +17,9 @@ module Cardano.RTView.NodeState.Updater
     ) where
 
 import           Control.Concurrent (threadDelay)
-import           Control.Concurrent.MVar.Strict (MVar, modifyMVar_)
+import           Control.Concurrent.STM.TVar (TVar, modifyTVar')
 import           Control.Monad (forever, forM_)
+import           Control.Monad.STM (atomically)
 import qualified Data.Aeson as A
 import           Data.Map.Strict ((!?))
 import qualified Data.Map.Strict as Map
@@ -47,29 +48,29 @@ launchNodeStateUpdater
   :: Trace IO Text
   -> Switchboard Text
   -> ErrorBuffer Text
-  -> MVar NodesState
+  -> TVar NodesState
   -> IO ()
-launchNodeStateUpdater _tr switchBoard errBuff nsMVar = forever $ do
+launchNodeStateUpdater _tr switchBoard errBuff nsTVar = forever $ do
   -- logDebug tr "Try to update nodes' state..."
   -- Take current |LogObject|s from the |ErrorBuffer|.
   currentErrLogObjects <- readErrorBuffer errBuff
   forM_ currentErrLogObjects $ \(loggerName, errLogObject) ->
-    updateNodesStateErrors nsMVar loggerName errLogObject
+    updateNodesStateErrors nsTVar loggerName errLogObject
   -- Take current |LogObject|s from the |LogBuffer|.
   currentLogObjects <- readLogBuffer switchBoard
   forM_ currentLogObjects $ \(loggerName, logObject) ->
-    updateNodesState nsMVar loggerName logObject
+    updateNodesState nsTVar loggerName logObject
   -- Check for updates in the |LogBuffer| every second.
   threadDelay 1000000
 
 -- | Update NodeState for particular node based on loggerName.
 --   Please note that this function updates only Error-messages (if errors occurred).
 updateNodesStateErrors
-  :: MVar NodesState
+  :: TVar NodesState
   -> Text
   -> LogObject Text
   -> IO ()
-updateNodesStateErrors nsMVar loggerName (LogObject _ aMeta aContent) = do
+updateNodesStateErrors nsTVar loggerName (LogObject _ aMeta aContent) = do
   -- Check the name of the node this logObject came from.
   -- It is assumed that configuration contains correct names of remote nodes and
   -- loggers for them, for example:
@@ -82,13 +83,13 @@ updateNodesStateErrors nsMVar loggerName (LogObject _ aMeta aContent) = do
   let loggerNameParts = filter (not . T.null) $ T.splitOn "." loggerName
       nameOfNode = loggerNameParts !! 3
 
-  modifyMVar_ nsMVar $ \currentNodesState -> do
-    let nsWith :: NodeState -> IO NodesState
-        nsWith newState = return $ Map.adjust (const newState) nameOfNode currentNodesState
-
+  atomically $ modifyTVar' nsTVar $ \currentNodesState ->
+    let nsWith :: NodeState -> NodesState
+        nsWith newState = Map.adjust (const newState) nameOfNode currentNodesState
+    in
     case currentNodesState !? nameOfNode of
       Just ns -> nsWith $ updateNodeErrors ns aMeta aContent
-      Nothing -> return currentNodesState
+      Nothing -> currentNodesState
 
 updateNodeErrors :: Show a => NodeState -> LOMeta -> LOContent a -> NodeState
 updateNodeErrors ns (LOMeta timeStamp _ _ sev _) aContent = ns { nodeErrors = newMetrics }
@@ -112,11 +113,11 @@ updateNodeErrors ns (LOMeta timeStamp _ _ sev _) aContent = ns { nodeErrors = ne
 
 -- | Update NodeState for particular node based on loggerName.
 updateNodesState
-  :: MVar NodesState
+  :: TVar NodesState
   -> Text
   -> LogObject Text
   -> IO ()
-updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
+updateNodesState nsTVar loggerName (LogObject aName aMeta aContent) = do
   -- Check the name of the node this logObject came from.
   -- It is assumed that configuration contains correct names of remote nodes and
   -- loggers for them, for example:
@@ -131,22 +132,22 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
 
   now <- getMonotonicTimeNSec
 
-  modifyMVar_ nsMVar $ \currentNodesState -> do
-    let nsWith :: NodeState -> IO NodesState
-        nsWith newState = return $ Map.adjust (const newState) nameOfNode currentNodesState
+  atomically $ modifyTVar' nsTVar $ \currentNodesState ->
+    let nsWith :: NodeState -> NodesState
+        nsWith newState = Map.adjust (const newState) nameOfNode currentNodesState
         itIs name' = name' `T.isInfixOf` aName
         textValue updater =
           case aContent of
             LogMessage txtValue -> nsWith $ updater txtValue
-            _ -> return currentNodesState
-
+            _ -> currentNodesState
+    in
     case currentNodesState !? nameOfNode of
       Just ns ->
         if | itIs "cardano.node.metrics.peersFromNodeKernel" ->
             case aContent of
               LogStructured newPeersInfo ->
                 nsWith $ updatePeersInfo ns newPeersInfo
-              _ -> return currentNodesState
+              _ -> currentNodesState
            | itIs "cardano.node.metrics" ->
             case aContent of
               LogValue "upTime" (Nanoseconds upTimeInNs) ->
@@ -165,7 +166,7 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
                 nsWith $ updateNodeIsLeader ns leaderNum now
               LogValue "slotsMissedNum" (PureI missedSlotsNum) ->
                 nsWith $ updateSlotsMissed ns missedSlotsNum now
-              _ -> return currentNodesState
+              _ -> currentNodesState
            | itIs "cardano.node-metrics" ->
             case aContent of
 #ifdef WINDOWS
@@ -210,7 +211,7 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
                 nsWith $ updateGcNum ns gcNum now
               LogValue "RTS.gcMajorNum" (PureI gcMajorNum) ->
                 nsWith $ updateGcMajorNum ns gcMajorNum now
-              _ -> return currentNodesState
+              _ -> currentNodesState
            | itIs "cardano.node.Forge.metrics" ->
             case aContent of
               LogValue "operationalCertificateStartKESPeriod" (PureI oCertStartKesPeriod) ->
@@ -221,7 +222,7 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
                 nsWith $ updateCurrentKESPeriod ns currentKesPeriod now
               LogValue "remainingKESPeriods" (PureI kesPeriodsUntilExpiry) ->
                 nsWith $ updateRemainingKESPeriods ns kesPeriodsUntilExpiry now
-              _ -> return currentNodesState
+              _ -> currentNodesState
            | itIs "cardano.node.release" ->
              textValue $ updateNodeProtocol ns
            | itIs "cardano.node.version" ->
@@ -241,7 +242,7 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
            -- | "basicInfo.slotLengthByron" `T.isInfixOf` aName ->
            --   LogMessage slotLength ->
            --     nsWith $ updateSlotLength ns slotLength
-           --   _ -> return currentNodesState
+           --   _ -> currentNodesState
            | otherwise ->
             case aContent of
               LogValue "density" (PureD density) ->
@@ -252,11 +253,11 @@ updateNodesState nsMVar loggerName (LogObject aName aMeta aContent) = do
                 nsWith $ updateSlotInEpoch ns slotNum now
               LogValue "epoch" (PureI epoch') ->
                 nsWith $ updateEpoch ns epoch' now
-              _ -> return currentNodesState
+              _ -> currentNodesState
       Nothing ->
         -- This is a problem, because it means that configuration is unexpected one:
         -- name of node in getAcceptAt doesn't correspond to the name of loggerName.
-        return currentNodesState
+        currentNodesState
 
 -- Updaters for particular node state's fields.
 

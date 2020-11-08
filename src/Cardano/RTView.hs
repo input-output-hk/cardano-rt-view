@@ -5,7 +5,7 @@ module Cardano.RTView
     ) where
 
 import           Control.Concurrent.Async (async, waitAnyCancel)
-import           Control.Concurrent.MVar.Strict (MVar, newMVar)
+import           Control.Concurrent.STM.TVar (TVar, newTVarIO)
 import           Control.Monad (void)
 import           Data.Text (Text)
 import qualified Data.Text.IO as TIO
@@ -45,15 +45,15 @@ runCardanoRTView params' = do
   logNotice tr "Starting service; hit CTRL-C to terminate..."
 
   initStateOfNodes <- defaultNodesState config
-  -- This MVar contains state (info, metrics) for all nodes we receive metrics from.
-  nodesStateMVar :: MVar NodesState <- newMVar initStateOfNodes
+  -- This TVar contains state (info, metrics) for all nodes we receive metrics from.
+  nodesStateTVar :: TVar NodesState <- newTVarIO initStateOfNodes
 
   -- Launch 3 threads:
   --   1. acceptor plugin (it launches |TraceAcceptor| plugin),
   --   2. node state updater (it gets metrics from |LogBuffer| and updates NodeState),
   --   3. web server (it serves requests from user's browser and shows nodes' metrics in the real time).
   acceptorThr <- async $ launchMetricsAcceptor config accTr switchBoard
-  updaterThr  <- async $ launchNodeStateUpdater tr switchBoard be nodesStateMVar
-  serverThr   <- async $ launchWebServer nodesStateMVar params acceptors
+  updaterThr  <- async $ launchNodeStateUpdater tr switchBoard be nodesStateTVar
+  serverThr   <- async $ launchWebServer nodesStateTVar params acceptors
 
   void $ waitAnyCancel [acceptorThr, updaterThr, serverThr]
