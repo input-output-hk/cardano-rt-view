@@ -17,50 +17,84 @@ Saved configuration file is found. Do you want to use it? <Y/N>
 This is an example of a saved RTView configuration created on Linux, with all default values accepted during dialog:
 
 ```
-rotation: null
-defaultBackends:
-- KatipBK
-setupBackends:
-- KatipBK
-- LogBufferBK
-- TraceAcceptorBK
-hasPrometheus: null
-hasGraylog: null
-hasGUI: null
-traceForwardTo: null
-traceAcceptAt:
-- remoteAddr:
-    tag: RemotePipe
-    contents: /run/user/1000/rt-view-pipes/node-1
-  nodeName: node-1
-- remoteAddr:
-    tag: RemotePipe
-    contents: /run/user/1000/rt-view-pipes/node-2
-  nodeName: node-2
-- remoteAddr:
-    tag: RemotePipe
-    contents: /run/user/1000/rt-view-pipes/node-3
-  nodeName: node-3
-defaultScribes:
-- - StdoutSK
-  - stdout
-options:
-  mapBackends:
-    cardano-rt-view.acceptor:
-    - LogBufferBK
-    - kind: UserDefinedBK
-      name: ErrorBufferBK
-setupScribes:
-- scMaxSev: Emergency
-  scName: stdout
-  scRotation: null
-  scMinSev: Notice
-  scKind: StdoutSK
-  scFormat: ScText
-  scPrivacy: ScPublic
-hasEKG: null
-forwardDelay: null
-minSeverity: Info
+{
+  "rotation": null,
+  "defaultBackends": [
+    "KatipBK"
+  ],
+  "setupBackends": [
+    "KatipBK",
+    "LogBufferBK",
+    "TraceAcceptorBK"
+  ],
+  "hasPrometheus": null,
+  "hasGraylog": null,
+  "hasGUI": null,
+  "traceForwardTo": null,
+  "traceAcceptAt": [
+    {
+      "remoteAddr": {
+        "tag": "RemoteSocket",
+        "contents": [
+          "0.0.0.0",
+          "3000"
+        ]
+      },
+      "nodeName": "node-1"
+    },
+    {
+      "remoteAddr": {
+        "tag": "RemoteSocket",
+        "contents": [
+          "0.0.0.0",
+          "3001"
+        ]
+      },
+      "nodeName": "node-2"
+    },
+    {
+      "remoteAddr": {
+        "tag": "RemoteSocket",
+        "contents": [
+          "0.0.0.0",
+          "3002"
+        ]
+      },
+      "nodeName": "node-3"
+    }
+  ],
+  "defaultScribes": [
+    [
+      "StdoutSK",
+      "stdout"
+    ]
+  ],
+  "options": {
+    "mapBackends": {
+      "cardano-rt-view.acceptor": [
+        "LogBufferBK",
+        {
+          "kind": "UserDefinedBK",
+          "name": "ErrorBufferBK"
+        }
+      ]
+    }
+  },
+  "setupScribes": [
+    {
+      "scMaxSev": "Emergency",
+      "scName": "stdout",
+      "scRotation": null,
+      "scMinSev": "Notice",
+      "scKind": "StdoutSK",
+      "scFormat": "ScText",
+      "scPrivacy": "ScPublic"
+    }
+  ],
+  "hasEKG": null,
+  "forwardDelay": null,
+  "minSeverity": "Info"
+}
 ```
 
 ## Explicit configuration
@@ -68,5 +102,5 @@ minSeverity: Info
 It is possible to provide a configuration file explicitly, via `--config` command line parameter:
 
 ```
-cardano-rt-view --config /path/to/your/rt-view.yaml
+cardano-rt-view --config /path/to/your/cardano-rt-view.json
 ```

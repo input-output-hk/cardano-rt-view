@@ -39,6 +39,7 @@ cardano-rt-view
    :hidden:
 
    use-cases/different-machines
+   use-cases/liveview-to-rtview
 
 .. toctree::
    :maxdepth: 3
