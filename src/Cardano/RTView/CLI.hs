@@ -14,8 +14,8 @@ module Cardano.RTView.CLI
     , parseRTViewParams
     ) where
 
+import           Data.Aeson (FromJSON (..), ToJSON, (.:), withObject)
 import           Data.Word (Word64)
-import           Data.Yaml (FromJSON (..), ToJSON, (.:), withObject)
 import           GHC.Generics (Generic)
 
 import           Options.Applicative (HasCompleter, HasMetavar, HasName, HasValue, Mod, Parser,
