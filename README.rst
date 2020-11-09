@@ -69,6 +69,7 @@ Additional topics:
 Use cases:
 
 * `Distributed mode: step by step <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/use-cases/different-machines.md>`_
+* `LiveView to RTView <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/use-cases/liveview-to-rtview.md>`_
 
 .. raw:: html
 
