@@ -43,9 +43,7 @@ please go to `Settings` -> `Language Settings` -> `Administrative language setti
 After you run an executable `cardano-rt-view`, an interactive dialog will be started:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- RTView: real-time watching for Cardano nodes
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RTView: real-time watching for Cardano nodes
 
 Let's configure RTView...
 ```
@@ -77,19 +75,16 @@ Please input the port RTView will use to display the web-page. For example, if y
 The next question is:
 
 ```
-Indicate how your nodes should be connected with RTView (pipes <P> or networking sockets <S>):
+Indicate how your nodes should be connected with RTView: networking sockets <S> or named pipes <P>."
+Default way is sockets, so if you are not sure - choose <S>:
 ```
 
-Please choose the way how the nodes should be connected to RTView. If you selected `P`, you will be asked about the directory when pipes will be created:
+Please choose the way how the nodes should be connected to RTView.
+
+If you chose `S`, you will be asked about the base port:
 
 ```
-Ok, pipes will be used. Indicate the directory for them, default is "/run/user/1000/rt-view-pipes":
-```
-
-But if you chose `S`, you will be asked about the base port:
-
-```
-Ok, sockets will be used. Indicate the port base to listen for connections (1024 - 65535, default is 3000):
+Ok, sockets will be used. Indicate the base port to listen for connections (1024 - 65535, default is 3000):
 ```
 
 The base port will be used for the first node that forwards its metrics to RTView. For example, if you will launch three `cardano-node` processes (`node-1`, `node-2`, and `node-3`) that will forward their metrics using network sockets, this is how they will be connected to RTView:
@@ -97,6 +92,12 @@ The base port will be used for the first node that forwards its metrics to RTVie
 1. `node-1` -> `0.0.0.0:3000`
 1. `node-2` -> `0.0.0.0:3001`
 1. `node-3` -> `0.0.0.0:3002`
+
+Bit if you selected `P`, you will be asked about the directory when pipes will be created:
+
+```
+Ok, pipes will be used. Indicate the directory for them, default is "/run/user/1000/rt-view-pipes":
+```
 
 The next question is:
 
