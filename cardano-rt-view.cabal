@@ -54,7 +54,6 @@ library
                      , text
                      , threepenny-gui
                      , time
-                     , yaml
 
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings

@@ -9,12 +9,12 @@ module Cardano.RTView.Config
 
 import           Control.Exception (IOException, catch)
 import           Control.Monad (forM_, unless, void, when)
+import           Data.Aeson (eitherDecodeFileStrict, encodeFile)
 import           Data.List (nub, nubBy)
 import           Data.Maybe (fromJust)
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Text.IO as TIO
-import           Data.Yaml (ParseException, decodeFileEither, encodeFile)
 import           System.Console.ANSI (Color (..), ColorIntensity (..), ConsoleIntensity (..),
                                       ConsoleLayer (..), SGR (..), setSGR)
 import           System.Directory (XdgDirectory (..), createDirectoryIfMissing, doesFileExist,
@@ -67,7 +67,7 @@ prepareConfigAndParams params' = do
         checkIfPreviousConfigExists >>= \case
           Just (prevConfig, prevParams) -> do
             colorize Magenta NormalIntensity $
-              TIO.putStr "Saved configuration file is found. Do you want to use it? <Y/N>: "
+              TIO.putStr "\nSaved configuration file is found. Do you want to use it? <Y/N>: "
             askAboutPrevConfig prevConfig prevParams
           Nothing ->
             startDialogToPrepareConfig
@@ -96,9 +96,9 @@ readConfigFile pathToConfig = setup pathToConfig `catch` exceptHandler
 
 readRTViewParamsFile :: FilePath -> IO RTViewParams
 readRTViewParamsFile pathToParams =
-  decodeFileEither pathToParams >>= \case
-    Left (e :: ParseException) -> Ex.die $ "Exception while reading RTView parameters "
-                                         <> pathToParams <> ", exception: " <> show e
+  eitherDecodeFileStrict pathToParams >>= \case
+    Left errMsg -> Ex.die $ "Error while reading RTView parameters "
+                            <> pathToParams <> ", error: " <> errMsg
     Right (params :: RTViewParams) -> return params
 
 -- | If `cardano-rt-view` already was used on this computer,
@@ -111,13 +111,13 @@ savedConfigurationFile = do
   -- On Windows, the default is %APPDATA% (e.g. C:/Users/<user>/AppData/Roaming).
   dir <- getXdgDirectory XdgConfig ""
   createDirectoryIfMissing True dir
-  return $ dir </> "rt-view.yaml"
+  return $ dir </> "cardano-rt-view.json"
 
 savedRTViewParamsFile :: IO FilePath
 savedRTViewParamsFile = do
   dir <- getXdgDirectory XdgConfig ""
   createDirectoryIfMissing True dir
-  return $ dir </> "rt-view-params.yaml"
+  return $ dir </> "cardano-rt-view-params.json"
 
 checkIfPreviousConfigExists :: IO (Maybe (Configuration, RTViewParams))
 checkIfPreviousConfigExists = do
