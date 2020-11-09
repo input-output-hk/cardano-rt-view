@@ -58,6 +58,7 @@ Recommended topics:
 * `Quick start <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/install.md>`_
 * `Configure your nodes <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/node-configuration.md>`_
 * `GUI overview <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/gui-overview/overview.md>`_
+* `FAQ <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/faq.md>`_
 
 Additional topics:
 

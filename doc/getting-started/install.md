@@ -18,25 +18,13 @@ Please go to [releases page](https://github.com/input-output-hk/cardano-rt-view/
 
 Then unpack an archive, inside you will find an executable `cardano-rt-view`.
 
-## Prepare to run
-
-### macOS notes
+## macOS notes
 
 To prevent a system warning about "an application downloaded from the Internet", run this command:
 
 ```
 xattr -r -d com.apple.quarantine cardano-rt-view-*-darwin/*
 ```
-
-### Windows notes
-
-During the start, RTView initiates an interactive dialog that depends on the UTF-8 encoding. So, to prevent a system error:
-
-```
-<stdout>: commitAndReleaseBuffer: invalid argument (invalid character)
-```
-
-please go to `Settings` -> `Language Settings` -> `Administrative language settings`, then `Change system locale` and select `Beta: Use Unicode UTF-8 for worldwide language support`. Restart Windows after that.
 
 ## Run and configuration dialog
 
@@ -130,37 +118,54 @@ Now you have to make the following changes in your node's configuration file:
 
 1. Find setupBackends and add TraceForwarderBK in it:
 
-   setupBackends:
-     - TraceForwarderBK
+   "setupBackends": [
+     "TraceForwarderBK"
+   ]
 
 2. Find TurnOnLogMetrics and set it to True:
 
-   TurnOnLogMetrics: True
+   "TurnOnLogMetrics": true
 
 3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:
 
-   options:
-     mapBackends:
-       cardano.node.metrics:
-         - TraceForwarderBK
-       cardano.node.Forge.metrics:
-         - TraceForwarderBK
+   "options": {
+     "mapBackends": {
+       "cardano.node-metrics": [
+         "TraceForwarderBK"
+       ],
+       "cardano.node.Forge.metrics": [
+         "TraceForwarderBK"
+       ],
+       ...
+     }
 
    For more info about supported metrics please read the documentation.
 
 4. Since you have 3 nodes, add following traceForwardTo sections in the root of their configuration files:
 
-   traceForwardTo:
-     tag: RemotePipe
-     contents: "/run/user/1000/rt-view-pipes/node-1"
+   "traceForwardTo": {
+     "tag": "RemoteSocket",
+     "contents": [
+       "0.0.0.0",
+       "3000"
+     ]
+   }
 
-   traceForwardTo:
-     tag: RemotePipe
-     contents: "/run/user/1000/rt-view-pipes/node-2"
+   "traceForwardTo": {
+     "tag": "RemoteSocket",
+     "contents": [
+       "0.0.0.0",
+       "3001"
+     ]
+   }
 
-   traceForwardTo:
-     tag: RemotePipe
-     contents: "/run/user/1000/rt-view-pipes/node-3"
+   "traceForwardTo": {
+     "tag": "RemoteSocket",
+     "contents": [
+       "0.0.0.0",
+       "3002"
+     ]
+   }
 
 After you are done, press <Enter> to run RTView...
 ```
