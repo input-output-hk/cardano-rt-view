@@ -182,17 +182,11 @@ startDialogToPrepareConfig = do
 
   colorize Green BoldIntensity $ do
     TIO.putStrLn ""
-    TIO.putStr "Indicate how your nodes should be connected with RTView (pipes <P> or networking sockets <S>): "
+    TIO.putStr "Indicate how your nodes should be connected with RTView: networking sockets <S> or named pipes <P>."
+    TIO.putStr "\nDefault way is sockets, so if you are not sure - choose <S>: "
   (remoteAddrs, rtViewMachineHost) <- askAboutPipesAndSockets >>= \case
-    Pipe -> do
-      defDir <- defaultPipesDir
-      TIO.putStr $ "Ok, pipes will be used. Indicate the directory for them (default is \""
-                   <> T.pack defDir <> "\"): "
-      hFlush stdout
-      addrs <- askAboutLocationForPipes nodesNumber
-      return (addrs, defaultRTVHost)
     Socket -> do
-      TIO.putStr $ "Ok, sockets will be used. Indicate the port base to listen for connections ("
+      TIO.putStr $ "Ok, sockets will be used. Indicate the base port to listen for connections ("
                    <> showt minimumPort <> " - " <> showt maximumPort <> ", default is "
                    <> showt defaultFirstPortForSockets <> "): "
       hFlush stdout
@@ -202,6 +196,13 @@ startDialogToPrepareConfig = do
       hFlush stdout
       host <- askAboutRTViewMachineHost
       return (addrsWithDefaultHost, host)
+    Pipe -> do
+      defDir <- defaultPipesDir
+      TIO.putStr $ "Ok, pipes will be used. Indicate the directory for them (default is \""
+                   <> T.pack defDir <> "\"): "
+      hFlush stdout
+      addrs <- askAboutLocationForPipes nodesNumber
+      return (addrs, defaultRTVHost)
 
   colorize Green BoldIntensity $ do
     TIO.putStrLn ""
@@ -366,14 +367,14 @@ data ConnectionWay
 askAboutPipesAndSockets :: IO ConnectionWay
 askAboutPipesAndSockets =
   TIO.getLine >>= \case
-    "P" -> return Pipe
-    "p" -> return Pipe
-    ""  -> return Pipe
     "S" -> return Socket
     "s" -> return Socket
+    ""  -> return Socket
+    "P" -> return Pipe
+    "p" -> return Pipe
     _   -> do
       colorize Red NormalIntensity $
-        TIO.putStr "Sorry? <P>ipes or <S>ockets? "
+        TIO.putStr "Sorry? <S>ockets or <P>ipes? "
       askAboutPipesAndSockets
 
 askAboutLocationForPipes :: Int -> IO [RemoteAddr]
