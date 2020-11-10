@@ -95,6 +95,13 @@ ownCSS = unpack . TL.toStrict . render $ do
     border            solid (px 1) red
     borderRadiusPx    8
 
+  cl UnsupportedVersion ? do
+    color             red
+    fontWeight        bold
+    textDecorationLine  underline
+    textDecorationStyle wavy
+    textDecorationColor red
+
   cl NodeNameArea ? do
     fontSizePct       110
     paddingTopPx      10
