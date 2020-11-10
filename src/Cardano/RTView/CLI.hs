@@ -7,17 +7,12 @@ module Cardano.RTView.CLI
     , defaultRTVConfig
     , defaultRTVStatic
     , defaultRTVPort
-    , defaultRTVNodeInfoLife
-    , defaultRTVBlockchainInfoLife
-    , defaultRTVResourcesInfoLife
-    , defaultRTVRTSInfoLife
+    , defaultRTVActiveNodeLife
     , parseRTViewParams
     ) where
 
 import           Data.Aeson (FromJSON (..), ToJSON, (.:), withObject)
-import           Data.Word (Word64)
 import           GHC.Generics (Generic)
-
 import           Options.Applicative (HasCompleter, HasMetavar, HasName, HasValue, Mod, Parser,
                                       auto, bashCompleter, completer, help, long, metavar, option,
                                       showDefault, strOption, value)
@@ -25,34 +20,25 @@ import           Options.Applicative (HasCompleter, HasMetavar, HasName, HasValu
 -- | Type for CLI parameters required for the service.
 data RTViewParams
   = RTViewParams
-      { rtvConfig             :: !FilePath
-      , rtvStatic             :: !FilePath
-      , rtvPort               :: !Int
-      , rtvNodeInfoLife       :: !Word64
-      , rtvBlockchainInfoLife :: !Word64
-      , rtvResourcesInfoLife  :: !Word64
-      , rtvRTSInfoLife        :: !Word64
+      { rtvConfig         :: !FilePath
+      , rtvStatic         :: !FilePath
+      , rtvPort           :: !Int
+      , rtvActiveNodeLife :: !Int
       } deriving (Generic, ToJSON)
 
 instance FromJSON RTViewParams where
   parseJSON = withObject "RTViewParams" $ \v -> RTViewParams
-    <$> v .:  "rtvConfig"
-    <*> v .:  "rtvStatic"
-    <*> v .:  "rtvPort"
-    <*> v .:  "rtvNodeInfoLife"
-    <*> v .:  "rtvBlockchainInfoLife"
-    <*> v .:  "rtvResourcesInfoLife"
-    <*> v .:  "rtvRTSInfoLife"
+    <$> v .: "rtvConfig"
+    <*> v .: "rtvStatic"
+    <*> v .: "rtvPort"
+    <*> v .: "rtvActiveNodeLife"
 
 defaultRTViewParams :: RTViewParams
 defaultRTViewParams = RTViewParams
-  { rtvConfig             = defaultRTVConfig
-  , rtvStatic             = defaultRTVStatic
-  , rtvPort               = defaultRTVPort
-  , rtvNodeInfoLife       = defaultRTVNodeInfoLife
-  , rtvBlockchainInfoLife = defaultRTVBlockchainInfoLife
-  , rtvResourcesInfoLife  = defaultRTVResourcesInfoLife
-  , rtvRTSInfoLife        = defaultRTVRTSInfoLife
+  { rtvConfig         = defaultRTVConfig
+  , rtvStatic         = defaultRTVStatic
+  , rtvPort           = defaultRTVPort
+  , rtvActiveNodeLife = defaultRTVActiveNodeLife
   }
 
 defaultRTVConfig, defaultRTVStatic :: FilePath
@@ -62,17 +48,8 @@ defaultRTVStatic = "static"
 defaultRTVPort :: Int
 defaultRTVPort = 8024
 
-defaultRTVNodeInfoLife
-  , defaultRTVBlockchainInfoLife
-  , defaultRTVResourcesInfoLife
-  , defaultRTVRTSInfoLife :: Word64
-defaultRTVNodeInfoLife       = secToNanosec 5
-defaultRTVBlockchainInfoLife = secToNanosec 35
-defaultRTVResourcesInfoLife  = secToNanosec 35
-defaultRTVRTSInfoLife        = secToNanosec 45
-
-secToNanosec :: Int -> Word64
-secToNanosec s = fromIntegral $ s * 1000000000
+defaultRTVActiveNodeLife :: Int
+defaultRTVActiveNodeLife = 120
 
 parseRTViewParams :: Parser RTViewParams
 parseRTViewParams =
@@ -92,22 +69,11 @@ parseRTViewParams =
           "The port number"
           "PORT"
           defaultRTVPort
-    <*> parseDiffTime
-          "node-info-life"
-          "Lifetime of node info"
-          defaultRTVNodeInfoLife
-    <*> parseDiffTime
-          "blockchain-info-life"
-          "Lifetime of blockchain info"
-          defaultRTVBlockchainInfoLife
-    <*> parseDiffTime
-          "resources-info-life"
-          "Lifetime of resources info"
-          defaultRTVResourcesInfoLife
-    <*> parseDiffTime
-          "rts-info-life"
-          "Lifetime of GHC RTS info"
-          defaultRTVRTSInfoLife
+    <*> parseInt
+          "active-node-life"
+          "Active node lifetime, in seconds"
+          "TIME"
+          defaultRTVActiveNodeLife
 
 -- Aux parsers
 
@@ -141,19 +107,5 @@ parseInt optname desc metavar' defaultValue =
     <> metavar metavar'
     <> help desc
     <> value defaultValue
-    <> showDefault
-  )
-
-parseDiffTime
-  :: String
-  -> String
-  -> Word64
-  -> Parser Word64
-parseDiffTime optname desc defaultTime =
-  option (secToNanosec <$> auto) (
-       long optname
-    <> metavar "DIFFTIME"
-    <> help desc
-    <> value defaultTime
     <> showDefault
   )

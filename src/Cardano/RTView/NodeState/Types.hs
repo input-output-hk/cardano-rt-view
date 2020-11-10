@@ -27,6 +27,7 @@ import           Data.Text (Text)
 import           Data.Time.Calendar (Day (..))
 import           Data.Time.Clock (UTCTime (..))
 import           Data.Word (Word64)
+import           GHC.Clock (getMonotonicTimeNSec)
 import           GHC.Generics (Generic)
 
 import           Cardano.BM.Configuration (Configuration)
@@ -64,6 +65,7 @@ data NodeState = NodeState
   , kesMetrics        :: !KESMetrics
   , nodeMetrics       :: !NodeMetrics
   , nodeErrors        :: !ErrorsMetrics
+  , metricsLastUpdate :: !Word64
   } deriving (Generic, NFData)
 
 data PeerMetrics = PeerMetrics
@@ -85,65 +87,56 @@ data MempoolMetrics = MempoolMetrics
   } deriving (Generic, NFData)
 
 data ForgeMetrics = ForgeMetrics
-  { nodeIsLeaderNum              :: !Integer
-  , nodeIsLeaderNumChanged       :: !Bool
-  , nodeIsLeaderNumLastUpdate    :: !Word64
-  , slotsMissedNumber            :: !Integer
-  , slotsMissedNumberChanged     :: !Bool
-  , slotsMissedNumberLastUpdate  :: !Word64
-  , nodeCannotForge              :: !Integer
-  , nodeCannotForgeChanged       :: !Bool
-  , blocksForgedNumber           :: !Integer
-  , blocksForgedNumberChanged    :: !Bool
-  , blocksForgedNumberLastUpdate :: !Word64
+  { nodeIsLeaderNum           :: !Integer
+  , nodeIsLeaderNumChanged    :: !Bool
+  , slotsMissedNumber         :: !Integer
+  , slotsMissedNumberChanged  :: !Bool
+  , nodeCannotForge           :: !Integer
+  , nodeCannotForgeChanged    :: !Bool
+  , blocksForgedNumber        :: !Integer
+  , blocksForgedNumberChanged :: !Bool
   } deriving (Generic, NFData)
 
 data ResourcesMetrics = ResourcesMetrics
-  { memory                    :: !Double
-  , memoryChanged             :: !Bool
-  , memoryMax                 :: !Double
-  , memoryMaxTotal            :: !Double
-  , memoryPercent             :: !Double
-  , memoryLastUpdate          :: !Word64
-  , cpuPercent                :: !Double
-  , cpuPercentChanged         :: !Bool
-  , cpuLast                   :: !Integer
-  , cpuNs                     :: !Word64
-  , cpuLastUpdate             :: !Word64
-  , diskUsageR                :: !Double
-  , diskUsageRChanged         :: !Bool
-  , diskUsageRMax             :: !Double
-  , diskUsageRMaxTotal        :: !Double
-  , diskUsageRPercent         :: !Double
-  , diskUsageRLast            :: !Word64
-  , diskUsageRNs              :: !Word64
-  , diskUsageRAdaptTime       :: !UTCTime
-  , diskUsageRLastUpdate      :: !Word64
-  , diskUsageW                :: !Double
-  , diskUsageWChanged         :: !Bool
-  , diskUsageWMax             :: !Double
-  , diskUsageWMaxTotal        :: !Double
-  , diskUsageWPercent         :: !Double
-  , diskUsageWLast            :: !Word64
-  , diskUsageWNs              :: !Word64
-  , diskUsageWAdaptTime       :: !UTCTime
-  , diskUsageWLastUpdate      :: !Word64
-  , networkUsageIn            :: !Double
-  , networkUsageInChanged     :: !Bool
-  , networkUsageInPercent     :: !Double
-  , networkUsageInMax         :: !Double
-  , networkUsageInMaxTotal    :: !Double
-  , networkUsageInLast        :: !Word64
-  , networkUsageInNs          :: !Word64
-  , networkUsageInLastUpdate  :: !Word64
-  , networkUsageOut           :: !Double
-  , networkUsageOutChanged    :: !Bool
-  , networkUsageOutPercent    :: !Double
-  , networkUsageOutMax        :: !Double
-  , networkUsageOutMaxTotal   :: !Double
-  , networkUsageOutLast       :: !Word64
-  , networkUsageOutNs         :: !Word64
-  , networkUsageOutLastUpdate :: !Word64
+  { memory                  :: !Double
+  , memoryChanged           :: !Bool
+  , memoryMax               :: !Double
+  , memoryMaxTotal          :: !Double
+  , memoryPercent           :: !Double
+  , cpuPercent              :: !Double
+  , cpuPercentChanged       :: !Bool
+  , cpuLast                 :: !Integer
+  , cpuNs                   :: !Word64
+  , diskUsageR              :: !Double
+  , diskUsageRChanged       :: !Bool
+  , diskUsageRMax           :: !Double
+  , diskUsageRMaxTotal      :: !Double
+  , diskUsageRPercent       :: !Double
+  , diskUsageRLast          :: !Word64
+  , diskUsageRNs            :: !Word64
+  , diskUsageRAdaptTime     :: !UTCTime
+  , diskUsageW              :: !Double
+  , diskUsageWChanged       :: !Bool
+  , diskUsageWMax           :: !Double
+  , diskUsageWMaxTotal      :: !Double
+  , diskUsageWPercent       :: !Double
+  , diskUsageWLast          :: !Word64
+  , diskUsageWNs            :: !Word64
+  , diskUsageWAdaptTime     :: !UTCTime
+  , networkUsageIn          :: !Double
+  , networkUsageInChanged   :: !Bool
+  , networkUsageInPercent   :: !Double
+  , networkUsageInMax       :: !Double
+  , networkUsageInMaxTotal  :: !Double
+  , networkUsageInLast      :: !Word64
+  , networkUsageInNs        :: !Word64
+  , networkUsageOut         :: !Double
+  , networkUsageOutChanged  :: !Bool
+  , networkUsageOutPercent  :: !Double
+  , networkUsageOutMax      :: !Double
+  , networkUsageOutMaxTotal :: !Double
+  , networkUsageOutLast     :: !Word64
+  , networkUsageOutNs       :: !Word64
   } deriving (Generic, NFData)
 
 data RTSMetrics = RTSMetrics
@@ -152,19 +145,14 @@ data RTSMetrics = RTSMetrics
   , rtsMemoryUsed             :: !Double
   , rtsMemoryUsedChanged      :: !Bool
   , rtsMemoryUsedPercent      :: !Double
-  , rtsMemoryLastUpdate       :: !Word64
   , rtsGcCpu                  :: !Double
   , rtsGcCpuChanged           :: !Bool
-  , rtsGcCpuLastUpdate        :: !Word64
   , rtsGcElapsed              :: !Double
   , rtsGcElapsedChanged       :: !Bool
-  , rtsGcElapsedLastUpdate    :: !Word64
   , rtsGcNum                  :: !Integer
   , rtsGcNumChanged           :: !Bool
-  , rtsGcNumLastUpdate        :: !Word64
   , rtsGcMajorNum             :: !Integer
   , rtsGcMajorNumChanged      :: !Bool
-  , rtsGcMajorNumLastUpdate   :: !Word64
   } deriving (Generic, NFData)
 
 data BlockchainMetrics = BlockchainMetrics
@@ -172,32 +160,24 @@ data BlockchainMetrics = BlockchainMetrics
   , systemStartTimeChanged :: !Bool
   , epoch                  :: !Integer
   , epochChanged           :: !Bool
-  , epochLastUpdate        :: !Word64
   , slot                   :: !Integer
   , slotChanged            :: !Bool
-  , slotLastUpdate         :: !Word64
   , blocksNumber           :: !Integer
   , blocksNumberChanged    :: !Bool
-  , blocksNumberLastUpdate :: !Word64
   , chainDensity           :: !Double
   , chainDensityChanged    :: !Bool
-  , chainDensityLastUpdate :: !Word64
   } deriving (Generic, NFData)
 
 data KESMetrics = KESMetrics
-  { remainingKESPeriods             :: !Integer
-  , remainingKESPeriodsChanged      :: !Bool
-  , remainingKESPeriodsInDays       :: !Integer
-  , remainingKESPeriodsLastUpdate   :: !Word64
-  , opCertStartKESPeriod            :: !Integer
-  , opCertStartKESPeriodChanged     :: !Bool
-  , opCertStartKESPeriodLastUpdate  :: !Word64
-  , opCertExpiryKESPeriod           :: !Integer
-  , opCertExpiryKESPeriodChanged    :: !Bool
-  , opCertExpiryKESPeriodLastUpdate :: !Word64
-  , currentKESPeriod                :: !Integer
-  , currentKESPeriodChanged         :: !Bool
-  , currentKESPeriodLastUpdate      :: !Word64
+  { remainingKESPeriods          :: !Integer
+  , remainingKESPeriodsChanged   :: !Bool
+  , remainingKESPeriodsInDays    :: !Integer
+  , opCertStartKESPeriod         :: !Integer
+  , opCertStartKESPeriodChanged  :: !Bool
+  , opCertExpiryKESPeriod        :: !Integer
+  , opCertExpiryKESPeriodChanged :: !Bool
+  , currentKESPeriod             :: !Integer
+  , currentKESPeriodChanged      :: !Bool
   } deriving (Generic, NFData)
 
 data NodeMetrics = NodeMetrics
@@ -212,8 +192,6 @@ data NodeMetrics = NodeMetrics
   , nodePlatformChanged  :: !Bool
   , nodeStartTime        :: !UTCTime
   , nodeStartTimeChanged :: !Bool
-  , upTime               :: !Word64
-  , upTimeLastUpdate     :: !Word64
   } deriving (Generic, NFData)
 
 data ErrorsMetrics = ErrorsMetrics
@@ -227,14 +205,15 @@ defaultNodesState
 defaultNodesState config =
   CM.getAcceptAt config >>= \case
     Just addrs -> do
-      return $ Map.fromList [(name, defaultNodeState) | (RemoteAddrNamed name _) <- addrs]
+      now <- getMonotonicTimeNSec
+      return $ Map.fromList [(name, defaultNodeState now) | (RemoteAddrNamed name _) <- addrs]
     Nothing ->
       -- Actually it's impossible, because at this point we already know
       -- that at least one |TraceAcceptor| is defined in the config.
       return Map.empty
 
-defaultNodeState :: NodeState
-defaultNodeState = NodeState
+defaultNodeState :: Word64 -> NodeState
+defaultNodeState now = NodeState
   { peersMetrics =
       PeerMetrics
         { peersInfo        = []
@@ -255,65 +234,56 @@ defaultNodeState = NodeState
         }
   , forgeMetrics =
       ForgeMetrics
-        { nodeIsLeaderNum              = 0
-        , nodeIsLeaderNumChanged       = True
-        , nodeIsLeaderNumLastUpdate    = 0
-        , slotsMissedNumber            = 0
-        , slotsMissedNumberChanged     = True
-        , slotsMissedNumberLastUpdate  = 0
-        , nodeCannotForge              = 0
-        , nodeCannotForgeChanged       = True
-        , blocksForgedNumber           = 0
-        , blocksForgedNumberChanged    = True
-        , blocksForgedNumberLastUpdate = 0
+        { nodeIsLeaderNum           = 0
+        , nodeIsLeaderNumChanged    = True
+        , slotsMissedNumber         = 0
+        , slotsMissedNumberChanged  = True
+        , nodeCannotForge           = 0
+        , nodeCannotForgeChanged    = True
+        , blocksForgedNumber        = 0
+        , blocksForgedNumberChanged = True
         }
   , resourcesMetrics =
       ResourcesMetrics
-        { memory                    = 0.0
-        , memoryChanged             = True
-        , memoryMax                 = 0.1
-        , memoryMaxTotal            = 200.0
-        , memoryPercent             = 0.0
-        , memoryLastUpdate          = 0
-        , cpuPercent                = 0.5
-        , cpuPercentChanged         = True
-        , cpuLast                   = 0
-        , cpuNs                     = 10000
-        , cpuLastUpdate             = 0
-        , diskUsageR                = 0.0
-        , diskUsageRChanged         = True
-        , diskUsageRMax             = 0.0
-        , diskUsageRMaxTotal        = 0.0
-        , diskUsageRPercent         = 0.0
-        , diskUsageRLast            = 0
-        , diskUsageRNs              = 10000
-        , diskUsageRAdaptTime       = UTCTime (ModifiedJulianDay 0) 0
-        , diskUsageRLastUpdate      = 0
-        , diskUsageW                = 0.0
-        , diskUsageWChanged         = True
-        , diskUsageWMax             = 0.0
-        , diskUsageWMaxTotal        = 0.0
-        , diskUsageWPercent         = 0.0
-        , diskUsageWLast            = 0
-        , diskUsageWNs              = 10000
-        , diskUsageWAdaptTime       = UTCTime (ModifiedJulianDay 0) 0
-        , diskUsageWLastUpdate      = 0
-        , networkUsageIn            = 0.0
-        , networkUsageInChanged     = True
-        , networkUsageInPercent     = 0.0
-        , networkUsageInMax         = 0.0
-        , networkUsageInMaxTotal    = 0.0
-        , networkUsageInLast        = 0
-        , networkUsageInNs          = 10000
-        , networkUsageInLastUpdate  = 0
-        , networkUsageOut           = 0.0
-        , networkUsageOutChanged    = True
-        , networkUsageOutPercent    = 0.0
-        , networkUsageOutMax        = 0.0
-        , networkUsageOutMaxTotal   = 0.0
-        , networkUsageOutLast       = 0
-        , networkUsageOutNs         = 10000
-        , networkUsageOutLastUpdate = 0
+        { memory                  = 0.0
+        , memoryChanged           = True
+        , memoryMax               = 0.1
+        , memoryMaxTotal          = 200.0
+        , memoryPercent           = 0.0
+        , cpuPercent              = 0.5
+        , cpuPercentChanged       = True
+        , cpuLast                 = 0
+        , cpuNs                   = 10000
+        , diskUsageR              = 0.0
+        , diskUsageRChanged       = True
+        , diskUsageRMax           = 0.0
+        , diskUsageRMaxTotal      = 0.0
+        , diskUsageRPercent       = 0.0
+        , diskUsageRLast          = 0
+        , diskUsageRNs            = 10000
+        , diskUsageRAdaptTime     = UTCTime (ModifiedJulianDay 0) 0
+        , diskUsageW              = 0.0
+        , diskUsageWChanged       = True
+        , diskUsageWMax           = 0.0
+        , diskUsageWMaxTotal      = 0.0
+        , diskUsageWPercent       = 0.0
+        , diskUsageWLast          = 0
+        , diskUsageWNs            = 10000
+        , diskUsageWAdaptTime     = UTCTime (ModifiedJulianDay 0) 0
+        , networkUsageIn          = 0.0
+        , networkUsageInChanged   = True
+        , networkUsageInPercent   = 0.0
+        , networkUsageInMax       = 0.0
+        , networkUsageInMaxTotal  = 0.0
+        , networkUsageInLast      = 0
+        , networkUsageInNs        = 10000
+        , networkUsageOut         = 0.0
+        , networkUsageOutChanged  = True
+        , networkUsageOutPercent  = 0.0
+        , networkUsageOutMax      = 0.0
+        , networkUsageOutMaxTotal = 0.0
+        , networkUsageOutLast     = 0
+        , networkUsageOutNs       = 10000
         }
   , rtsMetrics =
       RTSMetrics
@@ -322,19 +292,14 @@ defaultNodeState = NodeState
         , rtsMemoryUsed             = 0.1
         , rtsMemoryUsedChanged      = True
         , rtsMemoryUsedPercent      = 1.0
-        , rtsMemoryLastUpdate       = 0
         , rtsGcCpu                  = 0.1
         , rtsGcCpuChanged           = True
-        , rtsGcCpuLastUpdate        = 0
         , rtsGcElapsed              = 0.1
         , rtsGcElapsedChanged       = True
-        , rtsGcElapsedLastUpdate    = 0
         , rtsGcNum                  = 0
         , rtsGcNumChanged           = True
-        , rtsGcNumLastUpdate        = 0
         , rtsGcMajorNum             = 0
         , rtsGcMajorNumChanged      = True
-        , rtsGcMajorNumLastUpdate   = 0
         }
   , blockchainMetrics =
       BlockchainMetrics
@@ -342,32 +307,24 @@ defaultNodeState = NodeState
         , systemStartTimeChanged = True
         , epoch                  = 0
         , epochChanged           = True
-        , epochLastUpdate        = 0
         , slot                   = 0
         , slotChanged            = True
-        , slotLastUpdate         = 0
         , blocksNumber           = 0
         , blocksNumberChanged    = True
-        , blocksNumberLastUpdate = 0
         , chainDensity           = 0
         , chainDensityChanged    = True
-        , chainDensityLastUpdate = 0
         }
   , kesMetrics =
       KESMetrics
-        { remainingKESPeriods             = 9999999999
-        , remainingKESPeriodsChanged      = True
-        , remainingKESPeriodsInDays       = 9999999999
-        , remainingKESPeriodsLastUpdate   = 0
-        , opCertStartKESPeriod            = 9999999999
-        , opCertStartKESPeriodChanged     = True
-        , opCertStartKESPeriodLastUpdate  = 0
-        , opCertExpiryKESPeriod           = 9999999999
-        , opCertExpiryKESPeriodChanged    = True
-        , opCertExpiryKESPeriodLastUpdate = 0
-        , currentKESPeriod                = 9999999999
-        , currentKESPeriodChanged         = True
-        , currentKESPeriodLastUpdate      = 0
+        { remainingKESPeriods          = 9999999999
+        , remainingKESPeriodsChanged   = True
+        , remainingKESPeriodsInDays    = 9999999999
+        , opCertStartKESPeriod         = 9999999999
+        , opCertStartKESPeriodChanged  = True
+        , opCertExpiryKESPeriod        = 9999999999
+        , opCertExpiryKESPeriodChanged = True
+        , currentKESPeriod             = 9999999999
+        , currentKESPeriodChanged      = True
         }
   , nodeMetrics =
       NodeMetrics
@@ -382,12 +339,11 @@ defaultNodeState = NodeState
         , nodePlatformChanged  = True
         , nodeStartTime        = UTCTime (ModifiedJulianDay 0) 0
         , nodeStartTimeChanged = True
-        , upTime               = 0
-        , upTimeLastUpdate     = 0
         }
   , nodeErrors =
       ErrorsMetrics
         { errors        = []
         , errorsChanged = True
         }
+  , metricsLastUpdate = now
   }

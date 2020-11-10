@@ -21,18 +21,21 @@ import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
                                               HTMLId (..), NodeStateElements,
                                               NodesStateElements, PeerInfoItem (..),
-                                              (##), (#.))
+                                              (##), (#.), hideIt)
 
 mkNodesGrid
   :: [RemoteAddrNamed]
   -> UI (Element, NodesStateElements)
 mkNodesGrid acceptors = do
-  nodesEls
+  nodesEls'
     <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
-         nodeEls <- mkNodeElements nameOfNode
-         return (nameOfNode, nodeEls, [])
+         idleTag <- string "Idle" #. [IdleNode] # hideIt
+         nodeEls <- mkNodeElements nameOfNode idleTag
+         return (nameOfNode, nodeEls, [], idleTag)
 
-  nodesRowCells <- mkNodesRowCells acceptors
+  let idleTags = [idleTag      | (_,  _,   _, idleTag) <- nodesEls']
+      nodesEls = [(nm, els, l) | (nm, els, l, _)       <- nodesEls']
+  nodesRowCells <- mkNodesRowCells acceptors idleTags
 
   metricRows <-
     forM allMetricsNames $ \aName -> do
@@ -123,13 +126,16 @@ allMetricsNames =
 
 mkNodesRowCells
   :: [RemoteAddrNamed]
+  -> [Element]
   -> UI [UI Element]
-mkNodesRowCells acceptors = do
+mkNodesRowCells acceptors idleTags = do
+  let acceptorsWithTags = zip acceptors idleTags
   nodesRowCells
-    <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) ->
+    <- forM acceptorsWithTags $ \((RemoteAddrNamed nameOfNode _), idleTag) ->
          element <$> UI.th ## (show GridNodeTH <> T.unpack nameOfNode) #+
                        [ string "Node: " #. [GridNodeNameLabel]
                        , string $ T.unpack nameOfNode
+                       , element idleTag
                        ]
   -- To keep top-left corner cell empty.
   emptyRowCell <- element <$> UI.th #+ [UI.span # set UI.html "&nbsp;" #+ []]
@@ -152,8 +158,9 @@ mkRowCells nodesElements elemName = do
 
 mkNodeElements
   :: Text
+  -> Element
   -> UI NodeStateElements
-mkNodeElements nameOfNode = do
+mkNodeElements nameOfNode elIdleNode = do
   elNodeProtocol <- string "-"
   elNodeVersion  <- string "-"
   elNodePlatform <- string "-"
@@ -207,7 +214,8 @@ mkNodeElements nameOfNode = do
 
   return $
     Map.fromList
-      [ (ElNodeProtocol,          elNodeProtocol)
+      [ (ElIdleNode,              elIdleNode)
+      , (ElNodeProtocol,          elNodeProtocol)
       , (ElNodeVersion,           elNodeVersion)
       , (ElNodePlatform,          elNodePlatform)
       , (ElNodeCommitHref,        elNodeCommitHref)

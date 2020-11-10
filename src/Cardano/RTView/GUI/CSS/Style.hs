@@ -83,6 +83,18 @@ ownCSS = unpack . TL.toStrict . render $ do
     paddingTopPx      12
     paddingRightPx    18
 
+  cl IdleNode ? do
+    fontWeight        bold
+    color             white
+    marginLeftPx      15
+    paddingTopPx      3
+    paddingBottomPx   1
+    paddingLeftPx     5
+    paddingRightPx    5
+    backgroundColor   red
+    border            solid (px 1) red
+    borderRadiusPx    8
+
   cl NodeNameArea ? do
     fontSizePct       110
     paddingTopPx      10
@@ -291,6 +303,8 @@ ownCSS = unpack . TL.toStrict . render $ do
   widthPct        = width . pct
   minWidthPx      = minWidth . px
   maxWidthPx      = maxWidth . px
+
+  borderRadiusPx v = borderRadius (px v) (px v) (px v) (px v)
 
   progressBarColors bg c = do
     backgroundColor   bg
