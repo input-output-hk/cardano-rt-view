@@ -43,6 +43,7 @@ import           Cardano.BM.Data.Severity (Severity (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..), defaultRTViewParams, defaultRTVPort,
                                      defaultRTVStatic)
+import           Cardano.RTView.SupportedNodes (showSupportedNodesVersions)
 
 -- | There are few possible ways how we can prepare RTView configuration:
 --   1. By running interactive dialog with the user. If `--config` CLI-option
@@ -149,13 +150,19 @@ askAboutPrevConfig savedConfig savedParams =
 
 startDialogToPrepareConfig :: IO (Configuration, RTViewParams)
 startDialogToPrepareConfig = do
-  colorize Magenta BoldIntensity $ do
-    TIO.putStrLn ""
-    TIO.putStrLn "Let's configure RTView..."
+  colorize Magenta BoldIntensity $
+    TIO.putStrLn "\nLet's configure RTView..."
 
-  colorize Green BoldIntensity $ do
-    TIO.putStrLn ""
-    TIO.putStr $ "How many nodes will you connect (1 - "
+  colorize Magenta NormalIntensity $
+    TIO.putStr $ "\nPlease note that this version of RTView works with the following versions of Cardano node: "
+
+  colorize Magenta BoldIntensity $ do
+    TIO.putStr showSupportedNodesVersions
+    TIO.putStr "\nPress <Enter> to continue..."
+  void TIO.getLine
+
+  colorize Green BoldIntensity $
+    TIO.putStr $ "\nHow many nodes will you connect (1 - "
                <> showt maximumNode <> ", default is " <> showt defaultNodesNumber <> "): "
   nodesNumber <- askAboutNodesNumber
   let (names :: Text, nodes :: Text, are :: Text, oneAtATime :: Text)

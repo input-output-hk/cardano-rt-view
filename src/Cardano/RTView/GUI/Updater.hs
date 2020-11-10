@@ -12,7 +12,7 @@ import           Control.Monad.IO.Class (liftIO)
 import qualified Data.List as L
 import           Data.Maybe (isJust)
 import           Data.Map.Strict ((!))
-import           Data.Text (Text, pack, unpack)
+import           Data.Text (Text, pack, strip, unpack)
 import           Data.Time.Calendar (Day (..), diffDays)
 import           Data.Time.Clock (NominalDiffTime, UTCTime (..), addUTCTime, getCurrentTime,
                                   diffUTCTime)
@@ -36,6 +36,7 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..
 import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames)
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.NodeState.Types
+import           Cardano.RTView.SupportedNodes (supportedNodesVersions, showSupportedNodesVersions)
 
 -- | This function is calling by the timer. It updates the node' state elements
 --   on the page automatically, because threepenny-gui is based on websockets.
@@ -78,8 +79,9 @@ updatePaneGUI window nodesState params acceptors nodesStateElems =
 
     nodeIsIdle <- checkIfNodeIsIdlePane params metricsLastUpdate (els ! ElIdleNode) (els ! ElNodePane)
     unless nodeIsIdle $ do
+      updateNodeVersion nodeVersion nodeVersionChanged $ els ! ElNodeVersion
+
       updateElement (ElementText    nodeProtocol)         nodeProtocolChanged       $ els ! ElNodeProtocol
-      updateElement (ElementText    nodeVersion)          nodeVersionChanged        $ els ! ElNodeVersion
       updateElement (ElementText    nodePlatform)         nodePlatformChanged       $ els ! ElNodePlatform
       updateElement (ElementInteger epoch)                epochChanged              $ els ! ElEpoch
       updateElement (ElementInteger slot)                 slotChanged               $ els ! ElSlot
@@ -156,8 +158,9 @@ updateGridGUI window nodesState params acceptors gridNodesStateElems =
 
     nodeIsIdle <- checkIfNodeIsIdleGrid window params metricsLastUpdate (els ! ElIdleNode) nameOfNode
     unless nodeIsIdle $ do
+      updateNodeVersion nodeVersion nodeVersionChanged $ els ! ElNodeVersion
+
       updateElement (ElementText    nodeProtocol)       nodeProtocolChanged       $ els ! ElNodeProtocol
-      updateElement (ElementText    nodeVersion)        nodeVersionChanged        $ els ! ElNodeVersion
       updateElement (ElementText    nodePlatform)       nodePlatformChanged       $ els ! ElNodePlatform
       updateElement (ElementInt     $ length peersInfo) peersInfoChanged          $ els ! ElPeersNumber
       updateElement (ElementInteger epoch)              epochChanged              $ els ! ElEpoch
@@ -192,6 +195,24 @@ updateGridGUI window nodesState params acceptors gridNodesStateElems =
                     , (remainingKESPeriods,       els ! ElRemainingKESPeriods)
                     , (remainingKESPeriodsInDays, els ! ElRemainingKESPeriodsInDays)
                     ]
+
+updateNodeVersion
+  :: Text
+  -> Bool
+  -> Element
+  -> UI ()
+updateNodeVersion _           False _  = return ()
+updateNodeVersion nodeVersion True  el =
+  if (strip nodeVersion) `elem` supportedNodesVersions
+    then
+      void $ element el #. []
+                        # set text (unpack nodeVersion)
+                        # set UI.title__ ""
+    else do
+      void $ element el #. [UnsupportedVersion]
+                        # set text (unpack nodeVersion)
+                        # set UI.title__ ("Unsupported node version, please use these versions only: "
+                                          <> unpack showSupportedNodesVersions)
 
 updateElement
   :: ElementValue

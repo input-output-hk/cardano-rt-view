@@ -172,6 +172,7 @@ data HTMLClass
   | TabContainer
   | TopBar
   | TXsProcessed
+  | UnsupportedVersion
   | ValueUnit
   | ValueUnitPercent
   -- Charts
@@ -266,6 +267,7 @@ instance Show HTMLClass where
   show TabContainer           = "TabContainer"
   show TopBar                 = "TopBar"
   show TXsProcessed           = "TXsProcessed"
+  show UnsupportedVersion     = "UnsupportedVersion"
   show ValueUnit              = "ValueUnit"
   show ValueUnitPercent       = "ValueUnitPercent"
   show CPUUsageChart          = "CPUUsageChart"
