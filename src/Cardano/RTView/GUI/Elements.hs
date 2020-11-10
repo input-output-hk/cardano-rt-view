@@ -39,11 +39,12 @@ type NodeStateElements = Map ElementName Element
 type NodesStateElements = [(Text, NodeStateElements, [PeerInfoItem])]
 
 data ElementName
-  = ElNodeProtocol
+  = ElNodePane
+  | ElIdleNode
+  | ElNodeProtocol
   | ElNodeVersion
   | ElNodePlatform
   | ElNodeCommitHref
-  | ElActiveNode
   | ElUptime
   | ElSystemStartTime
   | ElEpoch
@@ -141,6 +142,7 @@ data HTMLClass
   | GridNodeNameLabel
   | GridRowCell
   | HSpacer
+  | IdleNode
   | InfoMark
   | InfoMarkImg
   | MetricsArea
@@ -234,6 +236,7 @@ instance Show HTMLClass where
   show GridNodeNameLabel      = "GridNodeNameLabel"
   show GridRowCell            = "GridRowCell"
   show HSpacer                = "HSpacer"
+  show IdleNode               = "IdleNode"
   show InfoMark               = "InfoMark"
   show InfoMarkImg            = "InfoMarkImg"
   show MetricsArea            = "MetricsArea"

@@ -46,10 +46,11 @@ mkNodePane nameOfNode = do
   -- Create |Element|s containing node state (info, metrics).
   -- These elements will be part of the complete page,
   -- later they will be updated by acceptor thread.
+  elIdleNode <- string "Idle" #. [IdleNode] # hideIt
+
   elNodeProtocol              <- string ""
   elNodeVersion               <- string ""
   elNodePlatform              <- string ""
-  elActiveNode                <- string "-"
   elUptime                    <- string "00:00:00"
   elSystemStartTime           <- string "00:00:00"
   elEpoch                     <- string "0"
@@ -450,11 +451,12 @@ mkNodePane nameOfNode = do
   registerClicksOnTabs tabs
 
   -- Make a widget for one node.
-  nodeWidget <-
+  nodePane <-
     UI.div #. [W3Container, W3Margin, W3Border, NodeContainer] #+
       [ UI.div #. [NodeNameArea] #+
           [ string "Name: "
-          , element elActiveNode #. [NodeName]
+          , string (T.unpack nameOfNode) #. [NodeName]
+          , element elIdleNode
           ]
       , UI.div #. [W3Bar, NodeBar] #+
           [ element nodeTab
@@ -482,11 +484,12 @@ mkNodePane nameOfNode = do
   -- Return these elements, they will be updated by another thread later.
   let nodeStateElems =
         Map.fromList
-          [ (ElNodeProtocol,            elNodeProtocol)
+          [ (ElNodePane,                nodePane)
+          , (ElIdleNode,                elIdleNode)
+          , (ElNodeProtocol,            elNodeProtocol)
           , (ElNodeVersion,             elNodeVersion)
           , (ElNodePlatform,            elNodePlatform)
           , (ElNodeCommitHref,          elNodeCommitHref)
-          , (ElActiveNode,              elActiveNode)
           , (ElUptime,                  elUptime)
           , (ElSystemStartTime,         elSystemStartTime)
           , (ElEpoch,                   elEpoch)
@@ -532,7 +535,7 @@ mkNodePane nameOfNode = do
           , (ElRTSMemoryProgressBox,    elRTSMemoryProgressBox)
           ]
 
-  return (nodeWidget, nodeStateElems, peerInfoItems)
+  return (nodePane, nodeStateElems, peerInfoItems)
 
 ---
 
