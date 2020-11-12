@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.RTView.GUI.Markup.Grid
@@ -7,6 +8,7 @@ module Cardano.RTView.GUI.Markup.Grid
     , allMetricsNames
     ) where
 
+import           Control.Concurrent.STM.TVar (TVar, readTVarIO)
 import           Control.Monad (forM)
 import           Data.Map.Strict ((!))
 import qualified Data.Map.Strict as Map
@@ -14,7 +16,7 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 
 import qualified Graphics.UI.Threepenny as UI
-import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, (#), (#+))
+import           Graphics.UI.Threepenny.Core (Element, UI, element, liftIO, set, string, (#), (#+))
 
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
@@ -22,15 +24,19 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
                                               HTMLId (..), NodeStateElements,
                                               NodesStateElements, PeerInfoItem (..),
                                               (##), (#.), hideIt)
+import           Cardano.RTView.NodeState.Types
 
 mkNodesGrid
-  :: [RemoteAddrNamed]
+  :: TVar NodesState
+  -> [RemoteAddrNamed]
   -> UI (Element, NodesStateElements)
-mkNodesGrid acceptors = do
+mkNodesGrid nsTVar acceptors = do
+  nodesState <- liftIO $ readTVarIO nsTVar
+
   nodesEls'
     <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
          idleTag <- string "Idle" #. [IdleNode] # hideIt
-         nodeEls <- mkNodeElements nameOfNode idleTag
+         nodeEls <- mkNodeElements (nodesState ! nameOfNode) nameOfNode idleTag acceptors
          return (nameOfNode, nodeEls, [], idleTag)
 
   let idleTags = [idleTag      | (_,  _,   _, idleTag) <- nodesEls']
@@ -157,26 +163,50 @@ mkRowCells nodesElements elemName = do
   return $ tagTd : tds
 
 mkNodeElements
-  :: Text
+  :: NodeState
+  -> Text
   -> Element
+  -> [RemoteAddrNamed]
   -> UI NodeStateElements
-mkNodeElements nameOfNode elIdleNode = do
-  elNodeProtocol <- string "-"
-  elNodeVersion  <- string "-"
-  elNodePlatform <- string "-"
-  elNodeCommitHref
-    <- UI.anchor # set UI.href ""
-                 # set UI.target "_blank"
-                 # set UI.title__ "Browse cardano-node repository on this commit"
-                 #+ [string ""]
-  elUptime      <- string "00:00:00"
-  elTraceAcceptorEndpoint <- string "0.0.0.0:0"
-  elPeersNumber <- string "0"
-  elOpCertStartKESPeriod      <- string "-"
-  elOpCertExpiryKESPeriod     <- string "-"
-  elCurrentKESPeriod          <- string "-"
-  elRemainingKESPeriods       <- string "-"
-  elRemainingKESPeriodsInDays <- string "-"
+mkNodeElements NodeState {..} nameOfNode elIdleNode acceptors = do
+  let PeerMetrics {..}       = peersMetrics
+      MempoolMetrics {..}    = mempoolMetrics
+      ForgeMetrics {..}      = forgeMetrics
+      RTSMetrics {..}        = rtsMetrics
+      BlockchainMetrics {..} = blockchainMetrics
+      KESMetrics {..}        = kesMetrics
+      NodeMetrics {..}       = nodeMetrics
+
+  let acceptorEndpoint = mkTraceAcceptorEndpoint nameOfNode acceptors
+
+  elNodeProtocol              <- string $ showText nodeProtocol
+  elNodeVersion               <- string $ showText nodeVersion
+  elNodePlatform              <- string $ showText nodePlatform
+  elUptime                    <- string   showInitTime
+  elTraceAcceptorEndpoint     <- string   acceptorEndpoint
+                                        # set UI.title__ (fullEndpointTitle acceptorEndpoint)
+  elPeersNumber               <- string $ showInteger (fromIntegral $ length peersInfo)
+  elOpCertStartKESPeriod      <- string $ showInteger opCertStartKESPeriod
+  elOpCertExpiryKESPeriod     <- string $ showInteger opCertExpiryKESPeriod
+  elCurrentKESPeriod          <- string $ showInteger currentKESPeriod
+  elRemainingKESPeriods       <- string $ showInteger remKESPeriods
+  elRemainingKESPeriodsInDays <- string $ showInteger remKESPeriodsInDays
+  elSystemStartTime           <- string $ showTime systemStartTime
+  elEpoch                     <- string $ showInteger epoch
+  elSlot                      <- string $ showInteger slot
+  elBlocksNumber              <- string $ showInteger blocksNumber
+  elBlocksForgedNumber        <- string $ showInteger blocksForgedNumber
+  elNodeCannotForge           <- string $ showInteger nodeCannotForge
+  elChainDensity              <- string $ showDouble  chainDensity
+  elNodeIsLeaderNumber        <- string $ showInteger nodeIsLeaderNum
+  elSlotsMissedNumber         <- string $ showInteger slotsMissedNumber
+  elTxsProcessed              <- string $ showInteger txsProcessed
+  elMempoolTxsNumber          <- string $ showInteger mempoolTxsNumber
+  elMempoolBytes              <- string $ showWord64  mempoolBytes
+  elRTSGcCpu                  <- string $ showDouble  rtsGcCpu
+  elRTSGcElapsed              <- string $ showDouble  rtsGcElapsed
+  elRTSGcNum                  <- string $ showInteger rtsGcNum
+  elRTSGcMajorNum             <- string $ showInteger rtsGcMajorNum
 
   elMemoryUsageChart
     <- UI.canvas ## (show GridMemoryUsageChartId <> T.unpack nameOfNode)
@@ -195,22 +225,11 @@ mkNodeElements nameOfNode elIdleNode = do
                  #. [GridNetworkUsageChart]
                  #+ []
 
-  elSystemStartTime    <- string "00:00:00"
-  elEpoch              <- string "0"
-  elSlot               <- string "0"
-  elBlocksNumber       <- string "0"
-  elBlocksForgedNumber <- string "0"
-  elNodeCannotForge    <- string "0"
-  elChainDensity       <- string "0"
-  elNodeIsLeaderNumber <- string "0"
-  elSlotsMissedNumber  <- string "0"
-  elTxsProcessed       <- string "0"
-  elMempoolTxsNumber   <- string "0"
-  elMempoolBytes       <- string "0"
-  elRTSGcCpu           <- string "0"
-  elRTSGcElapsed       <- string "0"
-  elRTSGcNum           <- string "0"
-  elRTSGcMajorNum      <- string "0"
+  elNodeCommitHref
+    <- UI.anchor # set UI.href ""
+                 # set UI.target "_blank"
+                 # set UI.title__ "Browse cardano-node repository on this commit"
+                 # set UI.text (showText nodeShortCommit)
 
   return $
     Map.fromList
