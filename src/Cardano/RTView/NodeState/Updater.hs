@@ -25,7 +25,7 @@ import           Data.HashMap.Strict ((!?))
 import qualified Data.HashMap.Strict as HM
 import           Data.Text (Text)
 import qualified Data.Text as T
-import           Data.Time.Clock (NominalDiffTime, UTCTime, diffUTCTime)
+import           Data.Time.Clock (UTCTime)
 import           Data.Word (Word64)
 import           GHC.Clock (getMonotonicTimeNSec)
 
@@ -325,39 +325,19 @@ updateNodePlatform ns platfId now = ns { nodeMetrics = newNodeMetrics, metricsLa
 updateMemoryPages :: NodeState -> Integer -> Word64 -> NodeState
 updateMemoryPages ns pages now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
-  newMetrics =
-    currentMetrics
-      { memory         = mBytes
-      , memoryMax      = newMax
-      , memoryMaxTotal = newMaxTotal
-      , memoryPercent  = mBytes / newMaxTotal * 100.0
-      }
-  currentMetrics   = resourcesMetrics ns
-  prevMax     = memoryMax currentMetrics
-  newMax      = max prevMax mBytes
-  newMaxTotal = max newMax 200.0
-  mBytes      = fromIntegral (pages * pageSize) / 1024 / 1024 :: Double
-  pageSize    = 4096 :: Integer
+  newMetrics     = currentMetrics { memory = mBytes }
+  currentMetrics = resourcesMetrics ns
+  mBytes         = fromIntegral (pages * pageSize) / 1024 / 1024 :: Double
+  pageSize       = 4096 :: Integer
 #endif
 
 #ifdef DARWIN
 updateMemoryBytes :: NodeState -> Word64 -> Word64 -> NodeState
 updateMemoryBytes ns bytes now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
-  newMetrics =
-    currentMetrics
-      { memory         = mBytes
-      , memoryChanged  = currentMemory /= mBytes
-      , memoryMax      = newMax
-      , memoryMaxTotal = newMaxTotal
-      , memoryPercent  = mBytes / newMaxTotal * 100.0
-      }
-  currentMetrics   = resourcesMetrics ns
-  currentMemory = memory currentMetrics
-  prevMax     = memoryMax currentMetrics
-  newMax      = max prevMax mBytes
-  newMaxTotal = max newMax 200.0
-  mBytes      = fromIntegral bytes / 1024 / 1024 :: Double
+  newMetrics     = currentMetrics { memory = mBytes }
+  currentMetrics = resourcesMetrics ns
+  mBytes         = fromIntegral bytes / 1024 / 1024 :: Double
 #endif
 
 #ifdef LINUX
@@ -366,70 +346,40 @@ updateDiskRead ns bytesWereRead meta now = ns { resourcesMetrics = newMetrics, m
  where
   newMetrics =
     currentMetrics
-      { diskUsageR          = currentDiskRate
-      , diskUsageRPercent   = diskUsageRPercent'
-      , diskUsageRLast      = bytesWereRead
-      , diskUsageRNs        = currentTimeInNs
-      , diskUsageRMax       = maxDiskRate
-      , diskUsageRMaxTotal  = max maxDiskRate 1.0
-      , diskUsageRAdaptTime = newAdaptTime
+      { diskUsageR     = currentDiskRate
+      , diskUsageRLast = bytesWereRead
+      , diskUsageRNs   = currentTimeInNs
       }
-  currentMetrics         = resourcesMetrics ns
-  currentTimeInNs   = utc2ns (tstamp meta)
-  timeDiff          = fromIntegral (currentTimeInNs - diskUsageRNs currentMetrics) :: Double
-  timeDiffInSecs    = timeDiff / 1000000000
-  bytesDiff         = fromIntegral (bytesWereRead - diskUsageRLast currentMetrics) :: Double
-  bytesDiffInKB'    = bytesDiff / 1024
-  bytesDiffInKB     = if bytesDiffInKB' > 500.0 -- To prevent an overflow if the node was restarted.
-                        then 1.0
-                        else bytesDiffInKB'
-  currentDiskRate   = bytesDiffInKB / timeDiffInSecs
-  lastAdaptTime     = diskUsageRAdaptTime currentMetrics
-  timeElapsed       = diffUTCTime (tstamp meta) lastAdaptTime
-  ( maxDiskRate
-    , newAdaptTime ) =
-        if timeElapsed >= adaptPeriod
-          then ((diskUsageRMax currentMetrics + currentDiskRate) / 2, tstamp meta)
-          else (max currentDiskRate $ diskUsageRMax currentMetrics, lastAdaptTime)
-  diskUsageRPercent' = currentDiskRate / (maxDiskRate / 100.0)
+  currentMetrics  = resourcesMetrics ns
+  currentDiskRate = bytesDiffInKB / timeDiffInSecs
+  bytesDiffInKB   = if bytesDiffInKB' > 500.0 -- To prevent an overflow if the node was restarted.
+                      then 1.0
+                      else bytesDiffInKB'
+  bytesDiffInKB'  = bytesDiff / 1024
+  bytesDiff       = fromIntegral (bytesWereRead - diskUsageRLast currentMetrics) :: Double
+  timeDiffInSecs  = timeDiff / 1000000000
+  timeDiff        = fromIntegral (currentTimeInNs - diskUsageRNs currentMetrics) :: Double
+  currentTimeInNs = utc2ns (tstamp meta)
 
 updateDiskWrite :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
 updateDiskWrite ns bytesWereWritten meta now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics =
     currentMetrics
-      { diskUsageW           = currentDiskRate
-      , diskUsageWPercent    = diskUsageWPercent'
-      , diskUsageWLast       = bytesWereWritten
-      , diskUsageWNs         = currentTimeInNs
-      , diskUsageWMax        = maxDiskRate
-      , diskUsageWMaxTotal   = max maxDiskRate 1.0
-      , diskUsageWAdaptTime  = newAdaptTime
+      { diskUsageW     = currentDiskRate
+      , diskUsageWLast = bytesWereWritten
+      , diskUsageWNs   = currentTimeInNs
       }
-  currentMetrics         = resourcesMetrics ns
-  currentTimeInNs   = utc2ns (tstamp meta)
-  timeDiff          = fromIntegral (currentTimeInNs - diskUsageWNs currentMetrics) :: Double
-  timeDiffInSecs    = timeDiff / 1000000000
-  bytesDiff         = fromIntegral (bytesWereWritten - diskUsageWLast currentMetrics) :: Double
-  bytesDiffInKB'    = bytesDiff / 1024
-  bytesDiffInKB     = if bytesDiffInKB' > 500.0 -- To prevent an overflow if the node was restarted.
-                        then 1.0
-                        else bytesDiffInKB'
-  currentDiskRate   = bytesDiffInKB / timeDiffInSecs
-  lastAdaptTime     = diskUsageWAdaptTime currentMetrics
-  timeElapsed       = diffUTCTime (tstamp meta) lastAdaptTime
-  ( maxDiskRate
-    , newAdaptTime ) =
-        if timeElapsed >= adaptPeriod
-          then ((diskUsageWMax currentMetrics + currentDiskRate) / 2, tstamp meta)
-          else (max currentDiskRate $ diskUsageWMax currentMetrics, lastAdaptTime)
-  diskUsageWPercent' = currentDiskRate / (maxDiskRate / 100.0)
-
--- | Adaptaion period for disk usage max values.
---   We have to adapt the max value to the new situation periodically,
---   because it might get very high once, and then it will stay there forever.
-adaptPeriod :: NominalDiffTime
-adaptPeriod = fromInteger $ 60 * 2 -- 2 minutes.
+  currentMetrics  = resourcesMetrics ns
+  currentDiskRate = bytesDiffInKB / timeDiffInSecs
+  bytesDiffInKB   = if bytesDiffInKB' > 500.0 -- To prevent an overflow if the node was restarted.
+                      then 1.0
+                      else bytesDiffInKB'
+  bytesDiffInKB'  = bytesDiff / 1024
+  bytesDiff       = fromIntegral (bytesWereWritten - diskUsageWLast currentMetrics) :: Double
+  timeDiffInSecs  = timeDiff / 1000000000
+  timeDiff        = fromIntegral (currentTimeInNs - diskUsageWNs currentMetrics) :: Double
+  currentTimeInNs = utc2ns (tstamp meta)
 
 updateCPUTicks :: NodeState -> Integer -> LOMeta -> Word64 -> NodeState
 updateCPUTicks ns ticks meta now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
@@ -441,11 +391,13 @@ updateCPUTicks ns ticks meta now = ns { resourcesMetrics = newMetrics, metricsLa
       , cpuNs      = tns
       }
   currentMetrics = resourcesMetrics ns
-  newCPUPercent = cpuperc * 100.0
-  tns       = utc2ns $ tstamp meta
-  tdiff     = max 0.1 $ fromIntegral (tns - cpuNs currentMetrics) / 1000000000 :: Double
-  cpuperc   = fromIntegral (ticks - cpuLast currentMetrics) / fromIntegral clktck / tdiff
-  clktck    = 100 :: Integer
+  newCPUPercent  = if cpuperc < 0
+                     then 0.0
+                     else cpuperc * 100.0
+  cpuperc        = fromIntegral (ticks - cpuLast currentMetrics) / fromIntegral clktck / tdiff
+  clktck         = 100 :: Integer
+  tdiff          = max 0.1 $ fromIntegral (tns - cpuNs currentMetrics) / 1000000000 :: Double
+  tns            = utc2ns $ tstamp meta
 #endif
 
 #if defined(DARWIN) || defined(LINUX)
@@ -454,42 +406,34 @@ updateNetworkIn ns inBytes meta now = ns { resourcesMetrics = newMetrics, metric
  where
   newMetrics =
     currentMetrics
-      { networkUsageIn         = currentNetRate
-      , networkUsageInPercent  = currentNetRate / (maxNetRate / 100.0)
-      , networkUsageInLast     = inBytes
-      , networkUsageInNs       = currentTimeInNs
-      , networkUsageInMax      = maxNetRate
-      , networkUsageInMaxTotal = max maxNetRate 1.0
+      { networkUsageIn     = currentNetRate
+      , networkUsageInLast = inBytes
+      , networkUsageInNs   = currentTimeInNs
       }
-  currentMetrics       = resourcesMetrics ns
-  currentTimeInNs = utc2ns (tstamp meta)
-  timeDiff        = fromIntegral (currentTimeInNs - networkUsageInNs currentMetrics) :: Double
+  currentMetrics  = resourcesMetrics ns
+  currentNetRate  = bytesDiffInKB / timeDiffInSecs
+  bytesDiffInKB   = bytesDiff / 1024
   timeDiffInSecs  = timeDiff / 1000000000
   bytesDiff       = fromIntegral (inBytes - networkUsageInLast currentMetrics) :: Double
-  bytesDiffInKB   = bytesDiff / 1024
-  currentNetRate  = bytesDiffInKB / timeDiffInSecs
-  maxNetRate      = max currentNetRate $ networkUsageInMax currentMetrics
+  timeDiff        = fromIntegral (currentTimeInNs - networkUsageInNs currentMetrics) :: Double
+  currentTimeInNs = utc2ns (tstamp meta)
 
 updateNetworkOut :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
 updateNetworkOut ns outBytes meta now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics =
     currentMetrics
-      { networkUsageOut         = currentNetRate
-      , networkUsageOutPercent  = currentNetRate / (maxNetRate / 100.0)
-      , networkUsageOutLast     = outBytes
-      , networkUsageOutNs       = currentTimeInNs
-      , networkUsageOutMax      = maxNetRate
-      , networkUsageOutMaxTotal = max maxNetRate 1.0
+      { networkUsageOut     = currentNetRate
+      , networkUsageOutLast = outBytes
+      , networkUsageOutNs   = currentTimeInNs
       }
-  currentMetrics       = resourcesMetrics ns
-  currentTimeInNs = utc2ns (tstamp meta)
-  timeDiff        = fromIntegral (currentTimeInNs - networkUsageOutNs currentMetrics) :: Double
+  currentMetrics  = resourcesMetrics ns
+  currentNetRate  = bytesDiffInKB / timeDiffInSecs
+  bytesDiffInKB   = bytesDiff / 1024
   timeDiffInSecs  = timeDiff / 1000000000
   bytesDiff       = fromIntegral (outBytes - networkUsageOutLast currentMetrics) :: Double
-  bytesDiffInKB   = bytesDiff / 1024
-  currentNetRate  = bytesDiffInKB / timeDiffInSecs
-  maxNetRate      = max currentNetRate $ networkUsageOutMax currentMetrics
+  timeDiff        = fromIntegral (currentTimeInNs - networkUsageOutNs currentMetrics) :: Double
+  currentTimeInNs = utc2ns (tstamp meta)
 #endif
 
 #if defined(DARWIN) || defined(WINDOWS)
@@ -498,21 +442,20 @@ updateCPUSecs ns nanosecs meta now = ns { resourcesMetrics = newMetrics, metrics
  where
   newMetrics =
     currentMetrics
-      { cpuPercent        = newCPUPercent
-      , cpuPercentChanged = cpuPercent currentMetrics /= newCPUPercent
-      , cpuLast           = fromIntegral nanosecs
-      , cpuNs             = tns
+      { cpuPercent = newCPUPercent
+      , cpuLast    = fromIntegral nanosecs
+      , cpuNs      = tns
       }
   currentMetrics = resourcesMetrics ns
-  newCPUPercent = if cpuperc < 0
-                    then 0
+  newCPUPercent  = if cpuperc < 0
+                    then 0.0
                     else if cpuperc > 20.0
                            then cpuPercent currentMetrics
                            else cpuperc * 100.0
-  tns       = utc2ns $ tstamp meta
-  tdiff     = max 0.1 $ fromIntegral (tns - cpuNs currentMetrics) / 1000000000 :: Double
-  deltacpu  = fromIntegral nanosecs - cpuLast currentMetrics
-  cpuperc   = fromIntegral deltacpu / 100000000 / tdiff
+  cpuperc  = fromIntegral deltacpu / 100000000 / tdiff
+  deltacpu = fromIntegral nanosecs - cpuLast currentMetrics
+  tdiff    = max 0.1 $ fromIntegral (tns - cpuNs currentMetrics) / 1000000000 :: Double
+  tns      = utc2ns $ tstamp meta
 #endif
 
 updateMempoolTxs :: NodeState -> Integer -> Word64 -> NodeState

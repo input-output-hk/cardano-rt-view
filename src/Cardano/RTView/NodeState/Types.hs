@@ -116,39 +116,22 @@ data ForgeMetrics = ForgeMetrics
   } deriving (Generic, NFData)
 
 data ResourcesMetrics = ResourcesMetrics
-  { memory                  :: !Double
-  , memoryMax               :: !Double
-  , memoryMaxTotal          :: !Double
-  , memoryPercent           :: !Double
-  , cpuPercent              :: !Double
-  , cpuLast                 :: !Integer
-  , cpuNs                   :: !Word64
-  , diskUsageR              :: !Double
-  , diskUsageRMax           :: !Double
-  , diskUsageRMaxTotal      :: !Double
-  , diskUsageRPercent       :: !Double
-  , diskUsageRLast          :: !Word64
-  , diskUsageRNs            :: !Word64
-  , diskUsageRAdaptTime     :: !UTCTime
-  , diskUsageW              :: !Double
-  , diskUsageWMax           :: !Double
-  , diskUsageWMaxTotal      :: !Double
-  , diskUsageWPercent       :: !Double
-  , diskUsageWLast          :: !Word64
-  , diskUsageWNs            :: !Word64
-  , diskUsageWAdaptTime     :: !UTCTime
-  , networkUsageIn          :: !Double
-  , networkUsageInPercent   :: !Double
-  , networkUsageInMax       :: !Double
-  , networkUsageInMaxTotal  :: !Double
-  , networkUsageInLast      :: !Word64
-  , networkUsageInNs        :: !Word64
-  , networkUsageOut         :: !Double
-  , networkUsageOutPercent  :: !Double
-  , networkUsageOutMax      :: !Double
-  , networkUsageOutMaxTotal :: !Double
-  , networkUsageOutLast     :: !Word64
-  , networkUsageOutNs       :: !Word64
+  { memory              :: !Double
+  , cpuPercent          :: !Double
+  , cpuLast             :: !Integer
+  , cpuNs               :: !Word64
+  , diskUsageR          :: !Double
+  , diskUsageRLast      :: !Word64
+  , diskUsageRNs        :: !Word64
+  , diskUsageW          :: !Double
+  , diskUsageWLast      :: !Word64
+  , diskUsageWNs        :: !Word64
+  , networkUsageIn      :: !Double
+  , networkUsageInLast  :: !Word64
+  , networkUsageInNs    :: !Word64
+  , networkUsageOut     :: !Double
+  , networkUsageOutLast :: !Word64
+  , networkUsageOutNs   :: !Word64
   } deriving (Generic, NFData)
 
 data RTSMetrics = RTSMetrics
@@ -265,36 +248,19 @@ initialNodeState now = NodeState
   , resourcesMetrics =
       ResourcesMetrics
         { memory                  = 0.1
-        , memoryMax               = 0.1
-        , memoryMaxTotal          = 200.0
-        , memoryPercent           = 0.1
         , cpuPercent              = 0.1
         , cpuLast                 = 0
         , cpuNs                   = 10000
         , diskUsageR              = 0.1
-        , diskUsageRMax           = 0.1
-        , diskUsageRMaxTotal      = 0.1
-        , diskUsageRPercent       = 0.1
         , diskUsageRLast          = 0
         , diskUsageRNs            = 10000
-        , diskUsageRAdaptTime     = nullTime
         , diskUsageW              = 0.1
-        , diskUsageWMax           = 0.1
-        , diskUsageWMaxTotal      = 0.1
-        , diskUsageWPercent       = 0.1
         , diskUsageWLast          = 0
         , diskUsageWNs            = 10000
-        , diskUsageWAdaptTime     = nullTime
         , networkUsageIn          = 0.1
-        , networkUsageInPercent   = 0.1
-        , networkUsageInMax       = 0.1
-        , networkUsageInMaxTotal  = 0.1
         , networkUsageInLast      = 0
         , networkUsageInNs        = 10000
         , networkUsageOut         = 0.1
-        , networkUsageOutPercent  = 0.1
-        , networkUsageOutMax      = 0.1
-        , networkUsageOutMaxTotal = 0.1
         , networkUsageOutLast     = 0
         , networkUsageOutNs       = 10000
         }
@@ -403,7 +369,7 @@ mkTraceAcceptorEndpoint nameOfNode acceptors =
   case maybeActiveNode of
     Just (RemoteAddrNamed _ (RemoteSocket host port)) -> host <> ":" <> port
     Just (RemoteAddrNamed _ (RemotePipe pipePath))    -> pipePath
-    Nothing                                           -> "-"
+    Nothing                                           -> none
  where
   maybeActiveNode = flip L.find acceptors $ \(RemoteAddrNamed name _) -> name == nameOfNode
 
