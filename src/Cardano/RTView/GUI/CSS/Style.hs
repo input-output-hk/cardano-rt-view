@@ -239,16 +239,16 @@ ownCSS = unpack . TL.toStrict . render $ do
     maxHeightPx       360
 
   cl GridCPUUsageChart ? do
-    maxWidthPx        280
+    maxWidthPx        320
 
   cl GridMemoryUsageChart ? do
-    maxWidthPx        280
+    maxWidthPx        320
 
   cl GridDiskUsageChart ? do
-    maxWidthPx        280
+    maxWidthPx        320
 
   cl GridNetworkUsageChart ? do
-    maxWidthPx        280
+    maxWidthPx        320
 
   cl GridNodeNameLabel ? do
     fontWeight        normal
