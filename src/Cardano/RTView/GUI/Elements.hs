@@ -20,10 +20,11 @@ module Cardano.RTView.GUI.Elements
     ) where
 
 import           Control.DeepSeq (NFData (..), rwhnf)
+import           Data.Hashable (Hashable)
 import           GHC.Generics (Generic)
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, (#))
-import           Data.Map.Strict (Map)
+import           Data.HashMap.Strict (HashMap)
 import           Data.Text (Text)
 import           Data.Word (Word64)
 
@@ -33,7 +34,7 @@ instance NFData Element where
 -- | GUI elements containing current node state (info, metrics).
 --   These elements are continuously updating using |LogObject|s
 --   received by |TraceAcceptor|s.
-type NodeStateElements = Map ElementName Element
+type NodeStateElements = HashMap ElementName Element
 
 -- | GUI elements for all nodes, tuples from nodeName, its elements and prepared peers items.
 type NodesStateElements = [(Text, NodeStateElements, [PeerInfoItem])]
@@ -93,6 +94,8 @@ data ElementName
   | ElDiskUsageChart
   | ElNetworkUsageChart
   deriving (Eq, Generic, NFData, Ord, Show)
+
+instance Hashable ElementName
 
 data ElementValue
   = IntV     !Int

@@ -21,8 +21,8 @@ import           Control.Concurrent.STM.TVar (TVar, modifyTVar')
 import           Control.Monad (forever, forM_)
 import           Control.Monad.STM (atomically)
 import qualified Data.Aeson as A
-import           Data.Map.Strict ((!?))
-import qualified Data.Map.Strict as Map
+import           Data.HashMap.Strict ((!?))
+import qualified Data.HashMap.Strict as HM
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Time.Clock (NominalDiffTime, UTCTime, diffUTCTime)
@@ -85,7 +85,7 @@ updateNodesStateErrors nsTVar loggerName (LogObject _ aMeta aContent) = do
 
   atomically $ modifyTVar' nsTVar $ \currentNodesState ->
     let nsWith :: NodeState -> NodesState
-        nsWith newState = Map.adjust (const newState) nameOfNode currentNodesState
+        nsWith newState = HM.adjust (const newState) nameOfNode currentNodesState
     in
     case currentNodesState !? nameOfNode of
       Just ns -> nsWith $ updateNodeErrors ns aMeta aContent
@@ -134,7 +134,7 @@ updateNodesState nsTVar loggerName (LogObject aName aMeta aContent) = do
 
   atomically $ modifyTVar' nsTVar $ \currentNodesState ->
     let nsWith :: NodeState -> NodesState
-        nsWith newState = Map.adjust (const newState) nameOfNode currentNodesState
+        nsWith newState = HM.adjust (const newState) nameOfNode currentNodesState
         itIs name' = name' `T.isInfixOf` aName
         textValue updater =
           case aContent of
