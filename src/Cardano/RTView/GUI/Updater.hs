@@ -13,8 +13,8 @@ import           Control.Monad.STM (atomically)
 import           Control.Monad.Extra (ifM, whenJust, whenJustM)
 import qualified Data.List as L
 import           Data.Maybe (isJust)
-import           Data.Map.Strict ((!), (!?))
-import qualified Data.Map.Strict as Map
+import           Data.HashMap.Strict ((!), (!?))
+import qualified Data.HashMap.Strict as HM
 import           Data.Text (Text, pack, strip, unpack)
 import           Data.Time.Calendar (Day (..), diffDays)
 import           Data.Time.Clock (NominalDiffTime, UTCTime (..), addUTCTime, getCurrentTime,
@@ -578,5 +578,5 @@ setChangedFlag
 setChangedFlag nsTVar nameOfNode mkNewNS =
   liftIO . atomically $ modifyTVar' nsTVar $ \currentNS ->
     case currentNS !? nameOfNode of
-      Just ns -> Map.adjust (const $ mkNewNS ns) nameOfNode currentNS
+      Just ns -> HM.adjust (const $ mkNewNS ns) nameOfNode currentNS
       Nothing -> currentNS

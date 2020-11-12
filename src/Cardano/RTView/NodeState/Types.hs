@@ -32,8 +32,8 @@ module Cardano.RTView.NodeState.Types
 
 import           Control.DeepSeq (NFData (..))
 import qualified Data.List as L
-import           Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
+import           Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HM
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Time.Calendar (Day (..))
@@ -49,7 +49,7 @@ import qualified Cardano.BM.Configuration.Model as CM
 import           Cardano.BM.Data.Configuration (RemoteAddr (..), RemoteAddrNamed (..))
 import           Cardano.BM.Data.Severity (Severity)
 
-type NodesState = Map Text NodeState
+type NodesState = HashMap Text NodeState
 
 data PeerInfo = PeerInfo
   { piEndpoint   :: !String
@@ -221,11 +221,11 @@ initialNodesState config =
   CM.getAcceptAt config >>= \case
     Just addrs -> do
       now <- getMonotonicTimeNSec
-      return $ Map.fromList [(name, initialNodeState now) | (RemoteAddrNamed name _) <- addrs]
+      return $ HM.fromList [(name, initialNodeState now) | (RemoteAddrNamed name _) <- addrs]
     Nothing ->
       -- Actually it's impossible, because at this point we already know
       -- that at least one |TraceAcceptor| is defined in the config.
-      return Map.empty
+      return HM.empty
 
 initialNodeState :: Word64 -> NodeState
 initialNodeState now = NodeState
