@@ -1,16 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.RTView.GUI.Markup.Pane
     ( mkNodesPanes
     ) where
 
+import           Control.Concurrent.STM.TVar (TVar, readTVarIO)
 import           Control.Monad (forM, forM_, void)
+import           Data.Map.Strict ((!))
 import qualified Data.Map.Strict as Map
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Graphics.UI.Threepenny as UI
-import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, (#), (#+))
+import           Graphics.UI.Threepenny.Core (Element, UI, element, liftIO, set, string, (#), (#+))
 
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
@@ -18,14 +21,18 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
                                               HTMLId (..), NodeStateElements, NodesStateElements,
                                               PeerInfoElements (..), PeerInfoItem (..), hideIt,
                                               showIt, (##), (#.))
+import           Cardano.RTView.NodeState.Types
 
 mkNodesPanes
-  :: [RemoteAddrNamed]
+  :: TVar NodesState
+  -> [RemoteAddrNamed]
   -> UI (Element, NodesStateElements, [(Text, Element)])
-mkNodesPanes acceptors = do
+mkNodesPanes nsTVar acceptors = do
+  nodesState <- liftIO $ readTVarIO nsTVar
+
   nodePanesWithElems
     <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
-         (pane, nodeStateElems, peerInfoItems) <- mkNodePane nameOfNode
+         (pane, nodeStateElems, peerInfoItems) <- mkNodePane (nodesState ! nameOfNode) nameOfNode acceptors
          return (nameOfNode, pane, nodeStateElems, peerInfoItems)
 
   panesAreas
@@ -40,51 +47,59 @@ mkNodesPanes acceptors = do
   return (panes, nodesEls, panesWithNames)
 
 mkNodePane
-  :: Text
+  :: NodeState
+  -> Text
+  -> [RemoteAddrNamed]
   -> UI (Element, NodeStateElements, [PeerInfoItem])
-mkNodePane nameOfNode = do
+mkNodePane NodeState {..} nameOfNode acceptors = do
+  let MempoolMetrics {..}    = mempoolMetrics
+      ForgeMetrics {..}      = forgeMetrics
+      RTSMetrics {..}        = rtsMetrics
+      BlockchainMetrics {..} = blockchainMetrics
+      KESMetrics {..}        = kesMetrics
+      NodeMetrics {..}       = nodeMetrics
+
   -- Create |Element|s containing node state (info, metrics).
   -- These elements will be part of the complete page,
   -- later they will be updated by acceptor thread.
   elIdleNode <- string "Idle" #. [IdleNode] # hideIt
 
-  elNodeProtocol              <- string ""
-  elNodeVersion               <- string ""
-  elNodePlatform              <- string ""
-  elUptime                    <- string "00:00:00"
-  elSystemStartTime           <- string "00:00:00"
-  elEpoch                     <- string "0"
-  elSlot                      <- string "0"
-  elBlocksNumber              <- string "0"
-  elBlocksForgedNumber        <- string "0"
-  elNodeCannotForge           <- string "0"
-  elChainDensity              <- string "0"
-  elNodeIsLeaderNumber        <- string "0"
-  elSlotsMissedNumber         <- string "0"
-  elTxsProcessed              <- string "0"
-  elTraceAcceptorEndpoint     <- string "0"
-  elOpCertStartKESPeriod      <- string "0"
-  elOpCertExpiryKESPeriod     <- string "0"
-  elCurrentKESPeriod          <- string "0"
-  elRemainingKESPeriods       <- string "0"
-  elRemainingKESPeriodsInDays <- string "0"
-  elMempoolTxsNumber          <- string "0"
-  elMempoolTxsPercent         <- string "0"
-  elMempoolBytes              <- string "0"
-  elMempoolBytesPercent       <- string "0"
-  elMempoolMaxTxs             <- string "0"
-  elMempoolMaxBytes           <- string "0"
-  elDiskUsageR                <- string "0"
-  elDiskUsageW                <- string "0"
-  elNetworkUsageIn            <- string "0"
-  elNetworkUsageOut           <- string "0"
-  elRTSMemoryAllocated        <- string "0"
-  elRTSMemoryUsed             <- string "0"
-  elRTSMemoryUsedPercent      <- string "0"
-  elRTSGcCpu                  <- string "0"
-  elRTSGcElapsed              <- string "0"
-  elRTSGcNum                  <- string "0"
-  elRTSGcMajorNum             <- string "0"
+  let acceptorEndpoint = mkTraceAcceptorEndpoint nameOfNode acceptors
+
+  elNodeProtocol              <- string $ showText nodeProtocol
+  elNodeVersion               <- string $ showText nodeVersion
+  elNodePlatform              <- string $ showText nodePlatform
+  elUptime                    <- string   showInitTime
+  elSystemStartTime           <- string $ showTime systemStartTime
+  elEpoch                     <- string $ showInteger epoch
+  elSlot                      <- string $ showInteger slot
+  elBlocksNumber              <- string $ showInteger blocksNumber
+  elBlocksForgedNumber        <- string $ showInteger blocksForgedNumber
+  elNodeCannotForge           <- string $ showInteger nodeCannotForge
+  elChainDensity              <- string $ showDouble  chainDensity
+  elNodeIsLeaderNumber        <- string $ showInteger nodeIsLeaderNum
+  elSlotsMissedNumber         <- string $ showInteger slotsMissedNumber
+  elTxsProcessed              <- string $ showInteger txsProcessed
+  elTraceAcceptorEndpoint     <- string   acceptorEndpoint
+                                        # set UI.title__ (fullEndpointTitle acceptorEndpoint)
+  elOpCertStartKESPeriod      <- string $ showInteger opCertStartKESPeriod
+  elOpCertExpiryKESPeriod     <- string $ showInteger opCertExpiryKESPeriod
+  elCurrentKESPeriod          <- string $ showInteger currentKESPeriod
+  elRemainingKESPeriods       <- string $ showInteger remKESPeriods
+  elRemainingKESPeriodsInDays <- string $ showInteger remKESPeriodsInDays
+  elMempoolTxsNumber          <- string $ showInteger mempoolTxsNumber
+  elMempoolTxsPercent         <- string $ showDouble  mempoolTxsPercent
+  elMempoolBytes              <- string $ showWord64  mempoolBytes
+  elMempoolBytesPercent       <- string $ showDouble  mempoolBytesPercent
+  elMempoolMaxTxs             <- string $ showInteger mempoolMaxTxs
+  elMempoolMaxBytes           <- string $ showInteger mempoolMaxBytes
+  elRTSMemoryAllocated        <- string $ showDouble  rtsMemoryAllocated
+  elRTSMemoryUsed             <- string $ showDouble  rtsMemoryUsed
+  elRTSMemoryUsedPercent      <- string $ showDouble  rtsMemoryUsedPercent
+  elRTSGcCpu                  <- string $ showDouble  rtsGcCpu
+  elRTSGcElapsed              <- string $ showDouble  rtsGcElapsed
+  elRTSGcNum                  <- string $ showInteger rtsGcNum
+  elRTSGcMajorNum             <- string $ showInteger rtsGcMajorNum
 
   -- Progress bars.
   elMempoolBytesProgress    <- UI.div #. [ProgressBar] #+
@@ -115,7 +130,7 @@ mkNodePane nameOfNode = do
   elNodeCommitHref <- UI.anchor # set UI.href ""
                                 # set UI.target "_blank"
                                 # set UI.title__ "Browse cardano-node repository on this commit"
-                                #+ [string ""]
+                                # set UI.text (showText nodeShortCommit)
 
   -- Create content area for each tab.
   nodeTabContent
@@ -381,7 +396,7 @@ mkNodePane nameOfNode = do
     <- UI.div #. [TabContainer, ErrorsTabContainer] # hideIt #+
          [ UI.div #. [W3Row] #+
              [ UI.div #. [W3Third] #+
-                 [ string "Timestamp" # set UI.title__ "Time in UTC"
+                 [ string "Timestamp"
                  ]
              , UI.div #. [W3TwoThird] #+
                  [ string "Error message"
@@ -410,7 +425,8 @@ mkNodePane nameOfNode = do
   blockchainTab <- tabButton "Blockchain" "blockchain.svg"
   mempoolTab    <- tabButton "Mempool" "mempool.svg"
   ghcRTSTab     <- tabButton "RTS GC" "rts.svg"
-  errorsTab     <- tabButton "Errors" "bugs.svg"
+  errorsTab     <- tabButton "Errors" "bugs.svg" # set UI.enabled False
+                                                 # set UI.title__ "Good news: there are no errors!"
 
   resourcesTabMemory  <- anchorButton "Memory" "memory.svg"
   resourcesTabCPU     <- anchorButton "CPU" "cpu.svg"
@@ -515,10 +531,6 @@ mkNodePane nameOfNode = do
           , (ElMempoolBytesPercent,     elMempoolBytesPercent)
           , (ElMempoolMaxTxs,           elMempoolMaxTxs)
           , (ElMempoolMaxBytes,         elMempoolMaxBytes)
-          , (ElDiskUsageR,              elDiskUsageR)
-          , (ElDiskUsageW,              elDiskUsageW)
-          , (ElNetworkUsageIn,          elNetworkUsageIn)
-          , (ElNetworkUsageOut,         elNetworkUsageOut)
           , (ElRTSMemoryAllocated,      elRTSMemoryAllocated)
           , (ElRTSMemoryUsed,           elRTSMemoryUsed)
           , (ElRTSMemoryUsedPercent,    elRTSMemoryUsedPercent)

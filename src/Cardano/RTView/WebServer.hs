@@ -5,11 +5,10 @@ module Cardano.RTView.WebServer
     ( launchWebServer
     ) where
 
-import           Control.Concurrent.STM.TVar (TVar, readTVarIO)
+import           Control.Concurrent.STM.TVar (TVar)
 import           Control.Monad (void)
-import           Control.Monad.IO.Class (liftIO)
 import qualified Graphics.UI.Threepenny as UI
-import           Graphics.UI.Threepenny.Core (UI, onEvent, set, ( # ), ( #+ ))
+import           Graphics.UI.Threepenny.Core (UI, onEvent, set, (#), (#+))
 import           Graphics.UI.Threepenny.Timer (interval, start, tick, timer)
 
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
@@ -50,14 +49,13 @@ mainPage nsTVar params acceptors window = do
   addJavaScript window "chart.js"
 
   -- Make page's body (HTML markup).
-  (pageBody, (nodesStateElems, gridNodesStateElems)) <- mkPageBody window acceptors
+  (pageBody, (nodesStateElems, gridNodesStateElems)) <- mkPageBody nsTVar window acceptors
 
   -- Start the timer for GUI update. Every second it will
   -- call a function which updates node state elements on the page.
   guiUpdateTimer <- timer # set interval 1000
-  void $ onEvent (tick guiUpdateTimer) $ \_ -> do
-    newState <- liftIO $ readTVarIO nsTVar
-    updateGUI window newState params acceptors (nodesStateElems, gridNodesStateElems)
+  void $ onEvent (tick guiUpdateTimer) $ \_ ->
+    updateGUI window nsTVar params (nodesStateElems, gridNodesStateElems)
   start guiUpdateTimer
 
   void $ UI.element pageBody

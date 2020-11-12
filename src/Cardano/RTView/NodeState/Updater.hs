@@ -328,7 +328,6 @@ updateMemoryPages ns pages now = ns { resourcesMetrics = newMetrics, metricsLast
   newMetrics =
     currentMetrics
       { memory         = mBytes
-      , memoryChanged  = memory currentMetrics /= mBytes
       , memoryMax      = newMax
       , memoryMaxTotal = newMaxTotal
       , memoryPercent  = mBytes / newMaxTotal * 100.0
@@ -367,14 +366,13 @@ updateDiskRead ns bytesWereRead meta now = ns { resourcesMetrics = newMetrics, m
  where
   newMetrics =
     currentMetrics
-      { diskUsageR           = currentDiskRate
-      , diskUsageRChanged    = diskUsageR currentMetrics /= currentDiskRate
-      , diskUsageRPercent    = diskUsageRPercent'
-      , diskUsageRLast       = bytesWereRead
-      , diskUsageRNs         = currentTimeInNs
-      , diskUsageRMax        = maxDiskRate
-      , diskUsageRMaxTotal   = max maxDiskRate 1.0
-      , diskUsageRAdaptTime  = newAdaptTime
+      { diskUsageR          = currentDiskRate
+      , diskUsageRPercent   = diskUsageRPercent'
+      , diskUsageRLast      = bytesWereRead
+      , diskUsageRNs        = currentTimeInNs
+      , diskUsageRMax       = maxDiskRate
+      , diskUsageRMaxTotal  = max maxDiskRate 1.0
+      , diskUsageRAdaptTime = newAdaptTime
       }
   currentMetrics         = resourcesMetrics ns
   currentTimeInNs   = utc2ns (tstamp meta)
@@ -401,7 +399,6 @@ updateDiskWrite ns bytesWereWritten meta now = ns { resourcesMetrics = newMetric
   newMetrics =
     currentMetrics
       { diskUsageW           = currentDiskRate
-      , diskUsageWChanged    = diskUsageW currentMetrics /= currentDiskRate
       , diskUsageWPercent    = diskUsageWPercent'
       , diskUsageWLast       = bytesWereWritten
       , diskUsageWNs         = currentTimeInNs
@@ -439,10 +436,9 @@ updateCPUTicks ns ticks meta now = ns { resourcesMetrics = newMetrics, metricsLa
  where
   newMetrics =
     currentMetrics
-      { cpuPercent        = newCPUPercent
-      , cpuPercentChanged = cpuPercent currentMetrics /= newCPUPercent
-      , cpuLast           = ticks
-      , cpuNs             = tns
+      { cpuPercent = newCPUPercent
+      , cpuLast    = ticks
+      , cpuNs      = tns
       }
   currentMetrics = resourcesMetrics ns
   newCPUPercent = cpuperc * 100.0
@@ -458,13 +454,12 @@ updateNetworkIn ns inBytes meta now = ns { resourcesMetrics = newMetrics, metric
  where
   newMetrics =
     currentMetrics
-      { networkUsageIn           = currentNetRate
-      , networkUsageInChanged    = networkUsageIn currentMetrics /= currentNetRate
-      , networkUsageInPercent    = currentNetRate / (maxNetRate / 100.0)
-      , networkUsageInLast       = inBytes
-      , networkUsageInNs         = currentTimeInNs
-      , networkUsageInMax        = maxNetRate
-      , networkUsageInMaxTotal   = max maxNetRate 1.0
+      { networkUsageIn         = currentNetRate
+      , networkUsageInPercent  = currentNetRate / (maxNetRate / 100.0)
+      , networkUsageInLast     = inBytes
+      , networkUsageInNs       = currentTimeInNs
+      , networkUsageInMax      = maxNetRate
+      , networkUsageInMaxTotal = max maxNetRate 1.0
       }
   currentMetrics       = resourcesMetrics ns
   currentTimeInNs = utc2ns (tstamp meta)
@@ -481,7 +476,6 @@ updateNetworkOut ns outBytes meta now = ns { resourcesMetrics = newMetrics, metr
   newMetrics =
     currentMetrics
       { networkUsageOut         = currentNetRate
-      , networkUsageOutChanged  = networkUsageOut currentMetrics /= currentNetRate
       , networkUsageOutPercent  = currentNetRate / (maxNetRate / 100.0)
       , networkUsageOutLast     = outBytes
       , networkUsageOutNs       = currentTimeInNs
@@ -525,16 +519,19 @@ updateMempoolTxs :: NodeState -> Integer -> Word64 -> NodeState
 updateMempoolTxs ns txsInMempool now = ns { mempoolMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics = currentMetrics
-    { mempoolTxsNumber = fromIntegral txsInMempool
-    , mempoolTxsNumberChanged = currentMempoolTxsNumber /= fromIntegral txsInMempool
+    { mempoolTxsNumber = txsInMempool
+    , mempoolTxsNumberChanged = changed
     , mempoolTxsPercent =   fromIntegral txsInMempool
                           / fromIntegral maxTxs
                           * 100.0
+    , mempoolTxsPercentChanged = changed
     , mempoolMaxTxs = maxTxs
+    , mempoolMaxTxsChanged = mempoolMaxTxs currentMetrics /= maxTxs
     }
   currentMetrics = mempoolMetrics ns
   currentMempoolTxsNumber = mempoolTxsNumber currentMetrics
   maxTxs = max txsInMempool (mempoolMaxTxs currentMetrics)
+  changed = currentMempoolTxsNumber /= fromIntegral txsInMempool
 
 updateMempoolBytes :: NodeState -> Integer -> Word64 -> NodeState
 updateMempoolBytes ns newMempoolBytes now = ns { mempoolMetrics = newMetrics, metricsLastUpdate = now }
@@ -546,6 +543,7 @@ updateMempoolBytes ns newMempoolBytes now = ns { mempoolMetrics = newMetrics, me
                             / fromIntegral maxBytes
                             * 100.0
     , mempoolMaxBytes = maxBytes
+    , mempoolMaxBytesChanged = mempoolMaxBytes currentMetrics /= maxBytes
     }
   currentMetrics = mempoolMetrics ns
   currentMempoolBytes = mempoolBytes currentMetrics
@@ -611,13 +609,15 @@ updateRTSBytesUsed ns usedMemBytes now = ns { rtsMetrics = newMetrics, metricsLa
  where
   newMetrics = currentMetrics
     { rtsMemoryUsed = mBytes
-    , rtsMemoryUsedChanged = rtsMemoryUsed currentMetrics /= mBytes
+    , rtsMemoryUsedChanged = changed
     , rtsMemoryUsedPercent =   mBytes
                              / rtsMemoryAllocated currentMetrics
                              * 100.0
+    , rtsMemoryUsedPercentChanged = changed
     }
   currentMetrics = rtsMetrics ns
-  mBytes    = fromIntegral usedMemBytes / 1024 / 1024 :: Double
+  mBytes = fromIntegral usedMemBytes / 1024 / 1024 :: Double
+  changed = rtsMemoryUsed currentMetrics /= mBytes
 
 updateGcCpuNs :: NodeState -> Word64 -> Word64 -> NodeState
 updateGcCpuNs ns gcCpuNs now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
@@ -688,11 +688,13 @@ updateRemainingKESPeriods :: NodeState -> Integer -> Word64 -> NodeState
 updateRemainingKESPeriods ns kesPeriodsUntilExpiry now = ns { kesMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics = currentMetrics
-    { remainingKESPeriods = kesPeriodsUntilExpiry
-    , remainingKESPeriodsChanged = remainingKESPeriods currentMetrics /= kesPeriodsUntilExpiry
-    , remainingKESPeriodsInDays = floor remainingInDays
+    { remKESPeriods = kesPeriodsUntilExpiry
+    , remKESPeriodsChanged = changed
+    , remKESPeriodsInDays = floor remainingInDays
+    , remKESPeriodsInDaysChanged = changed
     }
   currentMetrics = kesMetrics ns
+  changed = remKESPeriods currentMetrics /= kesPeriodsUntilExpiry
   remainingInSeconds =   fromIntegral kesPeriodsUntilExpiry
                        * (1 :: Int)      -- TODO: take from node basic info metric for current protocol.
                        * (129600 :: Int) -- TODO: take from node basic info metric for current protocol.

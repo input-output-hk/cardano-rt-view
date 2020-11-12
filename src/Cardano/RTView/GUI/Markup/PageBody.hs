@@ -6,6 +6,7 @@ module Cardano.RTView.GUI.Markup.PageBody
     ( mkPageBody
     ) where
 
+import           Control.Concurrent.STM.TVar (TVar)
 import           Control.Monad (forM, forM_, void, when)
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -19,14 +20,16 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
                                               hideIt, showCell, showIt, showRow, (##), (#.))
 import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames, metricLabel, mkNodesGrid)
 import           Cardano.RTView.GUI.Markup.Pane (mkNodesPanes)
+import           Cardano.RTView.NodeState.Types
 
 mkPageBody
-  :: UI.Window
+  :: TVar NodesState
+  -> UI.Window
   -> [RemoteAddrNamed]
   -> UI (Element, (NodesStateElements, NodesStateElements))
-mkPageBody window acceptors = do
-  (paneNodesRootElem, paneNodesElems, panesWithNames) <- mkNodesPanes acceptors
-  (gridNodesRootElem, gridNodesElems) <- mkNodesGrid acceptors
+mkPageBody nsTVar window acceptors = do
+  (paneNodesRootElem, paneNodesElems, panesWithNames) <- mkNodesPanes nsTVar acceptors
+  (gridNodesRootElem, gridNodesElems) <- mkNodesGrid nsTVar acceptors
 
   -- Register clickable selector for nodes (to be able to show only one or all of them).
   nodesSelector <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do

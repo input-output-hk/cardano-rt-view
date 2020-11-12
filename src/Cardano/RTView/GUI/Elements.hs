@@ -73,16 +73,6 @@ data ElementName
   | ElMempoolBytesPercent
   | ElMempoolMaxTxs
   | ElMempoolMaxBytes
-  | ElCPULast
-  | ElCPUNs
-  | ElDiskUsageR
-  | ElDiskUsageRMax
-  | ElDiskUsageRPercent
-  | ElDiskUsageW
-  | ElDiskUsageWMax
-  | ElDiskUsageWPercent
-  | ElNetworkUsageIn
-  | ElNetworkUsageOut
   | ElRTSMemoryAllocated
   | ElRTSMemoryUsed
   | ElRTSMemoryUsedPercent
@@ -105,12 +95,12 @@ data ElementName
   deriving (Eq, Generic, NFData, Ord, Show)
 
 data ElementValue
-  = ElementInt     !Int
-  | ElementInteger !Integer
-  | ElementWord64  !Word64
-  | ElementDouble  !Double
-  | ElementString  !String
-  | ElementText    !Text
+  = IntV     !Int
+  | IntegerV !Integer
+  | Word64V  !Word64
+  | DoubleV  !Double
+  | StringV  !String
+  | TextV    !Text
   deriving (Generic, NFData)
 
 -- | An item for each connected peer, contains a parent element

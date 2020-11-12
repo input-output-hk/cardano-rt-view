@@ -7,30 +7,31 @@ module Cardano.RTView.GUI.Updater
     ( updateGUI
     ) where
 
+import           Control.Concurrent.STM.TVar (TVar, modifyTVar', readTVarIO)
 import           Control.Monad (void, forM, forM_, unless)
-import           Control.Monad.IO.Class (liftIO)
+import           Control.Monad.STM (atomically)
+import           Control.Monad.Extra (ifM, whenJust, whenJustM)
 import qualified Data.List as L
 import           Data.Maybe (isJust)
-import           Data.Map.Strict ((!))
+import           Data.Map.Strict ((!), (!?))
+import qualified Data.Map.Strict as Map
 import           Data.Text (Text, pack, strip, unpack)
 import           Data.Time.Calendar (Day (..), diffDays)
 import           Data.Time.Clock (NominalDiffTime, UTCTime (..), addUTCTime, getCurrentTime,
                                   diffUTCTime)
 import           Data.Time.Format (defaultTimeLocale, formatTime)
 import           Data.Word (Word64)
-import           Formatting (fixed, sformat, (%))
 import           GHC.Clock (getMonotonicTimeNSec)
 import qualified Graphics.UI.Threepenny as UI
-import           Graphics.UI.Threepenny.Core (Element, UI, children, element, set, style, text,
-                                              (#), (#+))
+import           Graphics.UI.Threepenny.Core (Element, UI, children, element, liftIO, set, style,
+                                              text, (#), (#+))
 
-import           Cardano.BM.Data.Configuration (RemoteAddr (..), RemoteAddrNamed (..))
 import           Cardano.BM.Data.Severity (Severity (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..))
 import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..),
                                               HTMLClass (..), HTMLId (..),
-                                              NodesStateElements,
+                                              NodeStateElements, NodesStateElements,
                                               PeerInfoElements (..), PeerInfoItem (..),
                                               (#.))
 import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames)
@@ -42,112 +43,94 @@ import           Cardano.RTView.SupportedNodes (supportedNodesVersions, showSupp
 --   on the page automatically, because threepenny-gui is based on websockets.
 updateGUI
   :: UI.Window
-  -> NodesState
+  -> TVar NodesState
   -> RTViewParams
-  -> [RemoteAddrNamed]
   -> (NodesStateElements, NodesStateElements)
   -> UI ()
-updateGUI window nodesState params acceptors (nodesStateElems, gridNodesStateElems) = do
+updateGUI window nsTVar params (nodesStateElems, gridNodesStateElems) =
   -- Only one GUI mode can be active now, so check it and update only corresponding elements.
-  UI.getElementById window (show ViewModeButton) >>= \case
-    Just btn -> UI.get UI.value btn >>= \case
-      "paneMode" -> updatePaneGUI window nodesState params acceptors nodesStateElems
-      _ ->          updateGridGUI window nodesState params acceptors gridNodesStateElems
-    Nothing -> return ()
+  whenJustM (UI.getElementById window (show ViewModeButton)) $ \btn ->
+    UI.get UI.value btn >>= \case
+      "paneMode" -> updatePaneGUI window nsTVar params nodesStateElems
+      _ ->          updateGridGUI window nsTVar params gridNodesStateElems
 
 updatePaneGUI
   :: UI.Window
-  -> NodesState
+  -> TVar NodesState
   -> RTViewParams
-  -> [RemoteAddrNamed]
   -> NodesStateElements
   -> UI ()
-updatePaneGUI window nodesState params acceptors nodesStateElems =
-  forM_ nodesStateElems $ \(nameOfNode, els, peerInfoItems) -> do
-    let NodeState {..} = nodesState ! nameOfNode
-        acceptorEndpoint = mkTraceAcceptorEndpoint nameOfNode acceptors
+updatePaneGUI window tv params nodesStateElems = do
+  nodesState <- liftIO $ readTVarIO tv
+  forM_ nodesStateElems $ \(nName, els, peerInfoItems) -> do
+    let NodeState {..}         = nodesState ! nName
+        PeerMetrics {..}       = peersMetrics
+        MempoolMetrics {..}    = mempoolMetrics
+        ForgeMetrics {..}      = forgeMetrics
+        RTSMetrics {..}        = rtsMetrics
+        BlockchainMetrics {..} = blockchainMetrics
+        KESMetrics {..}        = kesMetrics
+        nm@NodeMetrics {..}    = nodeMetrics
+        ErrorsMetrics {..}     = nodeErrors
 
-    let PeerMetrics {..}         = peersMetrics
-        MempoolMetrics {..}      = mempoolMetrics
-        ForgeMetrics {..}        = forgeMetrics
-        rm@ResourcesMetrics {..} = resourcesMetrics
-        RTSMetrics {..}          = rtsMetrics
-        BlockchainMetrics {..}   = blockchainMetrics
-        KESMetrics {..}          = kesMetrics
-        nm@NodeMetrics {..}      = nodeMetrics
-        ErrorsMetrics {..}       = nodeErrors
+    updateErrorsListAndTab tv nName errors errorsChanged els ElNodeErrors ElNodeErrorsTab
+    updatePeersList tv nName peersInfo peersInfoChanged peerInfoItems
+
+    -- TODO: temporary solution, progress bars will be replaced by charts soon.
+    updateProgressBar mempoolBytesPercent  els ElMempoolBytesProgress
+    updateProgressBar mempoolTxsPercent    els ElMempoolTxsProgress
+    updateProgressBar rtsMemoryUsedPercent els ElRTSMemoryProgress
 
     nodeIsIdle <- checkIfNodeIsIdlePane params metricsLastUpdate (els ! ElIdleNode) (els ! ElNodePane)
     unless nodeIsIdle $ do
-      updateNodeVersion nodeVersion nodeVersionChanged $ els ! ElNodeVersion
+      setNodeUpTime nodeStartTime els ElUptime
 
-      updateElement (ElementText    nodeProtocol)         nodeProtocolChanged       $ els ! ElNodeProtocol
-      updateElement (ElementText    nodePlatform)         nodePlatformChanged       $ els ! ElNodePlatform
-      updateElement (ElementInteger epoch)                epochChanged              $ els ! ElEpoch
-      updateElement (ElementInteger slot)                 slotChanged               $ els ! ElSlot
-      updateElement (ElementInteger blocksNumber)         blocksNumberChanged       $ els ! ElBlocksNumber
-      updateElement (ElementDouble  chainDensity)         chainDensityChanged       $ els ! ElChainDensity
-      updateElement (ElementInteger blocksForgedNumber)   blocksForgedNumberChanged $ els ! ElBlocksForgedNumber
-      updateElement (ElementInteger nodeCannotForge)      nodeCannotForgeChanged    $ els ! ElNodeCannotForge
-      updateElement (ElementInteger nodeIsLeaderNum)      nodeIsLeaderNumChanged    $ els ! ElNodeIsLeaderNumber
-      updateElement (ElementInteger slotsMissedNumber)    slotsMissedNumberChanged  $ els ! ElSlotsMissedNumber
-      updateElement (ElementInteger txsProcessed)         txsProcessedChanged       $ els ! ElTxsProcessed
-      updateElement (ElementWord64  mempoolTxsNumber)     mempoolTxsNumberChanged   $ els ! ElMempoolTxsNumber
-      updateElement (ElementDouble  mempoolTxsPercent)    mempoolTxsNumberChanged   $ els ! ElMempoolTxsPercent
-      updateElement (ElementWord64  mempoolBytes)         mempoolBytesChanged       $ els ! ElMempoolBytes
-      updateElement (ElementDouble  mempoolBytesPercent)  mempoolBytesChanged       $ els ! ElMempoolBytesPercent
-      updateElement (ElementInteger mempoolMaxTxs)        True                      $ els ! ElMempoolMaxTxs
-      updateElement (ElementInteger mempoolMaxBytes)      True                      $ els ! ElMempoolMaxBytes
-      updateElement (ElementDouble  diskUsageR)           diskUsageRChanged         $ els ! ElDiskUsageR
-      updateElement (ElementDouble  diskUsageW)           diskUsageWChanged         $ els ! ElDiskUsageW
-      updateElement (ElementDouble  networkUsageIn)       networkUsageInChanged     $ els ! ElNetworkUsageIn
-      updateElement (ElementDouble  networkUsageOut)      networkUsageOutChanged    $ els ! ElNetworkUsageOut
-      updateElement (ElementDouble  rtsMemoryAllocated)   rtsMemoryAllocatedChanged $ els ! ElRTSMemoryAllocated
-      updateElement (ElementDouble  rtsMemoryUsed)        rtsMemoryUsedChanged      $ els ! ElRTSMemoryUsed
-      updateElement (ElementDouble  rtsMemoryUsedPercent) rtsMemoryUsedChanged      $ els ! ElRTSMemoryUsedPercent
-      updateElement (ElementDouble  rtsGcCpu)             rtsGcCpuChanged           $ els ! ElRTSGcCpu
-      updateElement (ElementDouble  rtsGcElapsed)         rtsGcElapsedChanged       $ els ! ElRTSGcElapsed
-      updateElement (ElementInteger rtsGcNum)             rtsGcNumChanged           $ els ! ElRTSGcNum
-      updateElement (ElementInteger rtsGcMajorNum)        rtsGcMajorNumChanged      $ els ! ElRTSGcMajorNum
+      setNodeVersion    tv nName (TextV    nodeVersion)          nodeVersionChanged        els ElNodeVersion
+      setNodeProtocol   tv nName (TextV    nodeProtocol)         nodeProtocolChanged       els ElNodeProtocol
+      setNodePlatform   tv nName (TextV    nodePlatform)         nodePlatformChanged       els ElNodePlatform
+      setEpoch          tv nName (IntegerV epoch)                epochChanged              els ElEpoch
+      setSlot           tv nName (IntegerV slot)                 slotChanged               els ElSlot
+      setBlocksNumber   tv nName (IntegerV blocksNumber)         blocksNumberChanged       els ElBlocksNumber
+      setChainDensity   tv nName (DoubleV  chainDensity)         chainDensityChanged       els ElChainDensity
+      setForgedNum      tv nName (IntegerV blocksForgedNumber)   blocksForgedNumberChanged els ElBlocksForgedNumber
+      setCannotForge    tv nName (IntegerV nodeCannotForge)      nodeCannotForgeChanged    els ElNodeCannotForge
+      setNodeIsLeader   tv nName (IntegerV nodeIsLeaderNum)      nodeIsLeaderNumChanged    els ElNodeIsLeaderNumber
+      setSlotsMissed    tv nName (IntegerV slotsMissedNumber)    slotsMissedNumberChanged  els ElSlotsMissedNumber
+      setTxsProcessed   tv nName (IntegerV txsProcessed)         txsProcessedChanged       els ElTxsProcessed
+      setMPoolTxsNum    tv nName (IntegerV mempoolTxsNumber)     mempoolTxsNumberChanged   els ElMempoolTxsNumber
+      setMPoolTxsPerc   tv nName (DoubleV  mempoolTxsPercent)    mempoolTxsPercentChanged   els ElMempoolTxsPercent
+      setMPoolBytes     tv nName (Word64V  mempoolBytes)         mempoolBytesChanged       els ElMempoolBytes
+      setMPoolBytesPerc tv nName (DoubleV  mempoolBytesPercent)  mempoolBytesPercentChanged els ElMempoolBytesPercent
+      setMPoolMaxTxs    tv nName (IntegerV mempoolMaxTxs)        mempoolMaxTxsChanged      els ElMempoolMaxTxs
+      setMPoolMaxBytes  tv nName (IntegerV mempoolMaxBytes)      mempoolMaxBytesChanged    els ElMempoolMaxBytes
+      setRtsMemAlloc    tv nName (DoubleV  rtsMemoryAllocated)   rtsMemoryAllocatedChanged els ElRTSMemoryAllocated
+      setRtsMemUsed     tv nName (DoubleV  rtsMemoryUsed)        rtsMemoryUsedChanged      els ElRTSMemoryUsed
+      setRtsMemUsedPerc tv nName (DoubleV  rtsMemoryUsedPercent) rtsMemoryUsedPercentChanged els ElRTSMemoryUsedPercent
+      setRtsGcCpu       tv nName (DoubleV  rtsGcCpu)             rtsGcCpuChanged           els ElRTSGcCpu
+      setRtsGcElapsed   tv nName (DoubleV  rtsGcElapsed)         rtsGcElapsedChanged       els ElRTSGcElapsed
+      setRtsGcNum       tv nName (IntegerV rtsGcNum)             rtsGcNumChanged           els ElRTSGcNum
+      setRtsGcMajorNum  tv nName (IntegerV rtsGcMajorNum)        rtsGcMajorNumChanged      els ElRTSGcMajorNum
+      setStartKES       tv nName (IntegerV opCertStartKESPeriod)  opCertStartKESPeriodChanged  els ElOpCertStartKESPeriod
+      setExpiryKES      tv nName (IntegerV opCertExpiryKESPeriod) opCertExpiryKESPeriodChanged els ElOpCertExpiryKESPeriod
+      setCurrentKES     tv nName (IntegerV currentKESPeriod)      currentKESPeriodChanged      els ElCurrentKESPeriod
+      setRemKES         tv nName (IntegerV remKESPeriods)       remKESPeriodsChanged       els ElRemainingKESPeriods
+      setRemKESDays     tv nName (IntegerV remKESPeriodsInDays) remKESPeriodsInDaysChanged els ElRemainingKESPeriodsInDays
+      setSystemStart    tv nName systemStartTime  systemStartTimeChanged els ElSystemStartTime
+      setNodeCommit     tv nName nodeCommit nodeShortCommit nodeCommitChanged els ElNodeCommitHref
 
-      updateSystemStart systemStartTime $ els ! ElSystemStartTime
-
-      updateCharts window nameOfNode rm nm
-
-      updateNodeUpTime nodeStartTime $ els ! ElUptime
-      updateNodeCommit nodeCommit
-                       nodeShortCommit
-                       nodeCommitChanged    $ els ! ElNodeCommitHref
-      updateEndpoint   acceptorEndpoint     $ els ! ElTraceAcceptorEndpoint
-      updateErrorsList errors errorsChanged $ els ! ElNodeErrors
-      updateErrorsTab  errors errorsChanged $ els ! ElNodeErrorsTab
-
-      updateKESInfo [ (opCertStartKESPeriod,      els ! ElOpCertStartKESPeriod)
-                    , (opCertExpiryKESPeriod,     els ! ElOpCertExpiryKESPeriod)
-                    , (currentKESPeriod,          els ! ElCurrentKESPeriod)
-                    , (remainingKESPeriods,       els ! ElRemainingKESPeriods)
-                    , (remainingKESPeriodsInDays, els ! ElRemainingKESPeriodsInDays)
-                    ]
-
-      updatePeersList peersInfo peersInfoChanged peerInfoItems
-
-      updateProgressBar mempoolBytesPercent  $ els ! ElMempoolBytesProgress
-      updateProgressBar mempoolTxsPercent    $ els ! ElMempoolTxsProgress
-      updateProgressBar rtsMemoryUsedPercent $ els ! ElRTSMemoryProgress
+      updateCharts window nName resourcesMetrics nm
 
 updateGridGUI
   :: UI.Window
-  -> NodesState
+  -> TVar NodesState
   -> RTViewParams
-  -> [RemoteAddrNamed]
   -> NodesStateElements
   -> UI ()
-updateGridGUI window nodesState params acceptors gridNodesStateElems =
-  forM_ gridNodesStateElems $ \(nameOfNode, els, _) -> do
-    let NodeState {..} = nodesState ! nameOfNode
-        acceptorEndpoint = mkTraceAcceptorEndpoint nameOfNode acceptors
-
-    let PeerMetrics {..}       = peersMetrics
+updateGridGUI window tv params gridNodesStateElems = do
+  nodesState <- liftIO $ readTVarIO tv
+  forM_ gridNodesStateElems $ \(nName, els, _) -> do
+    let NodeState {..}         = nodesState ! nName
+        PeerMetrics {..}       = peersMetrics
         MempoolMetrics {..}    = mempoolMetrics
         ForgeMetrics {..}      = forgeMetrics
         rm                     = resourcesMetrics
@@ -156,170 +139,246 @@ updateGridGUI window nodesState params acceptors gridNodesStateElems =
         KESMetrics {..}        = kesMetrics
         nm@NodeMetrics {..}    = nodeMetrics
 
-    nodeIsIdle <- checkIfNodeIsIdleGrid window params metricsLastUpdate (els ! ElIdleNode) nameOfNode
+    nodeIsIdle <- checkIfNodeIsIdleGrid window params metricsLastUpdate (els ! ElIdleNode) nName
     unless nodeIsIdle $ do
-      updateNodeVersion nodeVersion nodeVersionChanged $ els ! ElNodeVersion
+      setNodeUpTime nodeStartTime els ElUptime
 
-      updateElement (ElementText    nodeProtocol)       nodeProtocolChanged       $ els ! ElNodeProtocol
-      updateElement (ElementText    nodePlatform)       nodePlatformChanged       $ els ! ElNodePlatform
-      updateElement (ElementInt     $ length peersInfo) peersInfoChanged          $ els ! ElPeersNumber
-      updateElement (ElementInteger epoch)              epochChanged              $ els ! ElEpoch
-      updateElement (ElementInteger slot)               slotChanged               $ els ! ElSlot
-      updateElement (ElementInteger blocksNumber)       blocksNumberChanged       $ els ! ElBlocksNumber
-      updateElement (ElementDouble  chainDensity)       chainDensityChanged       $ els ! ElChainDensity
-      updateElement (ElementInteger blocksForgedNumber) blocksForgedNumberChanged $ els ! ElBlocksForgedNumber
-      updateElement (ElementInteger nodeCannotForge)    nodeCannotForgeChanged    $ els ! ElNodeCannotForge
-      updateElement (ElementInteger nodeIsLeaderNum)    nodeIsLeaderNumChanged    $ els ! ElNodeIsLeaderNumber
-      updateElement (ElementInteger slotsMissedNumber)  slotsMissedNumberChanged  $ els ! ElSlotsMissedNumber
-      updateElement (ElementInteger txsProcessed)       txsProcessedChanged       $ els ! ElTxsProcessed
-      updateElement (ElementWord64  mempoolTxsNumber)   mempoolTxsNumberChanged   $ els ! ElMempoolTxsNumber
-      updateElement (ElementWord64  mempoolBytes)       mempoolBytesChanged       $ els ! ElMempoolBytes
-      updateElement (ElementDouble  rtsGcCpu)           rtsGcCpuChanged           $ els ! ElRTSGcCpu
-      updateElement (ElementDouble  rtsGcElapsed)       rtsGcElapsedChanged       $ els ! ElRTSGcElapsed
-      updateElement (ElementInteger rtsGcNum)           rtsGcNumChanged           $ els ! ElRTSGcNum
-      updateElement (ElementInteger rtsGcMajorNum)      rtsGcMajorNumChanged      $ els ! ElRTSGcMajorNum
+      setNodeVersion    tv nName (TextV    nodeVersion)          nodeVersionChanged        els ElNodeVersion
+      setNodeProtocol   tv nName (TextV    nodeProtocol)         nodeProtocolChanged       els ElNodeProtocol
+      setNodePlatform   tv nName (TextV    nodePlatform)         nodePlatformChanged       els ElNodePlatform
+      setEpoch          tv nName (IntegerV epoch)                epochChanged              els ElEpoch
+      setSlot           tv nName (IntegerV slot)                 slotChanged               els ElSlot
+      setBlocksNumber   tv nName (IntegerV blocksNumber)         blocksNumberChanged       els ElBlocksNumber
+      setChainDensity   tv nName (DoubleV  chainDensity)         chainDensityChanged       els ElChainDensity
+      setForgedNum      tv nName (IntegerV blocksForgedNumber)   blocksForgedNumberChanged els ElBlocksForgedNumber
+      setCannotForge    tv nName (IntegerV nodeCannotForge)      nodeCannotForgeChanged    els ElNodeCannotForge
+      setNodeIsLeader   tv nName (IntegerV nodeIsLeaderNum)      nodeIsLeaderNumChanged    els ElNodeIsLeaderNumber
+      setSlotsMissed    tv nName (IntegerV slotsMissedNumber)    slotsMissedNumberChanged  els ElSlotsMissedNumber
+      setTxsProcessed   tv nName (IntegerV txsProcessed)         txsProcessedChanged       els ElTxsProcessed
+      setMPoolTxsNum    tv nName (IntegerV mempoolTxsNumber)     mempoolTxsNumberChanged   els ElMempoolTxsNumber
+      setMPoolBytes     tv nName (Word64V  mempoolBytes)         mempoolBytesChanged       els ElMempoolBytes
+      setRtsGcCpu       tv nName (DoubleV  rtsGcCpu)             rtsGcCpuChanged           els ElRTSGcCpu
+      setRtsGcElapsed   tv nName (DoubleV  rtsGcElapsed)         rtsGcElapsedChanged       els ElRTSGcElapsed
+      setRtsGcNum       tv nName (IntegerV rtsGcNum)             rtsGcNumChanged           els ElRTSGcNum
+      setRtsGcMajorNum  tv nName (IntegerV rtsGcMajorNum)        rtsGcMajorNumChanged      els ElRTSGcMajorNum
+      setPeers          tv nName (IntV     $ length peersInfo)   peersInfoChanged          els ElPeersNumber
+      setStartKES       tv nName (IntegerV opCertStartKESPeriod)  opCertStartKESPeriodChanged  els ElOpCertStartKESPeriod
+      setExpiryKES      tv nName (IntegerV opCertExpiryKESPeriod) opCertExpiryKESPeriodChanged els ElOpCertExpiryKESPeriod
+      setCurrentKES     tv nName (IntegerV currentKESPeriod)      currentKESPeriodChanged      els ElCurrentKESPeriod
+      setRemKES         tv nName (IntegerV remKESPeriods)       remKESPeriodsChanged       els ElRemainingKESPeriods
+      setRemKESDays     tv nName (IntegerV remKESPeriodsInDays) remKESPeriodsInDaysChanged els ElRemainingKESPeriodsInDays
+      setSystemStart    tv nName systemStartTime systemStartTimeChanged els ElSystemStartTime
+      setNodeCommit     tv nName nodeCommit nodeShortCommit nodeCommitChanged els ElNodeCommitHref
 
-      updateSystemStart systemStartTime $ els ! ElSystemStartTime
+      updateCharts window nName rm nm
 
-      updateCharts window nameOfNode rm nm
+type Setter = TVar NodesState
+              -> Text
+              -> ElementValue
+              -> Bool
+              -> NodeStateElements
+              -> ElementName
+              -> UI ()
 
-      updateEndpoint   acceptorEndpoint  $ els ! ElTraceAcceptorEndpoint
-      updateNodeCommit nodeCommit
-                       nodeShortCommit
-                       nodeCommitChanged $ els ! ElNodeCommitHref
-      updateNodeUpTime nodeStartTime $ els ! ElUptime
+setNodeVersion :: Setter
+setNodeVersion _ _ _ False _ _ = return ()
+setNodeVersion tv nameOfNode nodeVersion True els elName =
+  whenJust (els !? elName) $ \el -> do
+    let nodeVersionT = pack $ elValueToStr nodeVersion
+    if strip nodeVersionT `elem` supportedNodesVersions
+      then void $ setElement nodeVersion el
+                    #. [] # set UI.title__ ""
+      else void $ setElement nodeVersion el
+                    #. [UnsupportedVersion]
+                    # set UI.title__ ("Unsupported node version, please use these versions only: "
+                                      <> unpack showSupportedNodesVersions)
+    setChangedFlag tv nameOfNode $ \ns -> ns { nodeMetrics = (nodeMetrics ns) { nodeVersionChanged = False } }
 
-      updateKESInfo [ (opCertStartKESPeriod,      els ! ElOpCertStartKESPeriod)
-                    , (opCertExpiryKESPeriod,     els ! ElOpCertExpiryKESPeriod)
-                    , (currentKESPeriod,          els ! ElCurrentKESPeriod)
-                    , (remainingKESPeriods,       els ! ElRemainingKESPeriods)
-                    , (remainingKESPeriodsInDays, els ! ElRemainingKESPeriodsInDays)
-                    ]
+setNodeProtocol
+  , setNodePlatform
+  , setEpoch
+  , setSlot
+  , setBlocksNumber
+  , setChainDensity
+  , setForgedNum
+  , setCannotForge
+  , setNodeIsLeader
+  , setSlotsMissed
+  , setTxsProcessed
+  , setMPoolTxsNum
+  , setMPoolTxsPerc
+  , setMPoolBytes
+  , setMPoolBytesPerc
+  , setMPoolMaxTxs
+  , setMPoolMaxBytes
+  , setRtsMemAlloc
+  , setRtsMemUsed
+  , setRtsMemUsedPerc
+  , setRtsGcCpu
+  , setRtsGcElapsed
+  , setRtsGcNum
+  , setRtsGcMajorNum
+  , setPeers
+  , setStartKES
+  , setExpiryKES
+  , setCurrentKES
+  , setRemKES
+  , setRemKESDays :: Setter
+setNodeProtocol   = evSetter (\ns -> ns { nodeMetrics = (nodeMetrics ns) { nodeProtocolChanged = False } })
+setNodePlatform   = evSetter (\ns -> ns { nodeMetrics = (nodeMetrics ns) { nodePlatformChanged = False } })
+setEpoch          = evSetter (\ns -> ns { blockchainMetrics = (blockchainMetrics ns) { epochChanged        = False } })
+setSlot           = evSetter (\ns -> ns { blockchainMetrics = (blockchainMetrics ns) { slotChanged         = False } })
+setBlocksNumber   = evSetter (\ns -> ns { blockchainMetrics = (blockchainMetrics ns) { blocksNumberChanged = False } })
+setChainDensity   = evSetter (\ns -> ns { blockchainMetrics = (blockchainMetrics ns) { chainDensityChanged = False } })
+setForgedNum      = evSetter (\ns -> ns { forgeMetrics = (forgeMetrics ns) { blocksForgedNumberChanged = False } })
+setCannotForge    = evSetter (\ns -> ns { forgeMetrics = (forgeMetrics ns) { nodeCannotForgeChanged    = False } })
+setNodeIsLeader   = evSetter (\ns -> ns { forgeMetrics = (forgeMetrics ns) { nodeIsLeaderNumChanged    = False } })
+setSlotsMissed    = evSetter (\ns -> ns { forgeMetrics = (forgeMetrics ns) { slotsMissedNumberChanged  = False } })
+setTxsProcessed   = evSetter (\ns -> ns { mempoolMetrics = (mempoolMetrics ns) { txsProcessedChanged     = False } })
+setMPoolTxsNum    = evSetter (\ns -> ns { mempoolMetrics = (mempoolMetrics ns) { mempoolTxsNumberChanged    = False } })
+setMPoolTxsPerc   = evSetter (\ns -> ns { mempoolMetrics = (mempoolMetrics ns) { mempoolTxsPercentChanged   = False } })
+setMPoolBytes     = evSetter (\ns -> ns { mempoolMetrics = (mempoolMetrics ns) { mempoolBytesChanged        = False } })
+setMPoolBytesPerc = evSetter (\ns -> ns { mempoolMetrics = (mempoolMetrics ns) { mempoolBytesPercentChanged = False } })
+setMPoolMaxTxs    = evSetter (\ns -> ns { mempoolMetrics = (mempoolMetrics ns) { mempoolMaxTxsChanged       = False } })
+setMPoolMaxBytes  = evSetter (\ns -> ns { mempoolMetrics = (mempoolMetrics ns) { mempoolMaxBytesChanged     = False } })
+setRtsMemAlloc    = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsMemoryAllocatedChanged = False } })
+setRtsMemUsed     = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsMemoryUsedChanged      = False } })
+setRtsMemUsedPerc = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsMemoryUsedPercentChanged = False } })
+setRtsGcCpu       = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcCpuChanged           = False } })
+setRtsGcElapsed   = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcElapsedChanged       = False } })
+setRtsGcNum       = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcNumChanged           = False } })
+setRtsGcMajorNum  = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcMajorNumChanged      = False } })
+setPeers          = evSetter (\ns -> ns { peersMetrics = (peersMetrics ns) { peersInfoChanged = False } })
+setStartKES       = evSetter (\ns -> ns { kesMetrics = (kesMetrics ns) { opCertStartKESPeriodChanged  = False } })
+setExpiryKES      = evSetter (\ns -> ns { kesMetrics = (kesMetrics ns) { opCertExpiryKESPeriodChanged = False } })
+setCurrentKES     = evSetter (\ns -> ns { kesMetrics = (kesMetrics ns) { currentKESPeriodChanged      = False } })
+setRemKES         = evSetter (\ns -> ns { kesMetrics = (kesMetrics ns) { remKESPeriodsChanged         = False } })
+setRemKESDays     = evSetter (\ns -> ns { kesMetrics = (kesMetrics ns) { remKESPeriodsInDaysChanged   = False } })
 
-updateNodeVersion
-  :: Text
+evSetter
+  :: (NodeState -> NodeState)
+  -> TVar NodesState
+  -> Text
+  -> ElementValue
   -> Bool
-  -> Element
+  -> NodeStateElements
+  -> ElementName
   -> UI ()
-updateNodeVersion _           False _  = return ()
-updateNodeVersion nodeVersion True  el =
-  if (strip nodeVersion) `elem` supportedNodesVersions
-    then
-      void $ element el #. []
-                        # set text (unpack nodeVersion)
-                        # set UI.title__ ""
-    else do
-      void $ element el #. [UnsupportedVersion]
-                        # set text (unpack nodeVersion)
-                        # set UI.title__ ("Unsupported node version, please use these versions only: "
-                                          <> unpack showSupportedNodesVersions)
+evSetter _ _ _ _ False _ _ = return ()
+evSetter flagSetter tv nameOfNode ev True els elName =
+  whenJust (els !? elName) $ \el -> do
+    void $ setElement ev el
+    setChangedFlag tv nameOfNode flagSetter
 
-updateElement
+setElement
   :: ElementValue
-  -> Bool
   -> Element
-  -> UI ()
-updateElement _  False _  = return ()
-updateElement ev True  el = do
-  let textValue =
-        case ev of
-          ElementInt     i -> show i
-          ElementInteger i -> show i
-          ElementWord64  w -> show w
-          ElementDouble  d -> showWith1DecPlace d
-          ElementString  s -> s
-          ElementText    t -> unpack t
-  void $ element el # set text textValue
+  -> UI Element
+setElement ev el = element el # set text (elValueToStr ev)
+
+elValueToStr :: ElementValue -> String
+elValueToStr (IntV     i) = show i
+elValueToStr (IntegerV i) = show i
+elValueToStr (Word64V  w) = show w
+elValueToStr (DoubleV  d) = showWith1DecPlace d
+elValueToStr (StringV  s) = s
+elValueToStr (TextV    t) = unpack t
 
 updateProgressBar
   :: Double
-  -> Element
+  -> NodeStateElements
+  -> ElementName
   -> UI ()
-updateProgressBar percents bar = void $
-  element bar # set style [("width", showWith1DecPlace preparedPercents <> "%")]
+updateProgressBar percents els elName =
+  whenJust (els !? elName) $ \bar ->
+    void $ element bar # set style [("width", showWith1DecPlace preparedPercents <> "%")]
  where
   -- Sometimes (for CPU usage) percents can be bigger than 100%,
   -- in this case actual width of bar should be 100%.
   preparedPercents = if percents > 100.0 then 100.0 else percents
 
-showWith1DecPlace :: Double -> String
-showWith1DecPlace = unpack . sformat ("" % fixed 1)
-
-updateNodeCommit
-  :: Text
+setSystemStart
+  :: TVar NodesState
   -> Text
+  -> UTCTime
   -> Bool
-  -> Element
+  -> NodeStateElements
+  -> ElementName
   -> UI ()
-updateNodeCommit _      _           False _ = return ()
-updateNodeCommit commit shortCommit True  commitHref = do
-  sComm <- UI.string $ unpack shortCommit
-  void $ element commitHref # set UI.href ("https://github.com/input-output-hk/cardano-node/commit/"
-                                           <> unpack commit)
-                            # set children [sComm]
-
-updateEndpoint
-  :: String
-  -> Element
-  -> UI ()
-updateEndpoint endpoint endpointLabel = void $
-  element endpointLabel # set text shortened
-                        # set UI.title__ fullEndpointTitle
- where
-  len = length endpoint
-  shortened = if len > 20
-                then take 10 endpoint <> "..." <> drop (len - 10) endpoint
-                else endpoint
-  fullEndpointTitle = if shortened == endpoint then "" else endpoint
-
-updateSystemStart
-  :: UTCTime
-  -> Element
-  -> UI ()
-updateSystemStart systemStart systemStartLabel =
-  void $ element systemStartLabel # set text systemStartFormatted
+setSystemStart _ _ _ False _ _ = return ()
+setSystemStart tv nameOfNode systemStart True els elName =
+  whenJust (els !? elName) $ \el -> do
+    void $ element el # set text systemStartFormatted
+    setChangedFlag tv
+                   nameOfNode
+                   (\ns -> ns { blockchainMetrics = (blockchainMetrics ns) { systemStartTimeChanged = False } })
  where
   systemStartFormatted = formatTime defaultTimeLocale "%F %T %Z" systemStart
 
-updateNodeUpTime
+setNodeUpTime
   :: UTCTime
-  -> Element
+  -> NodeStateElements
+  -> ElementName
   -> UI ()
-updateNodeUpTime startTime upTimeLabel = do
-  let nullDay = UTCTime (ModifiedJulianDay 0) 0
-  upTimeDiff <-
-    if startTime /= nullDay
-      then do
-        -- nodeStartTime received from the node.
-        now <- liftIO $ getCurrentTime
-        let upTimeDiff = now `diffUTCTime` startTime
-        return upTimeDiff
-      else
-         -- No nodeStartTime were received (yet).
-         return 0
+setNodeUpTime startTime els elName =
+  whenJust (els !? elName) $ \el -> do
+    let nullDay = UTCTime (ModifiedJulianDay 0) 0
+    upTimeDiff <-
+      if startTime /= nullDay
+        then do
+          -- nodeStartTime received from the node.
+          now <- liftIO $ getCurrentTime
+          let upTimeDiff = now `diffUTCTime` startTime
+          return upTimeDiff
+        else
+          -- No nodeStartTime were received (yet).
+          return 0
 
-  if upTimeDiff == 0
-    then void $ element upTimeLabel # set text "00:00:00"
-    else do
-      let upTime = upTimeDiff `addUTCTime` nullDay
-          upTimeFormatted = formatTime defaultTimeLocale "%X" upTime
-          daysNum = utctDay upTime `diffDays` utctDay nullDay
-          upTimeWithDays = if daysNum > 0
-                             -- Show days only if upTime is bigger than 23:59:59.
-                             then show daysNum <> "d " <> upTimeFormatted
-                             else upTimeFormatted
-      void $ element upTimeLabel # set text upTimeWithDays
+    if upTimeDiff == 0
+      then
+        void $ element el # set text "00:00:00"
+      else do
+        let upTime = upTimeDiff `addUTCTime` nullDay
+            upTimeFormatted = formatTime defaultTimeLocale "%X" upTime
+            daysNum = utctDay upTime `diffDays` utctDay nullDay
+            upTimeWithDays = if daysNum > 0
+                               -- Show days only if upTime is bigger than 23:59:59.
+                               then show daysNum <> "d " <> upTimeFormatted
+                               else upTimeFormatted
+        void $ element el # set text upTimeWithDays
+
+setNodeCommit
+  :: TVar NodesState
+  -> Text
+  -> Text
+  -> Text
+  -> Bool
+  -> NodeStateElements
+  -> ElementName
+  -> UI ()
+setNodeCommit _ _ _ _ False _ _ = return ()
+setNodeCommit tv nameOfNode commit shortCommit True els elName =
+  whenJust (els !? elName) $ \el -> do
+    void $ element el # set UI.href ("https://github.com/input-output-hk/cardano-node/commit/"
+                                     <> unpack commit)
+                      # set text (unpack shortCommit)
+    setChangedFlag tv
+                   nameOfNode
+                   (\ns -> ns { nodeMetrics = (nodeMetrics ns) { nodeCommitChanged = False } })
 
 -- | Since peers list will be changed dynamically, we need it
 --   to update corresponding HTML-murkup dynamically as well.
 --   Please note that we don't change DOM actully (to avoid possible space leak).
 updatePeersList
-  :: [PeerInfo]
+  :: TVar NodesState
+  -> Text
+  -> [PeerInfo]
   -> Bool
   -> [PeerInfoItem]
   -> UI ()
-updatePeersList peersInfo' changed peersInfoItems = do
-  -- The number of connected peers may reduce, so hide all items by default.
+updatePeersList _ _ _ False _ = return ()
+updatePeersList tv nameOfNode peersInfo' True peersInfoItems = do
+  -- The number of connected peers may reduce, so first of all hide all items.
   mapM_ (hideElement . piItem) peersInfoItems
 
   let peersInfo =
@@ -338,75 +397,58 @@ updatePeersList peersInfo' changed peersInfoItems = do
     let item  = peersInfoItems L.!! i
         PeerInfoElements {..} = piItemElems item
     -- Update internal elements of item using actual values.
-    updateElement (ElementString piEndpoint)   changed pieEndpoint
-    updateElement (ElementString piBytesInF)   changed pieBytesInF
-    updateElement (ElementString piReqsInF)    changed pieReqsInF
-    updateElement (ElementString piBlocksInF)  changed pieBlocksInF
-    updateElement (ElementString piSlotNumber) changed pieSlotNumber
-    updateElement (ElementString piStatus)     changed pieStatus
+    void $ setElement (StringV piEndpoint)   pieEndpoint
+    void $ setElement (StringV piBytesInF)   pieBytesInF
+    void $ setElement (StringV piReqsInF)    pieReqsInF
+    void $ setElement (StringV piBlocksInF)  pieBlocksInF
+    void $ setElement (StringV piSlotNumber) pieSlotNumber
+    void $ setElement (StringV piStatus)     pieStatus
     -- Make item visible.
     showElement $ piItem item
+  setChangedFlag tv
+                 nameOfNode
+                 (\ns -> ns { peersMetrics = (peersMetrics ns) { peersInfoChanged = False } })
 
-updateKESInfo :: [(Integer, Element)] -> UI ()
-updateKESInfo valuesWithElems =
-  forM_ valuesWithElems $ \(value, kesElem) ->
-    if value == 9999999999
-      -- This value cannot be such a big, so it wasn't replaced by the
-      -- real metric. It means there's no KES at all (node uses an old protocol).
-      then updateElement (ElementString "—")    True kesElem
-      else updateElement (ElementInteger value) True kesElem
-
-updateErrorsList
-  :: [NodeError]
+updateErrorsListAndTab
+  :: TVar NodesState
+  -> Text
+  -> [NodeError]
   -> Bool
-  -> Element
+  -> NodeStateElements
+  -> ElementName
+  -> ElementName
   -> UI ()
-updateErrorsList _          False _ = return ()
-updateErrorsList nodeErrors True  errorsList = do
-  errors <- forM nodeErrors $ \(NodeError utcTimeStamp sev msg) -> do
-    let aClass :: HTMLClass
-        aClass = case sev of
-                      Warning   -> WarningMessage
-                      Error     -> ErrorMessage
-                      Critical  -> CriticalMessage
-                      Alert     -> AlertMessage
-                      Emergency -> EmergencyMessage
-                      _         -> NoClass
-    let timeStamp = formatTime defaultTimeLocale "%F %T" utcTimeStamp
+updateErrorsListAndTab _ _ _ False _ _ _ = return ()
+updateErrorsListAndTab tv nameOfNode nodeErrors' True els elName elTabName =
+  whenJust (els !? elName) $ \el -> do
+    -- Change availability of the tab if needed.
+    whenJust (els !? elTabName) $ \elTab -> do
+      if null nodeErrors'
+        then void $ element elTab # set UI.enabled False
+                                  # set UI.title__ "Good news: there are no errors!"
+        else void $ element elTab # set UI.enabled True
+                                  # set UI.title__ "Errors"
 
-    UI.div #. [W3Row] #+
-      [ UI.div #. [W3Third, W3Theme] #+ [UI.div #+ [UI.string timeStamp]]
-      , UI.div #. [W3TwoThird, W3Theme] #+ [UI.div #. [aClass] #+ [UI.string msg]]
-      ]
-  void $ element errorsList # set children errors
+    errors <- forM nodeErrors' $ \(NodeError utcTimeStamp sev msg) -> do
+      let aClass :: HTMLClass
+          aClass =
+            case sev of
+              Warning   -> WarningMessage
+              Error     -> ErrorMessage
+              Critical  -> CriticalMessage
+              Alert     -> AlertMessage
+              Emergency -> EmergencyMessage
+              _         -> NoClass
+      let timeStamp = formatTime defaultTimeLocale "%F %T %Z" utcTimeStamp
 
-updateErrorsTab
-  :: [NodeError]
-  -> Bool
-  -> Element
-  -> UI ()
-updateErrorsTab _          False _ = return ()
-updateErrorsTab nodeErrors True  errorsTab =
-  if null nodeErrors
-    then disableErrorsTab
-    else enableErrorsTab
- where
-   disableErrorsTab = void $ element errorsTab # set UI.enabled False
-                                               # set UI.title__ "Good news: there are no errors!"
-   enableErrorsTab  = void $ element errorsTab # set UI.enabled True
-                                               # set UI.title__ "Errors"
-
-mkTraceAcceptorEndpoint
-  :: Text
-  -> [RemoteAddrNamed]
-  -> String
-mkTraceAcceptorEndpoint nameOfNode acceptors =
-  case maybeActiveNode of
-    Just (RemoteAddrNamed _ (RemoteSocket host port)) -> host <> ":" <> port
-    Just (RemoteAddrNamed _ (RemotePipe pipePath))    -> pipePath
-    Nothing                                           -> "-"
- where
-  maybeActiveNode = flip L.find acceptors $ \(RemoteAddrNamed name _) -> name == nameOfNode
+      UI.div #. [W3Row] #+
+        [ UI.div #. [W3Third, W3Theme]    #+ [UI.div             #+ [UI.string timeStamp]]
+        , UI.div #. [W3TwoThird, W3Theme] #+ [UI.div #. [aClass] #+ [UI.string msg]]
+        ]
+    void $ element el # set children errors
+    setChangedFlag tv
+                   nameOfNode
+                   (\ns -> ns { nodeErrors = (nodeErrors ns) { errorsChanged = False } })
 
 showElement, hideElement :: Element -> UI Element
 showElement w = element w # set UI.style [("display", "inline")]
@@ -451,9 +493,6 @@ updateCharts window nameOfNode rm nm = do
 
   elementExists anId = isJust <$> UI.getElementById window (unpack anId)
 
-  ifM :: Monad m => m Bool -> m a -> m a -> m a
-  ifM b t f = do b' <- b; if b' then t else f
-
 -- | If no metrics was received from the node for a long time
 --   (more than 'active-node-life') this node is treated as idle.
 --   Technically it means that the node is disconnected from RTView
@@ -494,9 +533,8 @@ checkIfNodeIsIdleGrid window params metricsLastUpdate idleTag nameOfNode =
               allMetricsNames
     let allCells = (show GridNodeTH <> unpack nameOfNode) : cellsIdsForNodeColumn
     forM_ allCells $ \anId ->
-      UI.getElementById window anId >>= \case
-        Just el -> void $ element el # action
-        Nothing -> return ()
+      whenJustM (UI.getElementById window anId) $ \el ->
+        void $ element el # action
 
 checkIfNodeIsIdle
   :: RTViewParams
@@ -529,3 +567,16 @@ checkIfNodeIsIdle RTViewParams {..}
   markNodeAsActive = do
     void $ hideElement idleTag # set UI.title__ ""
     additionalActionOnActive
+
+-- | After we updated the value of DOM-element, we set 'changed'-flag
+--   to False to avoid useless re-update by the same value.
+setChangedFlag
+  :: TVar NodesState
+  -> Text
+  -> (NodeState -> NodeState)
+  -> UI ()
+setChangedFlag nsTVar nameOfNode mkNewNS =
+  liftIO . atomically $ modifyTVar' nsTVar $ \currentNS ->
+    case currentNS !? nameOfNode of
+      Just ns -> Map.adjust (const $ mkNewNS ns) nameOfNode currentNS
+      Nothing -> currentNS
