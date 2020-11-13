@@ -8,6 +8,7 @@ module Cardano.RTView.GUI.Markup.PageBody
 
 import           Control.Concurrent.STM.TVar (TVar)
 import           Control.Monad (forM, forM_, void, when)
+import           Control.Monad.Extra (whenJustM)
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Graphics.UI.Threepenny as UI
@@ -44,16 +45,14 @@ mkPageBody nsTVar window acceptors = do
         , UI.label #+ [UI.string $ T.unpack nameOfNode]
         ]
     void $ UI.onEvent (UI.checkedChange nodeCheckbox) $ \isChecked -> do
-      UI.getElementById window (show ViewModeButton) >>= \case
-        Just btn -> UI.get UI.value btn >>= \case
+      whenJustM (UI.getElementById window (show ViewModeButton)) $ \btn ->
+        UI.get UI.value btn >>= \case
           "paneMode" -> do
             let action = if isChecked then showIt else hideIt
             forNodePane nameOfNode panesWithNames action
           _ -> do
             let action = if isChecked then showCell else hideIt
             forNodeColumn window nameOfNode action
-
-        Nothing -> return ()
       changeStatusOfShowAllButton window ShowAllNodesButton SelectNodeCheck
     return $ element nodeButton
 
@@ -64,20 +63,18 @@ mkPageBody nsTVar window acceptors = do
            hideAllNodesButton <- hideAllButton HideAllNodesButton
 
            void $ UI.onEvent (UI.click showAllNodesButton) $ \_ -> do
-             UI.getElementById window (show ViewModeButton) >>= \case
-               Just btn -> UI.get UI.value btn >>= \case
+             whenJustM (UI.getElementById window (show ViewModeButton)) $ \btn ->
+               UI.get UI.value btn >>= \case
                  "paneMode" -> showAllNodes window panesWithNames
                  _ -> showAllNodesColumns window panesWithNames
-               Nothing -> return ()
              void $ element showAllNodesButton #. [W3BarItem, W3Button, W3Disabled]
              void $ element hideAllNodesButton #. [W3BarItem, W3Button, W3BorderBottom]
 
            void $ UI.onEvent (UI.click hideAllNodesButton) $ \_ -> do
-             UI.getElementById window (show ViewModeButton) >>= \case
-               Just btn -> UI.get UI.value btn >>= \case
+             whenJustM (UI.getElementById window (show ViewModeButton)) $ \btn ->
+               UI.get UI.value btn >>= \case
                  "paneMode" -> hideAllNodes window panesWithNames
                  _ -> hideAllNodesColumns window panesWithNames
-               Nothing -> return ()
              void $ element showAllNodesButton #. [W3BarItem, W3Button]
              void $ element hideAllNodesButton #. [W3BarItem, W3Button, W3BorderBottom, W3Disabled]
 
@@ -246,14 +243,12 @@ changeStatusOfShowAllButton
   -> HTMLClass
   -> UI ()
 changeStatusOfShowAllButton window anId aClass =
-  UI.getElementById window (show anId) >>= \case
-    Just button -> do
-      checkboxes <- UI.getElementsByClassName window (show aClass)
-      statuses <- mapM (UI.get UI.checked) checkboxes
-      if all (True ==) statuses
-        then void $ element button #. [W3BarItem, W3Button, W3Disabled]
-        else void $ element button #. [W3BarItem, W3Button]
-    Nothing -> return ()
+  whenJustM (UI.getElementById window (show anId)) $ \button -> do
+    checkboxes <- UI.getElementsByClassName window (show aClass)
+    statuses <- mapM (UI.get UI.checked) checkboxes
+    if all (True ==) statuses
+      then void $ element button #. [W3BarItem, W3Button, W3Disabled]
+      else void $ element button #. [W3BarItem, W3Button]
 
 -- | If all checkboxes are unchecked - "Hide all" button should be disabled.
 --   If at least one of them are checked - "Hide all" button should be enabled.
@@ -263,14 +258,12 @@ changeStatusOfHideAllButton
   -> HTMLClass
   -> UI ()
 changeStatusOfHideAllButton window anId aClass =
-  UI.getElementById window (show anId) >>= \case
-    Just button -> do
-      checkboxes <- UI.getElementsByClassName window (show aClass)
-      statuses <- mapM (UI.get UI.checked) checkboxes
-      if all (False ==) statuses
-        then void $ element button #. [W3BarItem, W3Button, W3BorderBottom, W3Disabled]
-        else void $ element button #. [W3BarItem, W3Button, W3BorderBottom]
-    Nothing -> return ()
+  whenJustM (UI.getElementById window (show anId)) $ \button -> do
+    checkboxes <- UI.getElementsByClassName window (show aClass)
+    statuses <- mapM (UI.get UI.checked) checkboxes
+    if all (False ==) statuses
+      then void $ element button #. [W3BarItem, W3Button, W3BorderBottom, W3Disabled]
+      else void $ element button #. [W3BarItem, W3Button, W3BorderBottom]
 
 mkMetricsSelector
   :: UI.Window
@@ -324,9 +317,8 @@ forElementWithId
   -> (UI Element -> UI Element)
   -> UI ()
 forElementWithId window anId action =
-  UI.getElementById window anId >>= \case
-    Just el -> void $ element el # action
-    Nothing -> return ()
+  whenJustM (UI.getElementById window anId) $ \el ->
+    void $ element el # action
 
 showAllMetrics, hideAllMetrics
   :: UI.Window

@@ -4,9 +4,9 @@ module Cardano.RTView.Acceptor
     ( launchMetricsAcceptor
     ) where
 
-import           Control.Concurrent (threadDelay)
 import           Control.Monad (forever)
 import           Data.Text (Text)
+import           System.Time.Extra (sleep)
 
 import           Cardano.BM.Backend.Switchboard (Switchboard)
 import qualified Cardano.BM.Backend.TraceAcceptor as TraceAcceptor
@@ -28,4 +28,4 @@ launchMetricsAcceptor
 launchMetricsAcceptor config accTr switchBoard =
   withIOManager $ \iomgr -> do
     TraceAcceptor.plugin iomgr config accTr switchBoard >>= loadPlugin switchBoard
-    forever $ threadDelay 1000000
+    forever $ sleep 1

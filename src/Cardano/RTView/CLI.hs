@@ -18,13 +18,12 @@ import           Options.Applicative (HasCompleter, HasMetavar, HasName, HasValu
                                       showDefault, strOption, value)
 
 -- | Type for CLI parameters required for the service.
-data RTViewParams
-  = RTViewParams
-      { rtvConfig         :: !FilePath
-      , rtvStatic         :: !FilePath
-      , rtvPort           :: !Int
-      , rtvActiveNodeLife :: !Int
-      } deriving (Generic, ToJSON)
+data RTViewParams = RTViewParams
+  { rtvConfig         :: !FilePath
+  , rtvStatic         :: !FilePath
+  , rtvPort           :: !Int
+  , rtvActiveNodeLife :: !Int
+  } deriving (Generic, ToJSON)
 
 instance FromJSON RTViewParams where
   parseJSON = withObject "RTViewParams" $ \v -> RTViewParams
