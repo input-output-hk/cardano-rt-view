@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module Cardano.RTView.GUI.Elements
     ( HTMLClass (..)
@@ -148,13 +147,9 @@ data HTMLClass
   | NodeMenuIcon
   | NodeName
   | NodeNameArea
-  | OutdatedValue
   | PercentsSlashHSpacer
-  | PercentsSlashHRSpacer
   | ProgressBar
-  | ProgressBarOutdated
   | ProgressBarBox
-  | ProgressBarBoxOutdated
   | ResourcesIcon
   | SelectMetricCheck
   | SelectMetricCheckArea
@@ -243,13 +238,9 @@ instance Show HTMLClass where
   show NodeMenuIcon           = "NodeMenuIcon"
   show NodeName               = "NodeName"
   show NodeNameArea           = "NodeNameArea"
-  show OutdatedValue          = "OutdatedValue"
   show PercentsSlashHSpacer   = "PercentsSlashHSpacer"
-  show PercentsSlashHRSpacer  = "PercentsSlashHRSpacer"
   show ProgressBar            = "ProgressBar"
-  show ProgressBarOutdated    = "ProgressBarOutdated"
   show ProgressBarBox         = "ProgressBarBox"
-  show ProgressBarBoxOutdated = "ProgressBarBoxOutdated"
   show ResourcesIcon          = "ResourcesIcon"
   show SelectMetricCheck      = "SelectMetricCheck"
   show SelectMetricCheckArea  = "SelectMetricCheckArea"

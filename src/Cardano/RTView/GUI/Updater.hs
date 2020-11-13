@@ -1,7 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.RTView.GUI.Updater
     ( updateGUI
@@ -16,7 +14,7 @@ import           Data.Maybe (isJust)
 import           Data.HashMap.Strict ((!), (!?))
 import qualified Data.HashMap.Strict as HM
 import           Data.Text (Text, pack, strip, unpack)
-import           Data.Time.Calendar (Day (..), diffDays)
+import           Data.Time.Calendar (diffDays)
 import           Data.Time.Clock (NominalDiffTime, UTCTime (..), addUTCTime, getCurrentTime,
                                   diffUTCTime)
 import           Data.Time.Format (defaultTimeLocale, formatTime)
@@ -322,12 +320,11 @@ setNodeUpTime
   -> UI ()
 setNodeUpTime startTime els elName =
   whenJust (els !? elName) $ \el -> do
-    let nullDay = UTCTime (ModifiedJulianDay 0) 0
     upTimeDiff <-
-      if startTime /= nullDay
+      if startTime /= nullTime
         then do
           -- nodeStartTime received from the node.
-          now <- liftIO $ getCurrentTime
+          now <- liftIO getCurrentTime
           let upTimeDiff = now `diffUTCTime` startTime
           return upTimeDiff
         else
@@ -338,9 +335,9 @@ setNodeUpTime startTime els elName =
       then
         void $ element el # set text "00:00:00"
       else do
-        let upTime = upTimeDiff `addUTCTime` nullDay
+        let upTime = upTimeDiff `addUTCTime` nullTime
             upTimeFormatted = formatTime defaultTimeLocale "%X" upTime
-            daysNum = utctDay upTime `diffDays` utctDay nullDay
+            daysNum = utctDay upTime `diffDays` utctDay nullTime
             upTimeWithDays = if daysNum > 0
                                -- Show days only if upTime is bigger than 23:59:59.
                                then show daysNum <> "d " <> upTimeFormatted
@@ -461,12 +458,12 @@ updateCharts
   -> NodeMetrics
   -> UI ()
 updateCharts window nameOfNode rm nm = do
-  now <- liftIO $ getCurrentTime
+  now <- liftIO getCurrentTime
   let ts :: String
       ts = formatTime defaultTimeLocale "%M:%S" time
-      time = timeDiff `addUTCTime` (UTCTime (ModifiedJulianDay 0) 0)
+      time = timeDiff `addUTCTime` nullTime
       timeDiff :: NominalDiffTime
-      timeDiff = now `diffUTCTime` (nodeStartTime nm)
+      timeDiff = now `diffUTCTime` nodeStartTime nm
 
   mcId <- ifM (elementExists mN) (pure mN) (pure mGN)
   ccId <- ifM (elementExists cN) (pure cN) (pure cGN)

@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Cardano.RTView
     ( runCardanoRTView
     ) where

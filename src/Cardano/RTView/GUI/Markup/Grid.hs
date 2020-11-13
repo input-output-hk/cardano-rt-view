@@ -1,6 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.RTView.GUI.Markup.Grid
     ( mkNodesGrid
@@ -137,7 +135,7 @@ mkNodesRowCells
 mkNodesRowCells acceptors idleTags = do
   let acceptorsWithTags = zip acceptors idleTags
   nodesRowCells
-    <- forM acceptorsWithTags $ \((RemoteAddrNamed nameOfNode _), idleTag) ->
+    <- forM acceptorsWithTags $ \(RemoteAddrNamed nameOfNode _, idleTag) ->
          element <$> UI.th ## (show GridNodeTH <> T.unpack nameOfNode) #+
                        [ string "Node: " #. [GridNodeNameLabel]
                        , string $ T.unpack nameOfNode

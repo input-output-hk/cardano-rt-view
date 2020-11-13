@@ -1,6 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Cardano.RTView.GUI.JS.Charts
     ( prepareChartsJS
     -- Charts JS snippets.
@@ -20,9 +17,8 @@ module Cardano.RTView.GUI.JS.Charts
     ) where
 
 prepareChartsJS :: String
-prepareChartsJS = concat
-  [ "window.charts = new Map();"
-  ]
+prepareChartsJS =
+  "window.charts = new Map();"
 
 memoryUsageChartJS :: String
 memoryUsageChartJS = concat

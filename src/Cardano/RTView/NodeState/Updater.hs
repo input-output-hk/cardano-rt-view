@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 #if defined(mingw32_HOST_OS)
 #define WINDOWS

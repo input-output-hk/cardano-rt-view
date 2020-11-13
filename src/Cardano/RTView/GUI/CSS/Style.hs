@@ -1,6 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Cardano.RTView.GUI.CSS.Style
     ( ownCSS
     ) where
@@ -207,9 +204,6 @@ ownCSS = unpack . TL.toStrict . render $ do
     paddingLeftPx     9
     paddingRightPx    9
 
-  cl PercentsSlashHRSpacer ? do
-    paddingRightPx    9
-
   cl NodeInfoVSpacer ? do
     paddingTopPx      18
 
@@ -221,10 +215,6 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl NodeMetricsValues ? do
     fontWeight        bold
-
-  cl OutdatedValue ? do
-    color             gray60
-    fontWeight        normal
 
   cl CPUUsageChart ? do
     maxHeightPx       360
@@ -277,14 +267,10 @@ ownCSS = unpack . TL.toStrict . render $ do
     minWidthPx        300
 
   cl ProgressBar ?            progressBarColors greenDark  white
-  cl ProgressBarOutdated ?    progressBarColors gray60     gray60
   cl ProgressBarBox ?         progressBarColors greenLight white
-  cl ProgressBarBoxOutdated ? progressBarColors grayLight  gray60
  where
   cardanoLight    = rgb 31  193 195
   gray40          = rgb 102 102 102
-  gray60          = rgb 153 153 153
-  grayLight       = rgb 170 170 170
   greenLight      = rgb 108 202 108
   greenDark       = rgb 0   112 0
 

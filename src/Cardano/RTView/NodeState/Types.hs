@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.RTView.NodeState.Types
     ( NodesState
@@ -28,6 +27,7 @@ module Cardano.RTView.NodeState.Types
     , none
     , mkTraceAcceptorEndpoint
     , fullEndpointTitle
+    , nullTime
     ) where
 
 import           Control.DeepSeq (NFData (..))

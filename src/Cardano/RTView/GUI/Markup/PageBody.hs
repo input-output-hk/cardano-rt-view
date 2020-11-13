@@ -1,6 +1,4 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.RTView.GUI.Markup.PageBody
     ( mkPageBody

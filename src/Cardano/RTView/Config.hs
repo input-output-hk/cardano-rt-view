@@ -1,7 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.RTView.Config
     ( prepareConfigAndParams
@@ -22,12 +21,10 @@ import           System.Directory (XdgDirectory (..), createDirectoryIfMissing, 
 #if !defined(mingw32_HOST_OS)
 import           System.Directory (listDirectory, removeFile)
 #endif
-
-import           System.FilePath ((</>))
 #if defined(mingw32_HOST_OS)
 import           System.FilePath (dropDrive)
 #else
-import           System.FilePath (takeDirectory)
+import           System.FilePath ((</>), takeDirectory)
 #endif
 import qualified System.Exit as Ex
 import           System.IO (hFlush, stdout)
@@ -154,7 +151,7 @@ startDialogToPrepareConfig = do
     TIO.putStrLn "\nLet's configure RTView..."
 
   colorize Magenta NormalIntensity $
-    TIO.putStr $ "\nPlease note that this version of RTView works with the following versions of Cardano node: "
+    TIO.putStr "\nPlease note that this version of RTView works with the following versions of Cardano node: "
 
   colorize Magenta BoldIntensity $ do
     TIO.putStr showSupportedNodesVersions
@@ -538,7 +535,7 @@ showChangesInNodeConfiguration config rtViewMachineHost = do
           TIO.putStrLn   "     \"contents\": ["
           TIO.putStrLn $ "       \"" <> T.pack rtViewMachineHost <> "\","
           TIO.putStrLn $ "       \"" <> T.pack port <> "\""
-          TIO.putStrLn $ "     ]"
+          TIO.putStrLn   "     ]"
         RemotePipe path -> do
           TIO.putStrLn   "     \"tag\": \"RemotePipe\","
 #if defined(mingw32_HOST_OS)

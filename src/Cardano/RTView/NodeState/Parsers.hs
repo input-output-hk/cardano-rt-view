@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.RTView.NodeState.Parsers
     ( extractPeersInfo

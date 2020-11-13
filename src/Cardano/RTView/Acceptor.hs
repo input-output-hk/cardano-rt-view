@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Cardano.RTView.Acceptor
     ( launchMetricsAcceptor
     ) where
