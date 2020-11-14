@@ -3,7 +3,7 @@
    <p align="center">
      <a href="https://github.com/input-output-hk/cardano-rt-view/releases"><img src="https://img.shields.io/github/release-pre/input-output-hk/cardano-rt-view.svg?style=for-the-badge" /></a>
      &nbsp;
-     <a href="https://hydra.iohk.io/jobset/Cardano/cardano-rt-view"><img src="https://img.shields.io/badge/Hydra-CI-brightgreen?style=for-the-badge /></a>
+     <a href="https://hydra.iohk.io/jobset/Cardano/cardano-rt-view"><img src="https://img.shields.io/badge/Hydra-CI-brightgreen?style=for-the-badge" /></a>
      &nbsp;
      <a href="https://github.com/input-output-hk/cardano-rt-view/issues"><img src="https://img.shields.io/github/issues/input-output-hk/cardano-rt-view?style=for-the-badge"></a>
    </p>
