@@ -22,7 +22,7 @@ import           System.Directory (XdgDirectory (..), createDirectoryIfMissing, 
 import           System.Directory (listDirectory, removeFile)
 #endif
 #if defined(mingw32_HOST_OS)
-import           System.FilePath (dropDrive)
+import           System.FilePath ((</>), dropDrive)
 #else
 import           System.FilePath ((</>), takeDirectory)
 #endif
