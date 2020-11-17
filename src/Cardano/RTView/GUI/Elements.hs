@@ -12,10 +12,14 @@ module Cardano.RTView.GUI.Elements
     , PeerInfoElements (..)
     , (#.)
     , (##)
+    , dataAttr
     , showIt
-    , hideIt
+    , showInline
     , showRow
     , showCell
+    , hideIt
+    , pageTitle
+    , pageTitleNotify
     ) where
 
 import           Control.DeepSeq (NFData (..), rwhnf)
@@ -67,6 +71,7 @@ data ElementName
   | ElRemainingKESPeriodsInDays
   | ElNodeErrors
   | ElNodeErrorsTab
+  | ElNodeErrorsTabBadge
   | ElMempoolTxsNumber
   | ElMempoolTxsPercent
   | ElMempoolBytes
@@ -130,7 +135,16 @@ data HTMLClass
   | CardanoLogo
   | CommitLink
   | DensityPercent
-  | ErrorsTabContainer
+  | ErrorRow
+  | ErrorsBadge
+  | ErrorsTabHeader
+  | ErrorsTabList
+  | ErrorsDownloadIcon
+  | ErrorsSortIcon
+  | ErrorsFilterIcon
+  | ErrorsFilterDropdownIcon
+  | ErrorsRemoveIcon
+  | ErrorTimestamp
   | GridNodeNameLabel
   | GridRowCell
   | HSpacer
@@ -151,6 +165,7 @@ data HTMLClass
   | ProgressBar
   | ProgressBarBox
   | ResourcesIcon
+  | ResourcesDropdownIcon
   | SelectMetricCheck
   | SelectMetricCheckArea
   | SelectNodeCheck
@@ -159,6 +174,7 @@ data HTMLClass
   | ShowHideIcon
   | TabContainer
   | TopBar
+  | TopNavDropdownIcon
   | TXsProcessed
   | UnsupportedVersion
   | ValueUnit
@@ -174,11 +190,22 @@ data HTMLClass
   | GridNetworkUsageChart
   -- Error messages
   | WarningMessage
+  | WarningMessageTag
+  | WarningMessageTagNoHelp
   | ErrorMessage
+  | ErrorMessageTag
+  | ErrorMessageTagNoHelp
   | CriticalMessage
+  | CriticalMessageTag
+  | CriticalMessageTagNoHelp
   | AlertMessage
+  | AlertMessageTag
+  | AlertMessageTagNoHelp
   | EmergencyMessage
+  | EmergencyMessageTag
+  | EmergencyMessageTagNoHelp
   -- W3C classes
+  | W3Badge
   | W3Bar
   | W3BarBlock
   | W3BarItem
@@ -199,6 +226,7 @@ data HTMLClass
   | W3Large
   | W3Margin
   | W3Mobile
+  | W3PaddingSmall
   | W3Responsive
   | W3Rest
   | W3Right
@@ -221,7 +249,16 @@ instance Show HTMLClass where
   show CardanoLogo            = "CardanoLogo"
   show CommitLink             = "CommitLink"
   show DensityPercent         = "DensityPercent"
-  show ErrorsTabContainer     = "ErrorsTabContainer"
+  show ErrorRow               = "ErrorRow"
+  show ErrorsBadge            = "ErrorsBadge"
+  show ErrorsTabHeader        = "ErrorsTabHeader"
+  show ErrorsTabList          = "ErrorsTabList"
+  show ErrorsDownloadIcon     = "ErrorsDownloadIcon"
+  show ErrorsSortIcon         = "ErrorsSortIcon"
+  show ErrorsFilterIcon       = "ErrorsFilterIcon"
+  show ErrorsFilterDropdownIcon = "ErrorsFilterDropdownIcon"
+  show ErrorsRemoveIcon       = "ErrorsRemoveIcon"
+  show ErrorTimestamp         = "ErrorTimestamp"
   show GridNodeNameLabel      = "GridNodeNameLabel"
   show GridRowCell            = "GridRowCell"
   show HSpacer                = "HSpacer"
@@ -242,6 +279,7 @@ instance Show HTMLClass where
   show ProgressBar            = "ProgressBar"
   show ProgressBarBox         = "ProgressBarBox"
   show ResourcesIcon          = "ResourcesIcon"
+  show ResourcesDropdownIcon  = "ResourcesDropdownIcon"
   show SelectMetricCheck      = "SelectMetricCheck"
   show SelectMetricCheckArea  = "SelectMetricCheckArea"
   show SelectNodeCheck        = "SelectNodeCheck"
@@ -250,6 +288,7 @@ instance Show HTMLClass where
   show ShowHideIcon           = "ShowHideIcon"
   show TabContainer           = "TabContainer"
   show TopBar                 = "TopBar"
+  show TopNavDropdownIcon     = "TopNavDropdownIcon"
   show TXsProcessed           = "TXsProcessed"
   show UnsupportedVersion     = "UnsupportedVersion"
   show ValueUnit              = "ValueUnit"
@@ -263,11 +302,22 @@ instance Show HTMLClass where
   show GridDiskUsageChart     = "GridDiskUsageChart"
   show GridNetworkUsageChart  = "GridNetworkUsageChart"
   show WarningMessage         = "WarningMessage"
+  show WarningMessageTag      = "WarningMessageTag"
+  show WarningMessageTagNoHelp = "WarningMessageTagNoHelp"
   show ErrorMessage           = "ErrorMessage"
+  show ErrorMessageTag        = "ErrorMessageTag"
+  show ErrorMessageTagNoHelp  = "ErrorMessageTagNoHelp"
   show CriticalMessage        = "CriticalMessage"
+  show CriticalMessageTag     = "CriticalMessageTag"
+  show CriticalMessageTagNoHelp = "CriticalMessageTagNoHelp"
   show AlertMessage           = "AlertMessage"
+  show AlertMessageTag        = "AlertMessageTag"
+  show AlertMessageTagNoHelp  = "AlertMessageTagNoHelp"
   show EmergencyMessage       = "EmergencyMessage"
+  show EmergencyMessageTag    = "EmergencyMessageTag"
+  show EmergencyMessageTagNoHelp = "EmergencyMessageTagNoHelp"
   -- Names of these classes are taken from W3C-library.
+  show W3Badge           = "w3-badge"
   show W3Bar             = "w3-bar"
   show W3BarBlock        = "w3-bar-block"
   show W3BarItem         = "w3-bar-item"
@@ -288,6 +338,7 @@ instance Show HTMLClass where
   show W3Large           = "w3-large"
   show W3Margin          = "w3-margin"
   show W3Mobile          = "w3-mobile"
+  show W3PaddingSmall    = "w3-padding-small"
   show W3Responsive      = "w3-responsive"
   show W3Rest            = "w3-rest"
   show W3Right           = "w3-right"
@@ -330,8 +381,19 @@ data HTMLId
 (#.) el [cl] = el # UI.set UI.class_ (show cl)
 (#.) el cls  = el # UI.set UI.class_ (unwords $ map show cls)
 
-showIt, hideIt, showRow, showCell :: UI Element -> UI Element
-showIt   = UI.set UI.style [("display", "block")]
-hideIt   = UI.set UI.style [("display", "none")]
-showRow  = UI.set UI.style [("display", "table-row")]
-showCell = UI.set UI.style [("display", "table-cell")]
+showIt, showInline, showRow, showCell, hideIt :: UI Element -> UI Element
+showIt     = UI.set UI.style [("display", "block")]
+showInline = UI.set UI.style [("display", "inline")]
+showRow    = UI.set UI.style [("display", "table-row")]
+showCell   = UI.set UI.style [("display", "table-cell")]
+hideIt     = UI.set UI.style [("display", "none")]
+
+pageTitle, pageTitleNotify :: String
+pageTitle       = "Cardano RTView"
+pageTitleNotify = "(!) " <> pageTitle
+
+dataAttr :: String -> UI.Attr UI.Element String
+dataAttr name = UI.mkReadWriteAttr getData setData
+ where
+  getData   el = UI.callFunction $ UI.ffi "$(%1).data(%2)" el name
+  setData v el = UI.runFunction  $ UI.ffi "$(%1).data(%2,%3)" el name v

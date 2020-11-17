@@ -3,14 +3,16 @@
 
 module Cardano.RTView.GUI.Updater
     ( updateGUI
+    -- For special cases
+    , justUpdateErrorsListAndTab
     ) where
 
 import           Control.Concurrent.STM.TVar (TVar, modifyTVar', readTVarIO)
-import           Control.Monad (void, forM, forM_, unless)
+import           Control.Monad (void, forM, forM_, unless, when)
 import           Control.Monad.STM (atomically)
 import           Control.Monad.Extra (ifM, whenJust, whenJustM)
 import qualified Data.List as L
-import           Data.Maybe (isJust)
+import           Data.Maybe (fromJust, isJust)
 import           Data.HashMap.Strict ((!), (!?))
 import qualified Data.HashMap.Strict as HM
 import           Data.Text (Text, pack, strip, unpack)
@@ -31,7 +33,7 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..
                                               HTMLClass (..), HTMLId (..),
                                               NodeStateElements, NodesStateElements,
                                               PeerInfoElements (..), PeerInfoItem (..),
-                                              (#.))
+                                              (#.), hideIt, showInline, pageTitle, pageTitleNotify)
 import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames)
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.NodeState.Types
@@ -60,6 +62,9 @@ updatePaneGUI
   -> UI ()
 updatePaneGUI window tv params nodesStateElems = do
   nodesState <- liftIO $ readTVarIO tv
+
+  resetPageTitleIfNeeded window tv
+
   forM_ nodesStateElems $ \(nName, els, peerInfoItems) -> do
     let NodeState {..}         = nodesState ! nName
         PeerMetrics {..}       = peersMetrics
@@ -71,7 +76,8 @@ updatePaneGUI window tv params nodesStateElems = do
         nm@NodeMetrics {..}    = nodeMetrics
         ErrorsMetrics {..}     = nodeErrors
 
-    updateErrorsListAndTab tv nName errors errorsChanged els ElNodeErrors ElNodeErrorsTab
+    updateErrorsListAndTab window tv nName errors errorsChanged els
+                           ElNodeErrors ElNodeErrorsTab ElNodeErrorsTabBadge
     updatePeersList tv nName peersInfo peersInfoChanged peerInfoItems
 
     -- TODO: temporary solution, progress bars will be replaced by charts soon.
@@ -407,45 +413,97 @@ updatePeersList tv nameOfNode peersInfo' True peersInfoItems = do
                  (\ns -> ns { peersMetrics = (peersMetrics ns) { peersInfoChanged = False } })
 
 updateErrorsListAndTab
-  :: TVar NodesState
+  :: UI.Window
+  -> TVar NodesState
   -> Text
   -> [NodeError]
   -> Bool
   -> NodeStateElements
   -> ElementName
   -> ElementName
+  -> ElementName
   -> UI ()
-updateErrorsListAndTab _ _ _ False _ _ _ = return ()
-updateErrorsListAndTab tv nameOfNode nodeErrors' True els elName elTabName =
-  whenJust (els !? elName) $ \el -> do
-    -- Change availability of the tab if needed.
-    whenJust (els !? elTabName) $ \elTab -> do
-      if null nodeErrors'
-        then void $ element elTab # set UI.enabled False
-                                  # set UI.title__ "Good news: there are no errors!"
-        else void $ element elTab # set UI.enabled True
-                                  # set UI.title__ "Errors"
+updateErrorsListAndTab _ _ _ _ False _ _ _ _ = return ()
+updateErrorsListAndTab window tv nameOfNode nodeErrors' True els elName elTabName elTabBadgeName = do
+  let maybeEl         = els !? elName
+      maybeElTab      = els !? elTabName
+      maybeElTabBadge = els !? elTabBadgeName
+  when (   isJust maybeEl
+        && isJust maybeElTab
+        && isJust maybeElTabBadge) $ do
+    let el         = fromJust maybeEl
+        elTab      = fromJust maybeElTab
+        elTabBadge = fromJust maybeElTabBadge
+    justUpdateErrorsListAndTab nodeErrors' el elTab elTabBadge
+    
+    unless (null nodeErrors') $
+      void $ return window # set UI.title pageTitleNotify
 
-    errors <- forM nodeErrors' $ \(NodeError utcTimeStamp sev msg) -> do
-      let aClass :: HTMLClass
-          aClass =
-            case sev of
-              Warning   -> WarningMessage
-              Error     -> ErrorMessage
-              Critical  -> CriticalMessage
-              Alert     -> AlertMessage
-              Emergency -> EmergencyMessage
-              _         -> NoClass
-      let timeStamp = formatTime defaultTimeLocale "%F %T %Z" utcTimeStamp
-
-      UI.div #. [W3Row] #+
-        [ UI.div #. [W3Third, W3Theme]    #+ [UI.div             #+ [UI.string timeStamp]]
-        , UI.div #. [W3TwoThird, W3Theme] #+ [UI.div #. [aClass] #+ [UI.string msg]]
-        ]
-    void $ element el # set children errors
     setChangedFlag tv
                    nameOfNode
                    (\ns -> ns { nodeErrors = (nodeErrors ns) { errorsChanged = False } })
+
+justUpdateErrorsListAndTab
+  :: [NodeError]
+  -> Element
+  -> Element
+  -> Element
+  -> UI ()
+justUpdateErrorsListAndTab nodeErrors' elErrors elTab elTabBadge = do
+  if null nodeErrors'
+    then do
+      void $ element elTab # set UI.enabled False
+                           # set UI.title__ errorsTabTitle
+      void $ element elTabBadge # hideIt
+                                # set text ""
+    else do
+      void $ element elTab # set UI.enabled True
+                           # set UI.title__ errorsTabTitle
+      void $ element elTabBadge # showInline
+                                # set text (show . length $ nodeErrors')
+  -- When the user filters errors in Errors tab, we don't remove them, just hide them.
+  -- So only visible errors should be displayed.
+  let visibleNodeErrors = filter eVisible nodeErrors'
+  errors <- forM visibleNodeErrors $ \(NodeError utcTimeStamp sev msg _) -> do
+    let (aClass, aTagClass, aTag, aTagTitle) =
+          case sev of
+            Warning   -> (WarningMessage,   WarningMessageTag,   "W", "Warning")
+            Error     -> (ErrorMessage,     ErrorMessageTag,     "E", "Error")
+            Critical  -> (CriticalMessage,  CriticalMessageTag,  "C", "Critical")
+            Alert     -> (AlertMessage,     AlertMessageTag,     "A", "Alert")
+            Emergency -> (EmergencyMessage, EmergencyMessageTag, "E", "Emergency")
+            _         -> (NoClass,          NoClass,             "",  "")
+
+    let timeStamp = formatTime defaultTimeLocale "%F %T %Z" utcTimeStamp
+
+    UI.div #. [W3Row, ErrorRow] #+
+      [ UI.div #. [W3Third, ErrorTimestamp] #+
+          [ UI.string timeStamp
+          ]
+      , UI.div #. [W3TwoThird] #+
+          [ UI.string aTag #. [aTagClass] # set UI.title__ aTagTitle
+          , UI.string msg  #. [aClass]
+          ]
+      ]
+  void $ element elErrors # set children errors
+ where
+  errorsTabTitle =
+    case length nodeErrors' of
+      0 -> "Good news: there are no errors!"
+      1 -> "There is one error from node"
+      n -> "There are " <> show n <> " errors from node"
+
+-- Check the errors for all nodes: if there's no errors at all,
+-- set the page's title to default one.
+resetPageTitleIfNeeded
+  :: UI.Window
+  -> TVar NodesState
+  -> UI ()
+resetPageTitleIfNeeded window tv = do
+  nodesState <- liftIO $ readTVarIO tv
+  noErrors <- forM (HM.elems nodesState) (return . null . errors . nodeErrors)
+  when (all (True ==) noErrors) $
+    void $ return window # set UI.title pageTitle
 
 showElement, hideElement :: Element -> UI Element
 showElement w = element w # set UI.style [("display", "inline")]

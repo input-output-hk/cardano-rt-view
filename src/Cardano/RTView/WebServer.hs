@@ -12,6 +12,7 @@ import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..))
 import           Cardano.RTView.GUI.CSS.Style (ownCSS)
+import           Cardano.RTView.GUI.Elements (pageTitle)
 import           Cardano.RTView.GUI.Markup.PageBody (mkPageBody)
 import           Cardano.RTView.GUI.Updater (updateGUI)
 import           Cardano.RTView.NodeState.Types (NodesState)
@@ -36,7 +37,7 @@ mainPage
   -> UI.Window
   -> UI ()
 mainPage nsTVar params acceptors window = do
-  void $ return window # set UI.title "Cardano RTView"
+  void $ return window # set UI.title pageTitle
 
   -- It is assumed that CSS files are available at 'pathToStatic/css/'.
   UI.addStyleSheet window "w3.css"

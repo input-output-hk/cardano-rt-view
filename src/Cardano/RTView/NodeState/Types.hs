@@ -28,6 +28,11 @@ module Cardano.RTView.NodeState.Types
     , mkTraceAcceptorEndpoint
     , fullEndpointTitle
     , nullTime
+    , sortErrorsByTimeAsc
+    , sortErrorsByTimeDesc
+    , sortErrorsBySevAsc
+    , sortErrorsBySevDesc
+    , mkCSVWithErrorsForHref
     ) where
 
 import           Control.DeepSeq (NFData (..))
@@ -36,9 +41,10 @@ import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HM
 import           Data.Text (Text)
 import qualified Data.Text as T
-import           Data.Time.Calendar (Day (..))
+import           Data.Time.Calendar (Day (..), fromGregorian)
 import           Data.Time.Clock (UTCTime (..))
 import           Data.Time.Format (defaultTimeLocale, formatTime)
+import           Data.Time.LocalTime (TimeOfDay (..), timeOfDayToTime)
 import           Data.Word (Word64)
 import           GHC.Clock (getMonotonicTimeNSec)
 import           GHC.Generics (Generic)
@@ -47,7 +53,7 @@ import           Formatting (fixed, sformat, (%))
 import           Cardano.BM.Configuration (Configuration)
 import qualified Cardano.BM.Configuration.Model as CM
 import           Cardano.BM.Data.Configuration (RemoteAddr (..), RemoteAddrNamed (..))
-import           Cardano.BM.Data.Severity (Severity)
+import           Cardano.BM.Data.Severity (Severity (..))
 
 type NodesState = HashMap Text NodeState
 
@@ -67,7 +73,29 @@ data NodeError = NodeError
   { eTimestamp :: !UTCTime
   , eSeverity  :: !Severity
   , eMessage   :: !String
+  , eVisible   :: !Bool
   } deriving (Generic, NFData)
+
+sortErrorsByTimeAsc
+  , sortErrorsByTimeDesc
+  , sortErrorsBySevAsc
+  , sortErrorsBySevDesc :: NodeError -> NodeError -> Ordering
+sortErrorsByTimeAsc  ne1 ne2 = eTimestamp ne1 `compare` eTimestamp ne2
+sortErrorsByTimeDesc ne1 ne2 = eTimestamp ne2 `compare` eTimestamp ne1
+sortErrorsBySevAsc   ne1 ne2 = eSeverity  ne1 `compare` eSeverity  ne2
+sortErrorsBySevDesc  ne1 ne2 = eSeverity  ne2 `compare` eSeverity  ne1
+
+mkCSVWithErrorsForHref :: [NodeError] -> String
+mkCSVWithErrorsForHref [] = ""
+mkCSVWithErrorsForHref allErrors = T.unpack csvForHref
+ where
+  csvForHref = T.replace " " "%20" (T.replace "," "%2C" csv)
+  csv = T.unlines [header, body]
+  header = "Timestamp,Severity,Message"
+  body = T.unlines $ map errorToCSV allErrors
+  errorToCSV ne = T.pack (show $ eTimestamp ne) <> "," <>
+                  T.pack (show $ eSeverity ne)  <> "," <>
+                  T.pack (eMessage ne)
 
 data NodeState = NodeState
   { peersMetrics      :: !PeerMetrics
@@ -324,11 +352,62 @@ initialNodeState now = NodeState
         }
   , nodeErrors =
       ErrorsMetrics
-        { errors        = []
+        { errors        = testErrors
         , errorsChanged = True
         }
   , metricsLastUpdate = now
   }
+ where
+  testErrors =
+    [ NodeError ((UTCTime (fromGregorian 2020 07 08) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
+                Error
+                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
+                True
+    , NodeError ((UTCTime (fromGregorian 2020 07 09) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
+                Warning
+                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
+                True
+    , NodeError ((UTCTime (fromGregorian 2020 07 08) (timeOfDayToTime $ TimeOfDay 9 36 56.553)))
+                Warning
+                "ERROR_MESSAGE_WARN2{if you think that Your node is perfectly tined your are wrong!}"
+                True
+    , NodeError ((UTCTime (fromGregorian 2020 07 10) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
+                Critical
+                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
+                True
+    , NodeError ((UTCTime (fromGregorian 2020 07 02) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
+                Emergency
+                "ERROR_MESSAGE_2_{very long complex error message that should be immediately explained}"
+                True
+    , NodeError ((UTCTime (fromGregorian 2020 07 03) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
+                Alert
+                "ERROR_MESSAGE_3_{Problem with error Messages is the fact that they can be extremely long.}"
+                True
+    , NodeError ((UTCTime (fromGregorian 2020 07 08) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
+                Error
+                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
+                True
+    , NodeError ((UTCTime (fromGregorian 2020 07 09) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
+                Warning
+                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
+                True
+    , NodeError ((UTCTime (fromGregorian 2020 07 08) (timeOfDayToTime $ TimeOfDay 9 36 56.553)))
+                Warning
+                "ERROR_MESSAGE_WARN2{if you think that Your node is perfectly tined your are wrong!}"
+                True
+    , NodeError ((UTCTime (fromGregorian 2020 07 10) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
+                Critical
+                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
+                True
+    , NodeError ((UTCTime (fromGregorian 2020 07 02) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
+                Emergency
+                "ERROR_MESSAGE_2_{very long complex error message that should be immediately explained}"
+                True
+    , NodeError ((UTCTime (fromGregorian 2020 07 03) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
+                Alert
+                "ERROR_MESSAGE_3_{Problem with error Messages is the fact that they can be extremely long.}"
+                True
+    ]
 
 nullTime :: UTCTime
 nullTime = UTCTime (ModifiedJulianDay 0) 0
