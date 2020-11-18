@@ -41,10 +41,9 @@ import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HM
 import           Data.Text (Text)
 import qualified Data.Text as T
-import           Data.Time.Calendar (Day (..), fromGregorian)
+import           Data.Time.Calendar (Day (..))
 import           Data.Time.Clock (UTCTime (..))
 import           Data.Time.Format (defaultTimeLocale, formatTime)
-import           Data.Time.LocalTime (TimeOfDay (..), timeOfDayToTime)
 import           Data.Word (Word64)
 import           GHC.Clock (getMonotonicTimeNSec)
 import           GHC.Generics (Generic)
@@ -352,62 +351,11 @@ initialNodeState now = NodeState
         }
   , nodeErrors =
       ErrorsMetrics
-        { errors        = testErrors
+        { errors        = []
         , errorsChanged = True
         }
   , metricsLastUpdate = now
   }
- where
-  testErrors =
-    [ NodeError ((UTCTime (fromGregorian 2020 07 08) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
-                Error
-                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
-                True
-    , NodeError ((UTCTime (fromGregorian 2020 07 09) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
-                Warning
-                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
-                True
-    , NodeError ((UTCTime (fromGregorian 2020 07 08) (timeOfDayToTime $ TimeOfDay 9 36 56.553)))
-                Warning
-                "ERROR_MESSAGE_WARN2{if you think that Your node is perfectly tined your are wrong!}"
-                True
-    , NodeError ((UTCTime (fromGregorian 2020 07 10) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
-                Critical
-                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
-                True
-    , NodeError ((UTCTime (fromGregorian 2020 07 02) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
-                Emergency
-                "ERROR_MESSAGE_2_{very long complex error message that should be immediately explained}"
-                True
-    , NodeError ((UTCTime (fromGregorian 2020 07 03) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
-                Alert
-                "ERROR_MESSAGE_3_{Problem with error Messages is the fact that they can be extremely long.}"
-                True
-    , NodeError ((UTCTime (fromGregorian 2020 07 08) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
-                Error
-                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
-                True
-    , NodeError ((UTCTime (fromGregorian 2020 07 09) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
-                Warning
-                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
-                True
-    , NodeError ((UTCTime (fromGregorian 2020 07 08) (timeOfDayToTime $ TimeOfDay 9 36 56.553)))
-                Warning
-                "ERROR_MESSAGE_WARN2{if you think that Your node is perfectly tined your are wrong!}"
-                True
-    , NodeError ((UTCTime (fromGregorian 2020 07 10) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
-                Critical
-                "ERROR_MESSAGE_1_{if you think that Your node is perfectly tined your are wrong!}"
-                True
-    , NodeError ((UTCTime (fromGregorian 2020 07 02) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
-                Emergency
-                "ERROR_MESSAGE_2_{very long complex error message that should be immediately explained}"
-                True
-    , NodeError ((UTCTime (fromGregorian 2020 07 03) (timeOfDayToTime $ TimeOfDay 8 45 56.553)))
-                Alert
-                "ERROR_MESSAGE_3_{Problem with error Messages is the fact that they can be extremely long.}"
-                True
-    ]
 
 nullTime :: UTCTime
 nullTime = UTCTime (ModifiedJulianDay 0) 0
