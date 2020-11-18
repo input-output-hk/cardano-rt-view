@@ -140,15 +140,23 @@ topNavigation nodesSelector viewModeSelector metricsSelector =
         [ UI.button ## show ViewModeButton
                     #. [W3Button]
                     # set UI.value "paneMode"
-                    #+ [string "View mode ▾"]
+                    #+ [ string "View mode"
+                       , UI.img #. [TopNavDropdownIcon] # set UI.src "/static/images/dropdown-light.svg"
+                       ]
         , UI.div #. [W3DropdownContent, W3BarBlock] #+ viewModeSelector
         ]
     , UI.div #. [W3DropdownHover, W3Mobile] #+
-        [ UI.button #. [W3Button] #+ [string "Select node ▾"]
+        [ UI.button #. [W3Button] #+
+            [ string "Select node"
+            , UI.img #. [TopNavDropdownIcon] # set UI.src "/static/images/dropdown-light.svg"
+            ]
         , UI.div #. [W3DropdownContent, W3BarBlock] #+ nodesSelector
         ]
     , UI.div ## show SelectMetricButton #. [W3DropdownHover, W3Mobile] # hideIt #+
-        [ UI.button #. [W3Button] #+ [string "Select metric ▾"]
+        [ UI.button #. [W3Button] #+
+            [ string "Select metric"
+            , UI.img #. [TopNavDropdownIcon] # set UI.src "/static/images/dropdown-light.svg"
+            ]
         , UI.div #. [W3DropdownContent, W3BarBlock, MetricsArea] #+ metricsSelector
         ]
     , UI.span #. [W3Right, W3HideMedium, W3HideSmall, ServiceName] #+

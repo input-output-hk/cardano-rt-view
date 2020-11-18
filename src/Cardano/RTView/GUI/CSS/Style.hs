@@ -10,7 +10,7 @@ import           Clay.Selector (selectorFromText)
 import           Data.Text (pack, unpack)
 import qualified Data.Text.Lazy as TL
 
-import           Cardano.RTView.GUI.Elements (HTMLClass (..)) 
+import           Cardano.RTView.GUI.Elements (HTMLClass (..))
 
 ownCSS :: String
 ownCSS = unpack . TL.toStrict . render $ do
@@ -56,6 +56,11 @@ ownCSS = unpack . TL.toStrict . render $ do
     important $
       color           cardanoLight
 
+  cl TopNavDropdownIcon ? do
+    widthPx           12
+    marginLeftPx      6
+    maxHeightPx       18
+
   cl W3DropdownHover # hover |> cl W3Button # firstChild ? do
     important $
       color           cardanoLight
@@ -91,6 +96,7 @@ ownCSS = unpack . TL.toStrict . render $ do
     backgroundColor   red
     border            solid (px 1) red
     borderRadiusPx    8
+    cursor            help
 
   cl UnsupportedVersion ? do
     color             red
@@ -129,27 +135,77 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl TabContainer ? do
     paddingTopPx      16
 
-  cl ErrorsTabContainer ? do
+  cl ErrorsSortIcon ? do
+    widthPx           15
+    marginLeftPx      10
+    maxHeightPx       19
+
+  cl ErrorsFilterIcon ? do
+    widthPx           15
+    marginLeftPx      10
+    maxHeightPx       19
+
+  cl ErrorsFilterDropdownIcon ? do
+    widthPx           11
+    marginLeftPx      1
+    maxHeightPx       17
+
+  cl ErrorsDownloadIcon ? do
+    widthPx           15
+    marginLeftPx      10
+    maxHeightPx       17
+
+  cl ErrorsRemoveIcon ? do
+    widthPx           15
+    maxHeightPx       19
+
+  cl ErrorsBadge ? do
+    color             white
+    backgroundColor   red
+    fontSizePct       75
+    position          absolute
+    marginLeftPx      (-8)
+    marginTopPx       (-7)
+
+  cl ErrorsTabHeader ? do
+    marginBottomPx    15
+
+  cl ErrorsTabList ? do
     overflowY         scroll
-    heightPx          305
+    heightPx          312
+
+  cl ErrorRow ? do
+    marginBottomPx    10
+
+  cl ErrorTimestamp ? do
+    fontWeight        bold
 
   cl WarningMessage ? do
-    color             orange
+    fontWeight        normal
 
   cl ErrorMessage ? do
-    color             red
+    fontWeight        normal
 
   cl CriticalMessage ? do
-    color             red
-    fontWeight        bold
+    fontWeight        normal
 
   cl AlertMessage ? do
-    color             red
-    fontWeight        bold
+    fontWeight        normal
 
   cl EmergencyMessage ? do
-    color             red
-    fontWeight        bold
+    fontWeight        normal
+
+  cl WarningMessageTag   ? errorTag darkorange 2 2 help
+  cl ErrorMessageTag     ? errorTag darkviolet 4 5 help
+  cl CriticalMessageTag  ? errorTag deeppink   4 4 help
+  cl AlertMessageTag     ? errorTag orangered  4 4 help
+  cl EmergencyMessageTag ? errorTag red        4 5 help
+
+  cl WarningMessageTagNoHelp   ? errorTag darkorange 2 2 pointer
+  cl ErrorMessageTagNoHelp     ? errorTag darkviolet 4 5 pointer
+  cl CriticalMessageTagNoHelp  ? errorTag deeppink   4 4 pointer
+  cl AlertMessageTagNoHelp     ? errorTag orangered  4 4 pointer
+  cl EmergencyMessageTagNoHelp ? errorTag red        4 5 pointer
 
   cl NodeContainer ? do
     minHeightPx       500
@@ -161,6 +217,11 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl ResourcesIcon ? do
     widthPx           32
     paddingRightPx    13
+
+  cl ResourcesDropdownIcon ? do
+    widthPx           15
+    marginLeftPx      3
+    maxHeightPx       19
 
   cl ShowHideIcon ? do
     widthPx           32
@@ -302,6 +363,19 @@ ownCSS = unpack . TL.toStrict . render $ do
   progressBarColors bg c = do
     backgroundColor   bg
     important $ color c
+
+  errorTag aColor padLeft padRight cur = do
+    fontSizePct       85
+    color             white
+    marginRightPx     15
+    paddingTopPx      2
+    paddingBottomPx   0
+    paddingLeftPx     padLeft
+    paddingRightPx    padRight
+    backgroundColor   aColor
+    border            solid (px 1) aColor
+    borderRadiusPx    4
+    cursor            cur
 
 -- | Convert class name as a constructor to 'Selector'.
 cl :: HTMLClass -> Selector

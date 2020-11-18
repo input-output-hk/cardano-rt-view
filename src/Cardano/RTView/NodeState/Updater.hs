@@ -97,7 +97,7 @@ updateNodeErrors ns (LOMeta timeStamp _ _ sev _) aContent = ns { nodeErrors = ne
     { errors = newErrors
     , errorsChanged = True -- Every error message changes current list of errors by definition.
     }
-  newErrors = NodeError timeStamp sev errorMessage : currentErrors
+  newErrors = NodeError timeStamp sev errorMessage visible : currentErrors
   currentMetrics = nodeErrors ns
   currentErrors = errors currentMetrics
   errorMessage =
@@ -109,6 +109,7 @@ updateNodeErrors ns (LOMeta timeStamp _ _ sev _) aContent = ns { nodeErrors = ne
       MonitoringEffect (MonitorAlert msg) -> "Monitor alert: " <> T.unpack msg
       MonitoringEffect _ -> ""
       _ -> "UNPARSED_ERROR_MESSAGE"
+  visible = True
 
 -- | Update NodeState for particular node based on loggerName.
 updateNodesState
