@@ -11,6 +11,7 @@ import           Data.Text (Text, intercalate)
 supportedNodesVersions :: [Text]
 supportedNodesVersions =
   [ "1.22.1"
+  , "1.23.0"
   ]
 
 showSupportedNodesVersions :: Text
