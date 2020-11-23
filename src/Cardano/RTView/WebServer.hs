@@ -28,6 +28,7 @@ launchWebServer nsTVar params acceptors =
   config = UI.defaultConfig
     { UI.jsStatic = Just $ rtvStatic params
     , UI.jsPort   = Just $ rtvPort params
+    , UI.jsAddr   = Just "0.0.0.0"
     }
 
 mainPage
