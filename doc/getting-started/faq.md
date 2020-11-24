@@ -18,7 +18,7 @@ Yes, you can. For example, your node can be launched on Linux machine, and RTVie
 
 ## «Where can I find an example of the node's configuration file for working with RTView?»
 
-You can find it [here](https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/node-configuration.md).
+You can find it [here](https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/node-configuration.md#cardano-node-configuration-file-complete-example).
 
 ## «How many nodes can I connect to my RTView process?»
 
