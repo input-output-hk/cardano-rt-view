@@ -42,6 +42,10 @@ ownCSS = unpack . TL.toStrict . render $ do
   a # visited # hover ? do
     color             "#4b0082"
 
+  cl InactiveHref ? do
+    pointerEvents     none
+    cursor            cursorDefault
+
   cl TopBar ? do
     backgroundColor   "#1b2238"
     color             whitesmoke

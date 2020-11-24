@@ -384,8 +384,10 @@ setNodeCommit
 setNodeCommit _ _ _ _ False _ _ = return ()
 setNodeCommit tv nameOfNode commit shortCommit True els elName =
   whenJust (els !? elName) $ \el -> do
-    void $ element el # set UI.href ("https://github.com/input-output-hk/cardano-node/commit/"
+    void $ element el #. []
+                      # set UI.href ("https://github.com/input-output-hk/cardano-node/commit/"
                                      <> unpack commit)
+                      # set UI.title__ "Browse cardano-node repository on this commit"
                       # set text (unpack shortCommit)
     setChangedFlag tv
                    nameOfNode
