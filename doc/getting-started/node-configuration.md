@@ -128,26 +128,14 @@ This is an example of the node's configuration file prepared for working with RT
     "mapBackends": {
       "cardano.node-metrics": [
         "EKGViewBK",
-        "TraceForwarderBK",
-        {
-          "kind": "UserDefinedBK",
-          "name": "LiveViewBackend"
-        }
+        "TraceForwarderBK"
       ],
       "cardano.node.BlockFetchDecision.peers": [
-        "EKGViewBK",
-        {
-          "kind": "UserDefinedBK",
-          "name": "LiveViewBackend"
-        }
+        "EKGViewBK"
       ],
       "cardano.node.ChainDB.metrics": [
         "EKGViewBK",
-        "TraceForwarderBK",
-        {
-          "kind": "UserDefinedBK",
-          "name": "LiveViewBackend"
-        }
+        "TraceForwarderBK"
       ],
       "cardano.node.Forge.metrics": [
         "EKGViewBK",
@@ -155,13 +143,39 @@ This is an example of the node's configuration file prepared for working with RT
       ],
       "cardano.node.metrics": [
         "EKGViewBK",
-        "TraceForwarderBK",
-        {
-          "kind": "UserDefinedBK",
-          "name": "LiveViewBackend"
-        }
+        "TraceForwarderBK"
       ],
       "cardano.node.metrics.peersFromNodeKernel": [
+        "TraceForwarderBK"
+      ],
+      "cardano.node.AcceptPolicy": [
+        "TraceForwarderBK"
+      ],
+      "cardano.node.ChainDB": [
+        "TraceForwarderBK"
+      ],
+      "cardano.node.DnsResolver": [
+        "TraceForwarderBK"
+      ],
+      "cardano.node.DnsSubscription": [
+        "TraceForwarderBK"
+      ],
+      "cardano.node.ErrorPolicy": [
+        "TraceForwarderBK"
+      ],
+      "cardano.node.Handshake": [
+        "TraceForwarderBK"
+      ],
+      "cardano.node.IpSubscription": [
+        "TraceForwarderBK"
+      ],
+      "cardano.node.LocalErrorPolicy": [
+        "TraceForwarderBK"
+      ],
+      "cardano.node.LocalHandshake": [
+        "TraceForwarderBK"
+      ],
+      "cardano.node.Mux": [
         "TraceForwarderBK"
       ]
     },
