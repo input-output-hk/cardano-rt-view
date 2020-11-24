@@ -145,9 +145,10 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
                                  ]
   elRTSMemoryProgressBox    <- UI.div #. [ProgressBarBox] #+ [element elRTSMemoryProgress]
 
-  elNodeCommitHref <- UI.anchor # set UI.href ""
+  elNodeCommitHref <- UI.anchor #. [InactiveHref]
+                                # set UI.href ""
                                 # set UI.target "_blank"
-                                # set UI.title__ "Browse cardano-node repository on this commit"
+                                # set UI.title__ ""
                                 # set UI.text (showText nodeShortCommit)
 
   -- Create content area for each tab.
