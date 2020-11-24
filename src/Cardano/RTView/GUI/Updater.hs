@@ -16,6 +16,7 @@ import           Data.Maybe (fromJust, isJust)
 import           Data.HashMap.Strict ((!), (!?))
 import qualified Data.HashMap.Strict as HM
 import           Data.Text (Text, pack, strip, unpack)
+import qualified Data.Text as T
 import           Data.Time.Calendar (diffDays)
 import           Data.Time.Clock (NominalDiffTime, UTCTime (..), addUTCTime, getCurrentTime,
                                   diffUTCTime)
@@ -273,7 +274,17 @@ evSetter
 evSetter _ _ _ _ False _ _ = return ()
 evSetter flagSetter tv nameOfNode ev True els elName =
   whenJust (els !? elName) $ \el -> do
-    void $ setElement ev el
+    -- If the value is still default one, don't display it (it's meaningless).
+    let nothing = StringV none
+        ev' =
+          case ev of
+            IntV     _ -> ev
+            IntegerV i -> if i < 0    then nothing else ev
+            Word64V  w -> if w == 0   then nothing else ev
+            DoubleV  d -> if d < 0    then nothing else ev
+            StringV  s -> if null s   then nothing else ev
+            TextV    t -> if T.null t then nothing else ev
+    void $ setElement ev' el
     setChangedFlag tv nameOfNode flagSetter
 
 setElement

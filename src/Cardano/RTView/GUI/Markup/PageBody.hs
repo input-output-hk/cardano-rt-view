@@ -132,11 +132,71 @@ mkPageBody nsTVar window acceptors = do
 
 forceChangingAllElements :: TVar NodesState -> UI ()
 forceChangingAllElements nsTVar =
-  liftIO . atomically $ modifyTVar' nsTVar $ \currentNS ->
-    let updatedNS = map (\(nm, ns) -> (nm, setAllChangedFlags ns)) $ HM.toList currentNS
-    in HM.fromList updatedNS
+  liftIO . atomically $ modifyTVar' nsTVar $
+    HM.fromList . map (\(nm, ns) -> (nm, setAllChangedFlags ns)) . HM.toList
  where
-   setAllChangedFlags ns = ns
+  setAllChangedFlags ns =
+    ns { peersMetrics =
+           (peersMetrics ns)
+             { peersInfoChanged = True
+             }
+       , nodeMetrics =
+           (nodeMetrics ns)
+             { nodeProtocolChanged  = True
+             , nodeVersionChanged   = True
+             , nodeCommitChanged    = True
+             , nodePlatformChanged  = True
+             , nodeStartTimeChanged = True
+             , nodeEndpointChanged  = True
+             }
+       , mempoolMetrics =
+           (mempoolMetrics ns)
+             { mempoolTxsNumberChanged    = True
+             , mempoolTxsPercentChanged   = True
+             , mempoolBytesChanged        = True
+             , mempoolBytesPercentChanged = True
+             , mempoolMaxTxsChanged       = True
+             , mempoolMaxBytesChanged     = True
+             , txsProcessedChanged        = True
+             }
+       , forgeMetrics =
+           (forgeMetrics ns)
+             { nodeIsLeaderNumChanged    = True
+             , slotsMissedNumberChanged  = True
+             , nodeCannotForgeChanged    = True
+             , blocksForgedNumberChanged = True
+             }
+       , rtsMetrics =
+           (rtsMetrics ns)
+             { rtsMemoryAllocatedChanged   = True
+             , rtsMemoryUsedChanged        = True
+             , rtsMemoryUsedPercentChanged = True
+             , rtsGcCpuChanged             = True
+             , rtsGcElapsedChanged         = True
+             , rtsGcNumChanged             = True
+             , rtsGcMajorNumChanged        = True
+             }
+       , blockchainMetrics =
+           (blockchainMetrics ns)
+             { systemStartTimeChanged = True
+             , epochChanged           = True
+             , slotChanged            = True
+             , blocksNumberChanged    = True
+             , chainDensityChanged    = True
+             }
+       , kesMetrics =
+           (kesMetrics ns)
+             { remKESPeriodsChanged         = True
+             , remKESPeriodsInDaysChanged   = True
+             , opCertStartKESPeriodChanged  = True
+             , opCertExpiryKESPeriodChanged = True
+             , currentKESPeriodChanged      = True
+             }
+       , nodeErrors =
+           (nodeErrors ns)
+             { errorsChanged = True
+             }
+       }
 
 topNavigation
   :: [UI Element]
