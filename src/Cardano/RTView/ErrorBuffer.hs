@@ -62,7 +62,7 @@ instance IsEffectuator ErrorBuffer a where
       case locontent of
         LogValue _ _ -> False
         LogError _   -> True
-        _            -> severity lometa >= Error
+        _            -> severity lometa >= Warning
 
   handleOverflow _ = TIO.hPutStrLn stderr "Notice: overflow in ErrorBuffer, dropping log items!"
 
