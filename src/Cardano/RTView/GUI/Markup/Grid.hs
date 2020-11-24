@@ -227,11 +227,15 @@ mkNodeElements NodeState {..} nameOfNode elIdleNode acceptors = do
                  #+ []
 
   elNodeCommitHref
-    <- UI.anchor #. [InactiveHref]
-                 # set UI.href ""
-                 # set UI.target "_blank"
-                 # set UI.title__ ""
-                 # set UI.text (showText nodeShortCommit)
+    <- if T.null nodeShortCommit
+         then UI.span #+ [string none] -- No real commit was received from the node yet.
+         else UI.span #+
+                [ UI.anchor # set UI.href ("https://github.com/input-output-hk/cardano-node/commit/"
+                                       <> T.unpack nodeCommit)
+                            # set UI.target "_blank"
+                            # set UI.title__ "Browse cardano-node repository on this commit"
+                            # set UI.text (showText nodeShortCommit)
+                ]
 
   return $ HM.fromList
     [ (ElIdleNode,              elIdleNode)

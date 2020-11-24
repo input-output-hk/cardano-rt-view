@@ -150,7 +150,6 @@ data HTMLClass
   | GridRowCell
   | HSpacer
   | IdleNode
-  | InactiveHref
   | InfoMark
   | InfoMarkImg
   | MetricsArea
@@ -265,7 +264,6 @@ instance Show HTMLClass where
   show GridRowCell            = "GridRowCell"
   show HSpacer                = "HSpacer"
   show IdleNode               = "IdleNode"
-  show InactiveHref           = "InactiveHref"
   show InfoMark               = "InfoMark"
   show InfoMarkImg            = "InfoMarkImg"
   show MetricsArea            = "MetricsArea"

@@ -119,6 +119,17 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
   elRTSGcNum                  <- string $ showInteger rtsGcNum
   elRTSGcMajorNum             <- string $ showInteger rtsGcMajorNum
 
+  elNodeCommitHref
+    <- if T.null nodeShortCommit
+         then UI.span #+ [string none] -- No real commit was received from the node yet.
+         else UI.span #+
+                [ UI.anchor # set UI.href ("https://github.com/input-output-hk/cardano-node/commit/"
+                                       <> T.unpack nodeCommit)
+                            # set UI.target "_blank"
+                            # set UI.title__ "Browse cardano-node repository on this commit"
+                            # set UI.text (showText nodeShortCommit)
+                ]
+
   -- Progress bars.
   elMempoolBytesProgress    <- UI.div #. [ProgressBar] #+
                                  [ UI.span #. [HSpacer] #+ []
@@ -144,13 +155,7 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
                                  , string "MB" #. [BarValueUnit]
                                  ]
   elRTSMemoryProgressBox    <- UI.div #. [ProgressBarBox] #+ [element elRTSMemoryProgress]
-
-  elNodeCommitHref <- UI.anchor #. [InactiveHref]
-                                # set UI.href ""
-                                # set UI.target "_blank"
-                                # set UI.title__ ""
-                                # set UI.text (showText nodeShortCommit)
-
+ 
   -- Create content area for each tab.
   nodeTabContent
     <- UI.div #. [TabContainer, W3Row] # showIt #+
