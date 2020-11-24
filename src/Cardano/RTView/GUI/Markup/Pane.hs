@@ -254,7 +254,7 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
   blockchainTabContent
     <- UI.div #. [TabContainer, W3Row] # hideIt #+
          [ UI.div #. [W3Half] #+
-             [ UI.div #+ [string "System start time"
+             [ UI.div #+ [string "Blockchain start time"
                           # set UI.title__ "The time when this blockchain has started"]
              , vSpacer NodeInfoVSpacer
              , UI.div #+ [string "Epoch / Slot in epoch"
