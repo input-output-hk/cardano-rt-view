@@ -86,7 +86,8 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
   elNodeProtocol              <- string $ showText nodeProtocol
   elNodeVersion               <- string $ showText nodeVersion
   elNodePlatform              <- string $ showText nodePlatform
-  elUptime                    <- string   showInitTime
+  elNodeStarttime             <- string $ showTime nodeStartTime
+  elNodeUptime                <- string   showInitTime
   elSystemStartTime           <- string $ showTime systemStartTime
   elEpoch                     <- string $ showInteger epoch
   elSlot                      <- string $ showInteger slot
@@ -153,14 +154,15 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
   nodeTabContent
     <- UI.div #. [TabContainer, W3Row] # showIt #+
          [ UI.div #. [W3Half] #+
-             [ UI.div #+ [string "Node protocol" # set UI.title__ "Node's protocol"]
-             , UI.div #+ [string "Node version"  # set UI.title__ "Version of the node"]
-             , UI.div #+ [string "Node platform" # set UI.title__ "Platform the node is working on"]
-             , UI.div #+ [string "Node commit"   # set UI.title__ "Git commit the node was built from"]
+             [ UI.div #+ [string "Node protocol"   # set UI.title__ "Node's protocol"]
+             , UI.div #+ [string "Node version"    # set UI.title__ "Version of the node"]
+             , UI.div #+ [string "Node platform"   # set UI.title__ "Platform the node is working on"]
+             , UI.div #+ [string "Node commit"     # set UI.title__ "Git commit the node was built from"]
              , vSpacer NodeInfoVSpacer
-             , UI.div #+ [string "Node uptime"   # set UI.title__ "How long the node is working"]
+             , UI.div #+ [string "Node start time" # set UI.title__ "The time when this node has started"]
+             , UI.div #+ [string "Node uptime"     # set UI.title__ "How long the node is working"]
              , vSpacer NodeInfoVSpacer
-             , UI.div #+ [string "Node endpoint" # set UI.title__ "Socket/pipe used to connect the node with RTView"]
+             , UI.div #+ [string "Node endpoint"   # set UI.title__ "Socket/pipe used to connect the node with RTView"]
              , vSpacer NodeInfoVSpacer
              ]
          , UI.div #. [W3Half, NodeInfoValues] #+
@@ -169,7 +171,8 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
              , UI.div #+ [element elNodePlatform]
              , UI.div #. [CommitLink] #+ [element elNodeCommitHref]
              , vSpacer NodeInfoVSpacer
-             , UI.div #+ [element elUptime]
+             , UI.div #+ [element elNodeStarttime]
+             , UI.div #+ [element elNodeUptime]
              , vSpacer NodeInfoVSpacer
              , UI.div #+ [element elTraceAcceptorEndpoint]
              , vSpacer NodeInfoVSpacer
@@ -674,7 +677,8 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
         , (ElNodeVersion,             elNodeVersion)
         , (ElNodePlatform,            elNodePlatform)
         , (ElNodeCommitHref,          elNodeCommitHref)
-        , (ElUptime,                  elUptime)
+        , (ElNodeStarttime,           elNodeStarttime)
+        , (ElNodeUptime,              elNodeUptime)
         , (ElSystemStartTime,         elSystemStartTime)
         , (ElEpoch,                   elEpoch)
         , (ElSlot,                    elSlot)

@@ -62,7 +62,8 @@ metricLabel ElNodeProtocol          = ("Node protocol", "Node's protocol")
 metricLabel ElNodeVersion           = ("Node version", "Version of the node")
 metricLabel ElNodePlatform          = ("Node platform", "Platform the node is working on")
 metricLabel ElNodeCommitHref        = ("Node commit", "Git commit the node was built from")
-metricLabel ElUptime                = ("Node uptime", "How long the node is working")
+metricLabel ElNodeStarttime         = ("Node start time", "The time when this node has started")
+metricLabel ElNodeUptime            = ("Node uptime", "How long the node is working")
 metricLabel ElTraceAcceptorEndpoint = ("Node endpoint", "Socket/pipe used to connect the node with RTView")
 metricLabel ElPeersNumber           = ("Peers number", "Number of peers connected to the node")
 metricLabel ElOpCertStartKESPeriod  = ("Start KES period", "Certificate KES start period")
@@ -98,7 +99,8 @@ allMetricsNames =
   , ElNodeVersion
   , ElNodePlatform
   , ElNodeCommitHref
-  , ElUptime
+  , ElNodeStarttime
+  , ElNodeUptime
   , ElTraceAcceptorEndpoint
   , ElPeersNumber
   , ElOpCertStartKESPeriod
@@ -180,7 +182,8 @@ mkNodeElements NodeState {..} nameOfNode elIdleNode acceptors = do
   elNodeProtocol              <- string $ showText nodeProtocol
   elNodeVersion               <- string $ showText nodeVersion
   elNodePlatform              <- string $ showText nodePlatform
-  elUptime                    <- string   showInitTime
+  elNodeStarttime             <- string $ showTime nodeStartTime
+  elNodeUptime                <- string   showInitTime
   elTraceAcceptorEndpoint     <- string   acceptorEndpoint
                                         # set UI.title__ (fullEndpointTitle acceptorEndpoint)
   elPeersNumber               <- string $ showInteger (fromIntegral $ length peersInfo)
@@ -235,7 +238,8 @@ mkNodeElements NodeState {..} nameOfNode elIdleNode acceptors = do
     , (ElNodeVersion,           elNodeVersion)
     , (ElNodePlatform,          elNodePlatform)
     , (ElNodeCommitHref,        elNodeCommitHref)
-    , (ElUptime,                elUptime)
+    , (ElNodeStarttime,         elNodeStarttime)
+    , (ElNodeUptime,            elNodeUptime)
     , (ElTraceAcceptorEndpoint, elTraceAcceptorEndpoint)
     , (ElPeersNumber,           elPeersNumber)
     , (ElOpCertStartKESPeriod,  elOpCertStartKESPeriod)
