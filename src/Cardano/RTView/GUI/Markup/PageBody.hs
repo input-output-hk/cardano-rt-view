@@ -4,13 +4,15 @@ module Cardano.RTView.GUI.Markup.PageBody
     ( mkPageBody
     ) where
 
-import           Control.Concurrent.STM.TVar (TVar)
+import           Control.Concurrent.STM.TVar (TVar, modifyTVar')
 import           Control.Monad (forM, forM_, void, when)
 import           Control.Monad.Extra (whenJustM)
+import           Control.Monad.STM (atomically)
+import qualified Data.HashMap.Strict as HM
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Graphics.UI.Threepenny as UI
-import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, (#), (#+))
+import           Graphics.UI.Threepenny.Core (Element, UI, element, liftIO, set, string, (#), (#+))
 
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
@@ -104,9 +106,11 @@ mkPageBody nsTVar window acceptors = do
 
   void $ UI.onEvent (UI.click paneViewButton) $ \_ -> do
     toggleViewMode window "paneMode" bodyRootElem [element paneNodesRootElem] [element gridNodesRootElem]
+    forceChangingAllElements nsTVar
     forElementWithId window (show SelectMetricButton) hideIt
   void $ UI.onEvent (UI.click gridViewButton) $ \_ -> do
     toggleViewMode window "gridMode" bodyRootElem [element gridNodesRootElem] [element paneNodesRootElem]
+    forceChangingAllElements nsTVar
     forElementWithId window (show SelectMetricButton) showIt
     forM_ acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
       UI.runFunction $ UI.ffi Chart.gridMemoryUsageChartJS  (showt GridMemoryUsageChartId  <> nameOfNode)
@@ -125,6 +129,74 @@ mkPageBody nsTVar window acceptors = do
  where
   showt :: Show a => a -> Text
   showt = T.pack . show
+
+forceChangingAllElements :: TVar NodesState -> UI ()
+forceChangingAllElements nsTVar =
+  liftIO . atomically $ modifyTVar' nsTVar $
+    HM.fromList . map (\(nm, ns) -> (nm, setAllChangedFlags ns)) . HM.toList
+ where
+  setAllChangedFlags ns =
+    ns { peersMetrics =
+           (peersMetrics ns)
+             { peersInfoChanged = True
+             }
+       , nodeMetrics =
+           (nodeMetrics ns)
+             { nodeProtocolChanged  = True
+             , nodeVersionChanged   = True
+             , nodeCommitChanged    = True
+             , nodePlatformChanged  = True
+             , nodeStartTimeChanged = True
+             , nodeEndpointChanged  = True
+             }
+       , mempoolMetrics =
+           (mempoolMetrics ns)
+             { mempoolTxsNumberChanged    = True
+             , mempoolTxsPercentChanged   = True
+             , mempoolBytesChanged        = True
+             , mempoolBytesPercentChanged = True
+             , mempoolMaxTxsChanged       = True
+             , mempoolMaxBytesChanged     = True
+             , txsProcessedChanged        = True
+             }
+       , forgeMetrics =
+           (forgeMetrics ns)
+             { nodeIsLeaderNumChanged    = True
+             , slotsMissedNumberChanged  = True
+             , nodeCannotForgeChanged    = True
+             , blocksForgedNumberChanged = True
+             }
+       , rtsMetrics =
+           (rtsMetrics ns)
+             { rtsMemoryAllocatedChanged   = True
+             , rtsMemoryUsedChanged        = True
+             , rtsMemoryUsedPercentChanged = True
+             , rtsGcCpuChanged             = True
+             , rtsGcElapsedChanged         = True
+             , rtsGcNumChanged             = True
+             , rtsGcMajorNumChanged        = True
+             }
+       , blockchainMetrics =
+           (blockchainMetrics ns)
+             { systemStartTimeChanged = True
+             , epochChanged           = True
+             , slotChanged            = True
+             , blocksNumberChanged    = True
+             , chainDensityChanged    = True
+             }
+       , kesMetrics =
+           (kesMetrics ns)
+             { remKESPeriodsChanged         = True
+             , remKESPeriodsInDaysChanged   = True
+             , opCertStartKESPeriodChanged  = True
+             , opCertExpiryKESPeriodChanged = True
+             , currentKESPeriodChanged      = True
+             }
+       , nodeErrors =
+           (nodeErrors ns)
+             { errorsChanged = True
+             }
+       }
 
 topNavigation
   :: [UI Element]
