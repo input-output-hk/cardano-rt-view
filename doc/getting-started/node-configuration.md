@@ -306,3 +306,66 @@ These are supported tracers:
 | `cardano.node.Forge.metrics`               | `KES` -> `Start KES period`            | `Start KES period`        |
 |                                            | `KES` -> `KES period`                  | `Current KES period`      |
 |                                            | `KES` -> `KES remaining`               | `KES remaining periods`   |
+
+## Errors routing
+
+Node forwards not only the metrics; it forwards possible errors as well. To see a particular error in the `Errors` tab in the `Pane view` mode, you should add corresponding tracers' names in the `mapBackends` section in the node's configuration file.
+
+For example, to see all DNS-related problems, add the following lines in the `mapBackends` section:
+
+```
+"cardano.node.DnsResolver": [
+  "TraceForwarderBK"
+],
+"cardano.node.DnsSubscription": [
+  "TraceForwarderBK"
+]
+```
+
+This is the complete list of tracers' names for all possible errors (actual for Cardano node `1.23.0`):
+
+* `cardano.node.AcceptPolicy`
+* `cardano.node.ChainDB`
+* `cardano.node.DnsResolver`
+* `cardano.node.DnsSubscription`
+* `cardano.node.ErrorPolicy`
+* `cardano.node.Handshake`
+* `cardano.node.IpSubscription`
+* `cardano.node.LocalErrorPolicy`
+* `cardano.node.LocalHandshake`
+* `cardano.node.Mux`
+
+To forward all possible errors to RTView, add the following lines in the `mapBackends` section:
+
+```
+"cardano.node.AcceptPolicy": [
+  "TraceForwarderBK"
+],
+"cardano.node.ChainDB": [
+  "TraceForwarderBK"
+],
+"cardano.node.DnsResolver": [
+  "TraceForwarderBK"
+],
+"cardano.node.DnsSubscription": [
+  "TraceForwarderBK"
+],
+"cardano.node.ErrorPolicy": [
+  "TraceForwarderBK"
+],
+"cardano.node.Handshake": [
+  "TraceForwarderBK"
+],
+"cardano.node.IpSubscription": [
+  "TraceForwarderBK"
+],
+"cardano.node.LocalErrorPolicy": [
+  "TraceForwarderBK"
+],
+"cardano.node.LocalHandshake": [
+  "TraceForwarderBK"
+],
+"cardano.node.Mux": [
+  "TraceForwarderBK"
+]
+```

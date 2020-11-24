@@ -23,3 +23,7 @@ You can find it [here](https://github.com/input-output-hk/cardano-rt-view/blob/m
 ## «How many nodes can I connect to my RTView process?»
 
 You can connect as many nodes as you want.
+
+## «I know that particular error occurred, but I don't see it in the Errors tab. Why?»
+
+Please make sure you added corresponding tracer name in your node's configuration file. You can find the details [here](https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/node-configuration.md#errors-routing).
