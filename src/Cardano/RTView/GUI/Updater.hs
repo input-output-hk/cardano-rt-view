@@ -87,7 +87,8 @@ updatePaneGUI window tv params nodesStateElems = do
 
     nodeIsIdle <- checkIfNodeIsIdlePane params metricsLastUpdate (els ! ElIdleNode) (els ! ElNodePane)
     unless nodeIsIdle $ do
-      setNodeUpTime nodeStartTime els ElUptime
+      setNodeStartTime  tv nName nodeStartTime nodeStartTimeChanged els ElNodeStarttime
+      setNodeUpTime nodeStartTime els ElNodeUptime
 
       setNodeVersion    tv nName (TextV    nodeVersion)          nodeVersionChanged        els ElNodeVersion
       setNodeProtocol   tv nName (TextV    nodeProtocol)         nodeProtocolChanged       els ElNodeProtocol
@@ -145,7 +146,8 @@ updateGridGUI window tv params gridNodesStateElems = do
 
     nodeIsIdle <- checkIfNodeIsIdleGrid window params metricsLastUpdate (els ! ElIdleNode) nName
     unless nodeIsIdle $ do
-      setNodeUpTime nodeStartTime els ElUptime
+      setNodeStartTime  tv nName nodeStartTime nodeStartTimeChanged els ElNodeStarttime
+      setNodeUpTime nodeStartTime els ElNodeUptime
 
       setNodeVersion    tv nName (TextV    nodeVersion)          nodeVersionChanged        els ElNodeVersion
       setNodeProtocol   tv nName (TextV    nodeProtocol)         nodeProtocolChanged       els ElNodeProtocol
@@ -349,6 +351,26 @@ setNodeUpTime startTime els elName =
                                then show daysNum <> "d " <> upTimeFormatted
                                else upTimeFormatted
         void $ element el # set text upTimeWithDays
+
+setNodeStartTime
+  :: TVar NodesState
+  -> Text
+  -> UTCTime
+  -> Bool
+  -> NodeStateElements
+  -> ElementName
+  -> UI ()
+setNodeStartTime _ _ _ False _ _ = return ()
+setNodeStartTime tv nameOfNode startTime True els elName =
+  whenJust (els !? elName) $ \el -> do
+    if startTime /= nullTime
+      then void $ element el # set text startTimeFormatted
+      else void $ element el # set text none
+    setChangedFlag tv
+                   nameOfNode
+                   (\ns -> ns { nodeMetrics = (nodeMetrics ns) { nodeStartTimeChanged = False } })
+ where
+  startTimeFormatted = formatTime defaultTimeLocale "%F %T %Z" startTime
 
 setNodeCommit
   :: TVar NodesState

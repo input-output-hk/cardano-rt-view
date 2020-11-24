@@ -49,7 +49,8 @@ data ElementName
   | ElNodeVersion
   | ElNodePlatform
   | ElNodeCommitHref
-  | ElUptime
+  | ElNodeStarttime
+  | ElNodeUptime
   | ElSystemStartTime
   | ElEpoch
   | ElSlot
