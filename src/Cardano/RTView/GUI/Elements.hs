@@ -86,6 +86,7 @@ data ElementName
   | ElRTSGcElapsed
   | ElRTSGcNum
   | ElRTSGcMajorNum
+  | ElDownloadErrorsAsCSV
   -- Progress bars.
   | ElMempoolBytesProgress
   | ElMempoolBytesProgressBox
