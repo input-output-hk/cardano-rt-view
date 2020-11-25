@@ -29,6 +29,7 @@ library
                        Cardano.RTView.GUI.Markup.Pane
                        Cardano.RTView.GUI.Updater
 
+                       Cardano.RTView.NodeState.CSV
                        Cardano.RTView.NodeState.Parsers
                        Cardano.RTView.NodeState.Types
                        Cardano.RTView.NodeState.Updater
@@ -44,6 +45,7 @@ library
                      , async
                      , base >=4.12 && <5
                      , clay
+                     , csv
                      , deepseq
                      , directory
                      , extra

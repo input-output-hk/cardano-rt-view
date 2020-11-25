@@ -24,6 +24,7 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
                                               PeerInfoElements (..), PeerInfoItem (..), dataAttr,
                                               hideIt, showIt, (##), (#.))
 import           Cardano.RTView.GUI.Updater (justUpdateErrorsListAndTab)
+import           Cardano.RTView.NodeState.CSV (mkCSVWithErrorsForHref)
 import           Cardano.RTView.NodeState.Types
 
 mkNodesPanes

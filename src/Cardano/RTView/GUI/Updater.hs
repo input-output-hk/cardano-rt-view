@@ -37,6 +37,7 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..
                                               (#.), hideIt, showInline, pageTitle, pageTitleNotify)
 import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames)
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
+import           Cardano.RTView.NodeState.CSV (mkCSVWithErrorsForHref)
 import           Cardano.RTView.NodeState.Types
 import           Cardano.RTView.SupportedNodes (supportedNodesVersions, showSupportedNodesVersions)
 

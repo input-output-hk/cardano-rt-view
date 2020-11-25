@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
@@ -33,7 +32,6 @@ module Cardano.RTView.NodeState.Types
     , sortErrorsByTimeDesc
     , sortErrorsBySevAsc
     , sortErrorsBySevDesc
-    , mkCSVWithErrorsForHref
     ) where
 
 import           Control.DeepSeq (NFData (..))
@@ -84,24 +82,6 @@ sortErrorsByTimeAsc  ne1 ne2 = eTimestamp ne1 `compare` eTimestamp ne2
 sortErrorsByTimeDesc ne1 ne2 = eTimestamp ne2 `compare` eTimestamp ne1
 sortErrorsBySevAsc   ne1 ne2 = eSeverity  ne1 `compare` eSeverity  ne2
 sortErrorsBySevDesc  ne1 ne2 = eSeverity  ne2 `compare` eSeverity  ne1
-
-mkCSVWithErrorsForHref :: [NodeError] -> String
-mkCSVWithErrorsForHref [] = ""
-mkCSVWithErrorsForHref allErrors = T.unpack csvForHref
- where
-  csvForHref = T.replace " " "%20" (T.replace "," "%2C" csv)
-  csv = header <> nl <> body
-  header = "Timestamp,Severity,Message"
-  body = T.concat $ map errorToCSV allErrors
-  errorToCSV ne = T.pack (show $ eTimestamp ne) <> "," <>
-                  T.pack (show $ eSeverity ne)  <> "," <>
-                  T.pack (eMessage ne) <>
-                  nl
-#if defined(mingw32_HOST_OS)
-  nl = "\r\n"
-#else
-  nl = "\n"
-#endif
 
 data NodeState = NodeState
   { peersMetrics      :: !PeerMetrics
