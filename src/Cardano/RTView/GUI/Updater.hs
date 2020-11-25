@@ -78,7 +78,7 @@ updatePaneGUI window tv params nodesStateElems = do
         ErrorsMetrics {..}     = nodeErrors
 
     updateErrorsListAndTab window tv nName errors errorsChanged els
-                           ElNodeErrors ElNodeErrorsTab ElNodeErrorsTabBadge
+                           ElNodeErrors ElNodeErrorsTab ElNodeErrorsTabBadge ElDownloadErrorsAsCSV
     updatePeersList tv nName peersInfo peersInfoChanged peerInfoItems
 
     -- TODO: temporary solution, progress bars will be replaced by charts soon.
@@ -459,22 +459,28 @@ updateErrorsListAndTab
   -> ElementName
   -> ElementName
   -> ElementName
+  -> ElementName
   -> UI ()
-updateErrorsListAndTab _ _ _ _ False _ _ _ _ = return ()
-updateErrorsListAndTab window tv nameOfNode nodeErrors' True els elName elTabName elTabBadgeName = do
+updateErrorsListAndTab _ _ _ _ False _ _ _ _ _ = return ()
+updateErrorsListAndTab window tv nameOfNode nodeErrors' True els
+                       elName elTabName elTabBadgeName elDownloadName = do
   let maybeEl         = els !? elName
       maybeElTab      = els !? elTabName
       maybeElTabBadge = els !? elTabBadgeName
+      maybeElDownload = els !? elDownloadName
   when (   isJust maybeEl
         && isJust maybeElTab
-        && isJust maybeElTabBadge) $ do
+        && isJust maybeElTabBadge
+        && isJust maybeElDownload) $ do
     let el         = fromJust maybeEl
         elTab      = fromJust maybeElTab
         elTabBadge = fromJust maybeElTabBadge
+        elDownload = fromJust maybeElDownload
     justUpdateErrorsListAndTab nodeErrors' el elTab elTabBadge
-    
-    unless (null nodeErrors') $
+
+    unless (null nodeErrors') $ do
       void $ return window # set UI.title pageTitleNotify
+      prepareCSVForDownload nodeErrors' nameOfNode elDownload
 
     setChangedFlag tv
                    nameOfNode
@@ -529,6 +535,23 @@ justUpdateErrorsListAndTab nodeErrors' elErrors elTab elTabBadge = do
       0 -> "Good news: there are no errors!"
       1 -> "There is one error from node"
       n -> "There are " <> show n <> " errors from node"
+
+prepareCSVForDownload
+  :: [NodeError]
+  -> Text
+  -> Element
+  -> UI ()
+prepareCSVForDownload nodeErrors' nameOfNode el = do
+  let csvFile = "cardano-rt-view-" <> T.unpack nameOfNode <> "-errors.csv"
+      errorsAsCSV = mkCSVWithErrorsForHref nodeErrors'
+  void $ element el # set children []
+  void $ element el #+ [ UI.anchor # set UI.href ("data:application/csv;charset=utf-8," <> errorsAsCSV)
+                                   # set (UI.attr "download") csvFile
+                                   #+ [ UI.img #. [ErrorsDownloadIcon]
+                                               # set UI.src "/static/images/file-download.svg"
+                                               # set UI.title__ "Download errors as CSV"
+                                      ]
+                       ]
 
 -- Check the errors for all nodes: if there's no errors at all,
 -- set the page's title to default one.

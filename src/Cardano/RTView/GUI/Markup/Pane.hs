@@ -75,6 +75,7 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
       BlockchainMetrics {..} = blockchainMetrics
       KESMetrics {..}        = kesMetrics
       NodeMetrics {..}       = nodeMetrics
+      ErrorsMetrics {..}     = nodeErrors
 
   -- Create |Element|s containing node state (info, metrics).
   -- These elements will be part of the complete page,
@@ -155,7 +156,7 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
                                  , string "MB" #. [BarValueUnit]
                                  ]
   elRTSMemoryProgressBox    <- UI.div #. [ProgressBarBox] #+ [element elRTSMemoryProgress]
- 
+
   -- Create content area for each tab.
   nodeTabContent
     <- UI.div #. [TabContainer, W3Row] # showIt #+
@@ -463,14 +464,20 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
                                # set UI.href "#"
                                #+ [ UI.string "Reset" ]
 
-  let csvFile = "cardano-rt-view-" <> T.unpack nameOfNode <> "-errors.csv"
-  errorsAsCSV <- mkCSVWithErrors nsTVar nameOfNode
-  downloadErrorsAsCSV <- UI.anchor # set UI.href ("data:application/csv;charset=utf-8," <> errorsAsCSV)
-                                   # set (UI.attr "download") csvFile
-                                   #+ [ UI.img #. [ErrorsDownloadIcon]
-                                               # set UI.src "/static/images/file-download.svg"
-                                               # set UI.title__ "Download errors as CSV"
-                                      ]
+  elDownloadErrorsAsCSV
+    <- if null errors
+         then UI.span #+ [string ""] -- No errors from the node.
+         else do
+           let csvFile = "cardano-rt-view-" <> T.unpack nameOfNode <> "-errors.csv"
+               errorsAsCSV = mkCSVWithErrorsForHref errors
+           UI.span #+
+                [ UI.anchor # set UI.href ("data:application/csv;charset=utf-8," <> errorsAsCSV)
+                            # set (UI.attr "download") csvFile
+                            #+ [ UI.img #. [ErrorsDownloadIcon]
+                                        # set UI.src "/static/images/file-download.svg"
+                                        # set UI.title__ "Download errors as CSV"
+                               ]
+                ]
 
   errorsTabContent
     <- UI.div #. [TabContainer] # hideIt #+
@@ -496,7 +503,7 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
                                  , element unFilter
                                  ]
                              ]
-                         , element downloadErrorsAsCSV
+                         , element elDownloadErrorsAsCSV
                          ]
                      , UI.div #. [W3Third, W3RightAlign] #+
                          [ element elRemoveAllErrors
@@ -717,6 +724,7 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
         , (ElRTSGcElapsed,            elRTSGcElapsed)
         , (ElRTSGcNum,                elRTSGcNum)
         , (ElRTSGcMajorNum,           elRTSGcMajorNum)
+        , (ElDownloadErrorsAsCSV,     elDownloadErrorsAsCSV)
         -- Progress bars
         , (ElMempoolBytesProgress,    elMempoolBytesProgress)
         , (ElMempoolBytesProgressBox, elMempoolBytesProgressBox)
@@ -805,15 +813,6 @@ immediatelyUpdateErrors nsTVar nameOfNode el elTab elTabBadge = do
   updatedState <- liftIO $ readTVarIO nsTVar
   let NodeState {..} = updatedState ! nameOfNode
   justUpdateErrorsListAndTab (errors nodeErrors) el elTab elTabBadge
-
-mkCSVWithErrors
-  :: TVar NodesState
-  -> Text
-  -> UI String
-mkCSVWithErrors nsTVar nameOfNode = do
-  currentState <- liftIO $ readTVarIO nsTVar
-  let NodeState {..} = currentState ! nameOfNode
-  return $ mkCSVWithErrorsForHref (errors nodeErrors)
 
 vSpacer :: HTMLClass -> UI Element
 vSpacer className = UI.div #. [className] #+ []

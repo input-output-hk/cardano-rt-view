@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
@@ -89,12 +90,18 @@ mkCSVWithErrorsForHref [] = ""
 mkCSVWithErrorsForHref allErrors = T.unpack csvForHref
  where
   csvForHref = T.replace " " "%20" (T.replace "," "%2C" csv)
-  csv = T.unlines [header, body]
+  csv = header <> nl <> body
   header = "Timestamp,Severity,Message"
-  body = T.unlines $ map errorToCSV allErrors
+  body = T.concat $ map errorToCSV allErrors
   errorToCSV ne = T.pack (show $ eTimestamp ne) <> "," <>
                   T.pack (show $ eSeverity ne)  <> "," <>
-                  T.pack (eMessage ne)
+                  T.pack (eMessage ne) <>
+                  nl
+#if defined(mingw32_HOST_OS)
+  nl = "\r\n"
+#else
+  nl = "\n"
+#endif
 
 data NodeState = NodeState
   { peersMetrics      :: !PeerMetrics
