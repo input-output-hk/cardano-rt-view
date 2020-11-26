@@ -44,8 +44,9 @@ library
                      , ansi-terminal
                      , async
                      , base >=4.12 && <5
+                     , bytestring
                      , clay
-                     , csv
+                     , cassava
                      , deepseq
                      , directory
                      , extra

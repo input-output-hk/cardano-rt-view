@@ -2,21 +2,40 @@ module Cardano.RTView.NodeState.CSV
     ( mkCSVWithErrorsForHref
     ) where
 
+import           Data.Csv (ToField (..), ToNamedRecord (..), (.=),
+                           encodeByName, header, namedRecord)
+import qualified Data.ByteString.Char8 as BSC
+import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text as T
-import           Text.CSV (printCSV)
+import           Data.Time.Clock (UTCTime (..))
+import           Data.Word (Word8)
+import           GHC.Base (unsafeChr)
+
+import           Cardano.BM.Data.Severity (Severity (..))
 
 import           Cardano.RTView.NodeState.Types (NodeError (..))
 
+instance ToField UTCTime where
+  toField = BSC.pack . show
+
+instance ToField Severity where
+  toField = BSC.pack . show
+
+instance ToNamedRecord NodeError where
+  toNamedRecord (NodeError ts sev msg _) =
+    namedRecord
+      [ "Timestamp" .= ts
+      , "Severity"  .= sev
+      , "Message"   .= msg
+      ]
+
 mkCSVWithErrorsForHref :: [NodeError] -> String
-mkCSVWithErrorsForHref allErrors = prepareForHref csv'
+mkCSVWithErrorsForHref allErrors = prepareForHref csv
  where
-  csv' = printCSV $ header : body
-  header = ["Timestamp", "Severity", "Message"]
-  body = map errorToCSV allErrors
-  errorToCSV ne = [ show $ eTimestamp ne
-                  , show $ eSeverity ne
-                  , eMessage ne
-                  ]
+  csv = map w2c . BSL.unpack . encodeByName header' $ allErrors
+  header' = header ["Timestamp", "Severity", "Message"]
+  w2c :: Word8 -> Char
+  w2c = unsafeChr . fromIntegral
 
 prepareForHref :: String -> String
 prepareForHref =
