@@ -231,10 +231,6 @@ updateNodesState nsTVar loggerName (LogObject aName aMeta aContent) = do
              textValue $ updateNodeStartTime ns now
            | itIs "basicInfo.systemStartTime" ->
              textValue $ updateSystemStartTime ns now
-           -- | "basicInfo.slotLengthByron" `T.isInfixOf` aName ->
-           --   LogMessage slotLength ->
-           --     nsWith $ updateSlotLength ns slotLength
-           --   _ -> currentNodesState
            | otherwise ->
             case aContent of
               LogValue "density" (PureD density) ->
