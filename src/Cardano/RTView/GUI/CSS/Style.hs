@@ -22,6 +22,10 @@ ownCSS = unpack . TL.toStrict . render $ do
     backgroundColor   whitesmoke
     color "#1b2238"
 
+  h2 ? do
+    fontFamily        ["Roboto Condensed"] [sansSerif]
+    fontSizePx        23
+
   -- To avoid shifting "labels-values" on mobile screens (for Pane mode).
   query M.screen [M.maxWidth (px 601)] $ ".w3-col.m6, .w3-half" ?     widthPct 49.99
   query M.screen [M.maxWidth (px 601)] $ ".w3-col.m4, .w3-third" ?    widthPct 33.33
@@ -60,6 +64,30 @@ ownCSS = unpack . TL.toStrict . render $ do
     widthPx           12
     marginLeftPx      6
     maxHeightPx       18
+
+  cl RTViewInfoIcon ? do
+    widthPx           25
+    paddingTopPx      8
+    cursor            pointer
+
+  cl RTViewInfoCopyPathIcon ? do
+    widthPx           12
+    marginLeftPx      10
+    marginBottomPx    4
+    cursor            pointer
+
+  cl RTViewInfoClose ? do
+    widthPx           32
+    paddingRightPx    18
+    paddingTopPx      16
+    cursor            pointer
+
+  cl RTViewInfoTop ? do
+    backgroundColor   "#364679"
+
+  cl RTViewInfoContainer ? do
+    color             black
+    fontSizePx        20
 
   cl W3DropdownHover # hover |> cl W3Button # firstChild ? do
     important $

@@ -4,6 +4,9 @@
 
 module Cardano.RTView.Config
     ( prepareConfigAndParams
+    , configFileIsProvided
+    , savedConfigurationFile
+    , savedRTViewParamsFile
     ) where
 
 import           Control.Exception (IOException, catch)

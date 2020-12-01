@@ -24,10 +24,15 @@ library
                        Cardano.RTView.GUI.CSS.Style
                        Cardano.RTView.GUI.Elements
                        Cardano.RTView.GUI.JS.Charts
+                       Cardano.RTView.GUI.JS.Utils
                        Cardano.RTView.GUI.Markup.Grid
+                       Cardano.RTView.GUI.Markup.OwnInfo
                        Cardano.RTView.GUI.Markup.PageBody
                        Cardano.RTView.GUI.Markup.Pane
                        Cardano.RTView.GUI.Updater
+
+                       Cardano.RTView.Git.Rev
+                       Cardano.RTView.Git.RevTH
 
                        Cardano.RTView.NodeState.CSV
                        Cardano.RTView.NodeState.Parsers
@@ -50,13 +55,16 @@ library
                      , deepseq
                      , directory
                      , extra
+                     , file-embed
                      , filepath
                      , formatting
                      , hashable
                      , iohk-monitoring
                      , lobemo-backend-trace-acceptor
                      , optparse-applicative
+                     , process
                      , stm
+                     , template-haskell
                      , text
                      , threepenny-gui
                      , time
