@@ -168,6 +168,11 @@ data HTMLClass
   | ProgressBarBox
   | ResourcesIcon
   | ResourcesDropdownIcon
+  | RTViewInfoClose
+  | RTViewInfoContainer
+  | RTViewInfoCopyPathIcon
+  | RTViewInfoIcon
+  | RTViewInfoTop
   | SelectMetricCheck
   | SelectMetricCheckArea
   | SelectNodeCheck
@@ -207,6 +212,7 @@ data HTMLClass
   | EmergencyMessageTag
   | EmergencyMessageTagNoHelp
   -- W3C classes
+  | W3AnimateTop
   | W3Badge
   | W3Bar
   | W3BarBlock
@@ -216,10 +222,12 @@ data HTMLClass
   | W3BorderBottom
   | W3BorderTop
   | W3Button
+  | W3Card4
   | W3Check
   | W3Col
   | W3Container
   | W3Disabled
+  | W3DisplayTopright
   | W3DropdownContent
   | W3DropdownHover
   | W3Half
@@ -228,6 +236,8 @@ data HTMLClass
   | W3Large
   | W3Margin
   | W3Mobile
+  | W3Modal
+  | W3ModalContent
   | W3PaddingSmall
   | W3Responsive
   | W3Rest
@@ -282,6 +292,11 @@ instance Show HTMLClass where
   show ProgressBarBox         = "ProgressBarBox"
   show ResourcesIcon          = "ResourcesIcon"
   show ResourcesDropdownIcon  = "ResourcesDropdownIcon"
+  show RTViewInfoClose        = "RTViewInfoClose"
+  show RTViewInfoContainer    = "RTViewInfoContainer"
+  show RTViewInfoCopyPathIcon = "RTViewInfoCopyPathIcon"
+  show RTViewInfoIcon         = "RTViewInfoIcon"
+  show RTViewInfoTop          = "RTViewInfoTop"
   show SelectMetricCheck      = "SelectMetricCheck"
   show SelectMetricCheckArea  = "SelectMetricCheckArea"
   show SelectNodeCheck        = "SelectNodeCheck"
@@ -319,6 +334,7 @@ instance Show HTMLClass where
   show EmergencyMessageTag    = "EmergencyMessageTag"
   show EmergencyMessageTagNoHelp = "EmergencyMessageTagNoHelp"
   -- Names of these classes are taken from W3C-library.
+  show W3AnimateTop      = "w3-animate-top"
   show W3Badge           = "w3-badge"
   show W3Bar             = "w3-bar"
   show W3BarBlock        = "w3-bar-block"
@@ -328,10 +344,12 @@ instance Show HTMLClass where
   show W3BorderBottom    = "w3-border-bottom"
   show W3BorderTop       = "w3-border-top"
   show W3Button          = "w3-button"
+  show W3Card4           = "w3-card-4"
   show W3Check           = "w3-check"
   show W3Col             = "w3-col"
   show W3Container       = "w3-container"
   show W3Disabled        = "w3-disabled"
+  show W3DisplayTopright = "w3-display-topright"
   show W3DropdownContent = "w3-dropdown-content"
   show W3DropdownHover   = "w3-dropdown-hover"
   show W3Half            = "w3-half"
@@ -340,6 +358,8 @@ instance Show HTMLClass where
   show W3Large           = "w3-large"
   show W3Margin          = "w3-margin"
   show W3Mobile          = "w3-mobile"
+  show W3Modal           = "w3-modal"
+  show W3ModalContent    = "w3-modal-content"
   show W3PaddingSmall    = "w3-padding-small"
   show W3Responsive      = "w3-responsive"
   show W3Rest            = "w3-rest"

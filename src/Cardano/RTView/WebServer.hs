@@ -50,7 +50,7 @@ mainPage nsTVar params acceptors window = do
   addJavaScript window "chart.js"
 
   -- Make page's body (HTML markup).
-  (pageBody, (nodesStateElems, gridNodesStateElems)) <- mkPageBody nsTVar window acceptors
+  (pageBody, (nodesStateElems, gridNodesStateElems)) <- mkPageBody nsTVar params window acceptors
 
   -- Start the timer for GUI update. Every second it will
   -- call a function which updates node state elements on the page.

@@ -15,20 +15,23 @@ import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, liftIO, set, string, (#), (#+))
 
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
+import           Cardano.RTView.CLI (RTViewParams (..))
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
                                               HTMLId (..), NodesStateElements,
                                               hideIt, showCell, showIt, showRow, (##), (#.))
 import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames, metricLabel, mkNodesGrid)
+import           Cardano.RTView.GUI.Markup.OwnInfo (mkOwnInfo)
 import           Cardano.RTView.GUI.Markup.Pane (mkNodesPanes)
 import           Cardano.RTView.NodeState.Types
 
 mkPageBody
   :: TVar NodesState
+  -> RTViewParams
   -> UI.Window
   -> [RemoteAddrNamed]
   -> UI (Element, (NodesStateElements, NodesStateElements))
-mkPageBody nsTVar window acceptors = do
+mkPageBody nsTVar params window acceptors = do
   (paneNodesRootElem, paneNodesElems, panesWithNames) <- mkNodesPanes nsTVar acceptors
   (gridNodesRootElem, gridNodesElems) <- mkNodesGrid nsTVar acceptors
 
@@ -98,7 +101,7 @@ mkPageBody nsTVar window acceptors = do
 
   body
     <- UI.getBody window #+
-         [ topNavigation allSelectors viewModeSelector metricsSelector
+         [ topNavigation params allSelectors viewModeSelector metricsSelector
          , element bodyRootElem
          ]
 
@@ -199,11 +202,19 @@ forceChangingAllElements nsTVar =
        }
 
 topNavigation
-  :: [UI Element]
+  :: RTViewParams
+  -> [UI Element]
   -> [UI Element]
   -> [UI Element]
   -> UI Element
-topNavigation nodesSelector viewModeSelector metricsSelector =
+topNavigation params nodesSelector viewModeSelector metricsSelector = do
+  rtViewInfo <- mkOwnInfo params
+  rtViewInfoButton <- UI.img #. [RTViewInfoIcon]
+                             # set UI.src "/static/images/info-light.svg"
+                             # set UI.title__ "RTView info"
+  void $ UI.onEvent (UI.click rtViewInfoButton) $ \_ -> do
+    element rtViewInfo # showIt
+
   UI.div #. [W3Bar, W3Large, TopBar] #+
     [ UI.anchor #. [W3BarItem, W3Mobile] # set UI.href "https://cardano.org/" #+
         [ UI.img #. [CardanoLogo] # set UI.src "/static/images/cardano-logo.svg"
@@ -230,6 +241,10 @@ topNavigation nodesSelector viewModeSelector metricsSelector =
             , UI.img #. [TopNavDropdownIcon] # set UI.src "/static/images/dropdown-light.svg"
             ]
         , UI.div #. [W3DropdownContent, W3BarBlock, MetricsArea] #+ metricsSelector
+        ]
+    , UI.span #. [W3BarItem, W3Mobile] #+
+        [ element rtViewInfoButton
+        , element rtViewInfo
         ]
     , UI.span #. [W3Right, W3HideMedium, W3HideSmall, ServiceName] #+
         [ string "Cardano Node Real-time View"
