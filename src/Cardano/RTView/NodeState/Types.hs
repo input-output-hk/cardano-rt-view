@@ -209,6 +209,7 @@ data NodeMetrics = NodeMetrics
 data ErrorsMetrics = ErrorsMetrics
   { errors        :: ![NodeError]
   , errorsChanged :: !Bool
+  , errorsRebuild :: !Bool
   } deriving (Generic, NFData)
 
 initialNodesState
@@ -340,6 +341,7 @@ initialNodeState now = NodeState
       ErrorsMetrics
         { errors        = []
         , errorsChanged = True
+        , errorsRebuild = False
         }
   , metricsLastUpdate = now
   }

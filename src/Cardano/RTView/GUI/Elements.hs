@@ -10,6 +10,8 @@ module Cardano.RTView.GUI.Elements
     , ElementValue (..)
     , PeerInfoItem (..)
     , PeerInfoElements (..)
+    , TmpElements (..)
+    , initialTmpElements
     , (#.)
     , (##)
     , dataAttr
@@ -86,7 +88,6 @@ data ElementName
   | ElRTSGcElapsed
   | ElRTSGcNum
   | ElRTSGcMajorNum
-  | ElDownloadErrorsAsCSV
   -- Progress bars.
   | ElMempoolBytesProgress
   | ElMempoolBytesProgressBox
@@ -127,6 +128,16 @@ data PeerInfoElements = PeerInfoElements
   , pieSlotNumber :: !Element
   , pieStatus     :: !Element
   } deriving (Generic, NFData)
+
+-- | The storage for temporary Elements, which should be deleted explicitly.
+--   Please read the documentation for details:
+--   https://hackage.haskell.org/package/threepenny-gui-0.9.0.0/docs/Graphics-UI-Threepenny-Core.html#v:delete
+newtype TmpElements = TmpElements
+  { tmpErrors :: [Element]
+  }
+
+initialTmpElements :: TmpElements
+initialTmpElements = TmpElements []
 
 -- | HTML elements identifiers, we use them in HTML, CSS and JS FFI.
 
@@ -383,6 +394,7 @@ data HTMLId
   | HideAllNodesButton
   | ShowAllNodesButton
   | ViewModeButton
+  | NodeInfoTab
   -- Id parts (the final id will be formed using unique name of node).
   | CPUUsageChartId
   | DiskUsageChartId

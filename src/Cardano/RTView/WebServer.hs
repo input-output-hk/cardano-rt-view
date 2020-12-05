@@ -12,18 +12,19 @@ import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..))
 import           Cardano.RTView.GUI.CSS.Style (ownCSS)
-import           Cardano.RTView.GUI.Elements (pageTitle)
+import           Cardano.RTView.GUI.Elements (TmpElements, pageTitle)
 import           Cardano.RTView.GUI.Markup.PageBody (mkPageBody)
 import           Cardano.RTView.GUI.Updater (updateGUI)
 import           Cardano.RTView.NodeState.Types (NodesState)
 
 launchWebServer
   :: TVar NodesState
+  -> TVar TmpElements
   -> RTViewParams
   -> [RemoteAddrNamed]
   -> IO ()
-launchWebServer nsTVar params acceptors =
-  UI.startGUI config $ mainPage nsTVar params acceptors
+launchWebServer nsTVar tmpElsTVar params acceptors =
+  UI.startGUI config $ mainPage nsTVar tmpElsTVar params acceptors
  where
   config = UI.defaultConfig
     { UI.jsStatic = Just $ rtvStatic params
@@ -35,11 +36,12 @@ launchWebServer nsTVar params acceptors =
 
 mainPage
   :: TVar NodesState
+  -> TVar TmpElements
   -> RTViewParams
   -> [RemoteAddrNamed]
   -> UI.Window
   -> UI ()
-mainPage nsTVar params acceptors window = do
+mainPage nsTVar tmpElsTVar params acceptors window = do
   void $ return window # set UI.title pageTitle
 
   -- It is assumed that CSS files are available at 'pathToStatic/css/'.
@@ -50,13 +52,13 @@ mainPage nsTVar params acceptors window = do
   addJavaScript window "chart.js"
 
   -- Make page's body (HTML markup).
-  (pageBody, (nodesStateElems, gridNodesStateElems)) <- mkPageBody nsTVar params window acceptors
+  (pageBody, (nodesStateElems, gridNodesStateElems)) <- mkPageBody nsTVar tmpElsTVar params window acceptors
 
   -- Start the timer for GUI update. Every second it will
   -- call a function which updates node state elements on the page.
   guiUpdateTimer <- timer # set interval 1000
   void $ onEvent (tick guiUpdateTimer) $ \_ ->
-    updateGUI window nsTVar params (nodesStateElems, gridNodesStateElems)
+    updateGUI window nsTVar tmpElsTVar params (nodesStateElems, gridNodesStateElems)
   start guiUpdateTimer
 
   void $ UI.element pageBody

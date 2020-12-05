@@ -17,6 +17,7 @@ import           Cardano.BM.Tracing (appendName)
 import           Cardano.RTView.Acceptor (launchMetricsAcceptor)
 import           Cardano.RTView.CLI (RTViewParams (..))
 import           Cardano.RTView.Config (prepareConfigAndParams)
+import           Cardano.RTView.GUI.Elements (TmpElements, initialTmpElements)
 import           Cardano.RTView.ErrorBuffer (ErrorBuffer, effectuate, realize, unrealize)
 import           Cardano.RTView.NodeState.Types (NodesState, initialNodesState)
 import           Cardano.RTView.NodeState.Updater (launchNodeStateUpdater)
@@ -43,6 +44,8 @@ runCardanoRTView params' = do
 
   -- This TVar contains state (info, metrics) for all nodes we receive metrics from.
   nsTVar :: TVar NodesState <- newTVarIO =<< initialNodesState config
+  -- This TVar contains temporary Elements which should be deleted explicitly.
+  tmpElsTVar :: TVar TmpElements <- newTVarIO initialTmpElements
 
   -- Launch 3 threads:
   --   1. acceptor plugin (it launches |TraceAcceptor| plugin),
@@ -50,6 +53,6 @@ runCardanoRTView params' = do
   --   3. web server (it serves requests from user's browser and shows nodes' metrics in the real time).
   acceptorThr <- async $ launchMetricsAcceptor config accTr switchBoard
   updaterThr  <- async $ launchNodeStateUpdater tr switchBoard be nsTVar
-  serverThr   <- async $ launchWebServer nsTVar params acceptors
+  serverThr   <- async $ launchWebServer nsTVar tmpElsTVar params acceptors
 
   void $ waitAnyCancel [acceptorThr, updaterThr, serverThr]
