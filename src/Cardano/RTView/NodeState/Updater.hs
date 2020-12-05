@@ -96,8 +96,9 @@ updateNodeErrors ns (LOMeta timeStamp _ _ sev _) aContent = ns { nodeErrors = ne
   newMetrics = currentMetrics
     { errors = newErrors
     , errorsChanged = True -- Every error message changes current list of errors by definition.
+    , errorsRebuild = False -- By default we shouldn't rebuild all the list.
     }
-  newErrors = NodeError timeStamp sev errorMessage visible : currentErrors
+  newErrors = currentErrors ++ [NodeError timeStamp sev errorMessage visible]
   currentMetrics = nodeErrors ns
   currentErrors = errors currentMetrics
   errorMessage =

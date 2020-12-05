@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -34,10 +35,10 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..
                                               HTMLClass (..), HTMLId (..),
                                               NodeStateElements, NodesStateElements,
                                               PeerInfoElements (..), PeerInfoItem (..),
+                                              TmpElements (..),
                                               (#.), hideIt, showInline, pageTitle, pageTitleNotify)
 import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames)
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
-import           Cardano.RTView.NodeState.CSV (mkCSVWithErrorsForHref)
 import           Cardano.RTView.NodeState.Types
 import           Cardano.RTView.SupportedNodes (supportedNodesVersions, showSupportedNodesVersions)
 
@@ -46,23 +47,25 @@ import           Cardano.RTView.SupportedNodes (supportedNodesVersions, showSupp
 updateGUI
   :: UI.Window
   -> TVar NodesState
+  -> TVar TmpElements
   -> RTViewParams
   -> (NodesStateElements, NodesStateElements)
   -> UI ()
-updateGUI window nsTVar params (nodesStateElems, gridNodesStateElems) =
+updateGUI window nsTVar tmpElsTVar params (nodesStateElems, gridNodesStateElems) =
   -- Only one GUI mode can be active now, so check it and update only corresponding elements.
   whenJustM (UI.getElementById window (show ViewModeButton)) $ \btn ->
     UI.get UI.value btn >>= \case
-      "paneMode" -> updatePaneGUI window nsTVar params nodesStateElems
+      "paneMode" -> updatePaneGUI window nsTVar tmpElsTVar params nodesStateElems
       _ ->          updateGridGUI window nsTVar params gridNodesStateElems
 
 updatePaneGUI
   :: UI.Window
   -> TVar NodesState
+  -> TVar TmpElements
   -> RTViewParams
   -> NodesStateElements
   -> UI ()
-updatePaneGUI window tv params nodesStateElems = do
+updatePaneGUI window tv tmpElsTVar params nodesStateElems = do
   nodesState <- liftIO $ readTVarIO tv
 
   resetPageTitleIfNeeded window tv
@@ -78,8 +81,8 @@ updatePaneGUI window tv params nodesStateElems = do
         nm@NodeMetrics {..}    = nodeMetrics
         ErrorsMetrics {..}     = nodeErrors
 
-    updateErrorsListAndTab window tv nName errors errorsChanged els
-                           ElNodeErrors ElNodeErrorsTab ElNodeErrorsTabBadge ElDownloadErrorsAsCSV
+    updateErrorsListAndTab window tv tmpElsTVar nName errors errorsChanged els
+                           ElNodeErrors ElNodeErrorsTab ElNodeErrorsTabBadge
     updatePeersList tv nName peersInfo peersInfoChanged peerInfoItems
 
     -- TODO: temporary solution, progress bars will be replaced by charts soon.
@@ -453,6 +456,7 @@ updatePeersList tv nameOfNode peersInfo' True peersInfoItems = do
 updateErrorsListAndTab
   :: UI.Window
   -> TVar NodesState
+  -> TVar TmpElements
   -> Text
   -> [NodeError]
   -> Bool
@@ -460,40 +464,44 @@ updateErrorsListAndTab
   -> ElementName
   -> ElementName
   -> ElementName
-  -> ElementName
   -> UI ()
-updateErrorsListAndTab _ _ _ _ False _ _ _ _ _ = return ()
-updateErrorsListAndTab window tv nameOfNode nodeErrors' True els
-                       elName elTabName elTabBadgeName elDownloadName = do
+updateErrorsListAndTab _ _ _ _ _ False _ _ _ _ = return ()
+updateErrorsListAndTab window tv tmpElsTVar nameOfNode nodeErrors' True els
+                       elName elTabName elTabBadgeName = do
   let maybeEl         = els !? elName
       maybeElTab      = els !? elTabName
       maybeElTabBadge = els !? elTabBadgeName
-      maybeElDownload = els !? elDownloadName
   when (   isJust maybeEl
         && isJust maybeElTab
-        && isJust maybeElTabBadge
-        && isJust maybeElDownload) $ do
+        && isJust maybeElTabBadge) $ do
     let el         = fromJust maybeEl
         elTab      = fromJust maybeElTab
         elTabBadge = fromJust maybeElTabBadge
-        elDownload = fromJust maybeElDownload
-    justUpdateErrorsListAndTab nodeErrors' el elTab elTabBadge
 
-    unless (null nodeErrors') $ do
+    nss <- liftIO $ readTVarIO tv
+    let shouldWeRebuild = errorsRebuild . nodeErrors $ (nss ! nameOfNode)
+    justUpdateErrorsListAndTab tmpElsTVar nodeErrors' shouldWeRebuild
+                               el elTab elTabBadge
+
+    unless (null nodeErrors') $
       void $ return window # set UI.title pageTitleNotify
-      prepareCSVForDownload nodeErrors' nameOfNode elDownload
 
     setChangedFlag tv
                    nameOfNode
                    (\ns -> ns { nodeErrors = (nodeErrors ns) { errorsChanged = False } })
 
 justUpdateErrorsListAndTab
-  :: [NodeError]
+  :: TVar TmpElements
+  -> [NodeError]
+  -> Bool
   -> Element
   -> Element
   -> Element
   -> UI ()
-justUpdateErrorsListAndTab nodeErrors' elErrors elTab elTabBadge = do
+justUpdateErrorsListAndTab tmpElsTVar
+                           nodeErrors'
+                           shouldWeRebuild
+                           elErrors elTab elTabBadge = do
   if null nodeErrors'
     then do
       void $ element elTab # set UI.enabled False
@@ -505,9 +513,29 @@ justUpdateErrorsListAndTab nodeErrors' elErrors elTab elTabBadge = do
                            # set UI.title__ errorsTabTitle
       void $ element elTabBadge # showInline
                                 # set text (show . length $ nodeErrors')
-  -- When the user filters errors in Errors tab, we don't remove them, just hide them.
-  -- So only visible errors should be displayed.
-  let visibleNodeErrors = filter eVisible nodeErrors'
+
+  tmpEls <- liftIO $ readTVarIO tmpElsTVar
+  visibleNodeErrors <-
+    if shouldWeRebuild
+      then do
+        -- It means that the user sorted, (un)filtered or deleted errors.
+        -- In this case we have to rebuild all the list from scratch,
+        -- so explicitly delete all tmp Elements corresponding to shown errors.
+        -- GC will clean them up later.
+        mapM_ UI.delete $ tmpErrors tmpEls
+        -- Please note that when the user filters errors,
+        -- we don't remove them, just hide them.
+        -- So only visible errors should be displayed.
+        return $ filter eVisible nodeErrors'
+      else do
+        -- It means that there's no actions from the user's side,
+        -- just some new errors arrived. In this case append them
+        -- at the end of errors that are already shown.
+        let alreadyShownErrors = tmpErrors tmpEls
+            len = length alreadyShownErrors
+            onlyNewErrors = drop len nodeErrors'
+        return $ filter eVisible onlyNewErrors
+
   errors <- forM visibleNodeErrors $ \(NodeError utcTimeStamp sev msg _) -> do
     let (aClass, aTagClass, aTag, aTagTitle) =
           case sev of
@@ -529,30 +557,29 @@ justUpdateErrorsListAndTab nodeErrors' elErrors elTab elTabBadge = do
           , UI.string msg  #. [aClass]
           ]
       ]
-  void $ element elErrors # set children errors
+
+  if shouldWeRebuild
+    then do
+      void $ element elErrors # set children []
+      void $ element elErrors # set children errors
+    else do
+      errors' <- mapM (fmap element . return) errors
+      void $ element elErrors #+ errors'
+
+  liftIO . atomically $ modifyTVar' tmpElsTVar $ \els ->
+    if shouldWeRebuild
+      then
+        els { tmpErrors = errors }
+      else
+        let alreadyShownErrors = tmpErrors els
+            errorsWithNewOnes = alreadyShownErrors ++ errors
+        in els { tmpErrors = errorsWithNewOnes }
  where
   errorsTabTitle =
     case length nodeErrors' of
       0 -> "Good news: there are no errors!"
       1 -> "There is one error from node"
       n -> "There are " <> show n <> " errors from node"
-
-prepareCSVForDownload
-  :: [NodeError]
-  -> Text
-  -> Element
-  -> UI ()
-prepareCSVForDownload nodeErrors' nameOfNode el = do
-  let csvFile = "cardano-rt-view-" <> T.unpack nameOfNode <> "-errors.csv"
-      errorsAsCSV = mkCSVWithErrorsForHref nodeErrors'
-  void $ element el # set children []
-  void $ element el #+ [ UI.anchor # set UI.href ("data:application/csv;charset=utf-8," <> errorsAsCSV)
-                                   # set (UI.attr "download") csvFile
-                                   #+ [ UI.img #. [ErrorsDownloadIcon]
-                                               # set UI.src "/static/images/file-download.svg"
-                                               # set UI.title__ "Download errors as CSV"
-                                      ]
-                       ]
 
 -- Check the errors for all nodes: if there's no errors at all,
 -- set the page's title to default one.

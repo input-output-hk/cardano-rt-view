@@ -18,7 +18,7 @@ import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 import           Cardano.RTView.CLI (RTViewParams (..))
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
-                                              HTMLId (..), NodesStateElements,
+                                              HTMLId (..), NodesStateElements, TmpElements,
                                               hideIt, showCell, showIt, showRow, (##), (#.))
 import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames, metricLabel, mkNodesGrid)
 import           Cardano.RTView.GUI.Markup.OwnInfo (mkOwnInfo)
@@ -27,12 +27,13 @@ import           Cardano.RTView.NodeState.Types
 
 mkPageBody
   :: TVar NodesState
+  -> TVar TmpElements
   -> RTViewParams
   -> UI.Window
   -> [RemoteAddrNamed]
   -> UI (Element, (NodesStateElements, NodesStateElements))
-mkPageBody nsTVar params window acceptors = do
-  (paneNodesRootElem, paneNodesElems, panesWithNames) <- mkNodesPanes nsTVar acceptors
+mkPageBody nsTVar tmpElsTVar params window acceptors = do
+  (paneNodesRootElem, paneNodesElems, panesWithNames) <- mkNodesPanes nsTVar tmpElsTVar acceptors
   (gridNodesRootElem, gridNodesElems) <- mkNodesGrid nsTVar acceptors
 
   -- Register clickable selector for nodes (to be able to show only one or all of them).

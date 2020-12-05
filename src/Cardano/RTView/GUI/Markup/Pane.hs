@@ -15,23 +15,26 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, liftIO, set, string, (#), (#+))
+import           System.Time.Extra (sleep)
 
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 import           Cardano.BM.Data.Severity (Severity (..))
 
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
                                               HTMLId (..), NodeStateElements, NodesStateElements,
-                                              PeerInfoElements (..), PeerInfoItem (..), dataAttr,
-                                              hideIt, showIt, (##), (#.))
+                                              PeerInfoElements (..), PeerInfoItem (..), TmpElements,
+                                              dataAttr, hideIt, showIt, (##), (#.))
+import           Cardano.RTView.GUI.JS.Utils (downloadCSVFile, goToTab)
 import           Cardano.RTView.GUI.Updater (justUpdateErrorsListAndTab)
 import           Cardano.RTView.NodeState.CSV (mkCSVWithErrorsForHref)
 import           Cardano.RTView.NodeState.Types
 
 mkNodesPanes
   :: TVar NodesState
+  -> TVar TmpElements
   -> [RemoteAddrNamed]
   -> UI (Element, NodesStateElements, [(Text, Element)])
-mkNodesPanes nsTVar acceptors = do
+mkNodesPanes nsTVar tmpElsTVar acceptors = do
   nodesState <- liftIO $ readTVarIO nsTVar
 
   nodePanesWithElems
@@ -42,7 +45,7 @@ mkNodesPanes nsTVar acceptors = do
          setChangedFlag nameOfNode (\ns -> ns { peersMetrics = (peersMetrics ns) { peersInfoChanged = True } })
 
          (pane, nodeStateElems, peerInfoItems) <-
-           mkNodePane nsTVar (nodesState ! nameOfNode) nameOfNode acceptors
+           mkNodePane nsTVar tmpElsTVar (nodesState ! nameOfNode) nameOfNode acceptors
          return (nameOfNode, pane, nodeStateElems, peerInfoItems)
 
   panesAreas
@@ -65,18 +68,19 @@ mkNodesPanes nsTVar acceptors = do
 
 mkNodePane
   :: TVar NodesState
+  -> TVar TmpElements
   -> NodeState
   -> Text
   -> [RemoteAddrNamed]
   -> UI (Element, NodeStateElements, [PeerInfoItem])
-mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
+mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
   let MempoolMetrics {..}    = mempoolMetrics
       ForgeMetrics {..}      = forgeMetrics
       RTSMetrics {..}        = rtsMetrics
       BlockchainMetrics {..} = blockchainMetrics
       KESMetrics {..}        = kesMetrics
       NodeMetrics {..}       = nodeMetrics
-      ErrorsMetrics {..}     = nodeErrors
+      -- ErrorsMetrics {..}     = nodeErrors
 
   -- Create |Element|s containing node state (info, metrics).
   -- These elements will be part of the complete page,
@@ -466,19 +470,16 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
                                #+ [ UI.string "Reset" ]
 
   elDownloadErrorsAsCSV
-    <- if null errors
-         then UI.span #+ [string ""] -- No errors from the node.
-         else do
-           let csvFile = "cardano-rt-view-" <> T.unpack nameOfNode <> "-errors.csv"
-               errorsAsCSV = mkCSVWithErrorsForHref errors
-           UI.span #+
-                [ UI.anchor # set UI.href ("data:application/csv;charset=utf-8," <> errorsAsCSV)
-                            # set (UI.attr "download") csvFile
-                            #+ [ UI.img #. [ErrorsDownloadIcon]
-                                        # set UI.src "/static/images/file-download.svg"
-                                        # set UI.title__ "Download errors as CSV"
-                               ]
-                ]
+    <- UI.img #. [ErrorsDownloadIcon]
+              # set UI.src "/static/images/file-download.svg"
+              # set UI.title__ "Download errors as CSV"
+
+  void $ UI.onEvent (UI.click elDownloadErrorsAsCSV) $ \_ -> do
+    nss <- liftIO $ readTVarIO nsTVar
+    let NodeState _ _ _ _ _ _ _ _ em _ = nss ! nameOfNode
+        csvFileName = "cardano-rt-view-" <> T.unpack nameOfNode <> "-errors.csv"
+        errorsAsCSV = mkCSVWithErrorsForHref (errors em)
+    UI.runFunction $ UI.ffi downloadCSVFile csvFileName errorsAsCSV
 
   errorsTabContent
     <- UI.div #. [TabContainer] # hideIt #+
@@ -539,7 +540,8 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
                      , string title
                      ]
 
-  nodeTab       <- tabButton "Node info" "info.svg" Nothing # makeItActive
+  nodeTab       <- tabButton "Node info" "info.svg" Nothing
+                             # makeItActive # set UI.id_ (show NodeInfoTab)
   kesTab        <- tabButton "Key Evolving Signature" "key.svg" Nothing
   peersTab      <- tabButton "Peers" "peers.svg" Nothing
   blockchainTab <- tabButton "Blockchain" "blockchain.svg" Nothing
@@ -558,7 +560,7 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
         setErrorsViewMode nsTVar nameOfNode $ sortErrors sortErrorsByTimeAsc
         void $ element elSortByTime # set (dataAttr dataSortByTime) desc
                                     # set UI.title__ "Sort by time, latest first"
-    immediatelyUpdateErrors nsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
+    immediatelyUpdateErrors nsTVar tmpElsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
 
   void $ UI.onEvent (UI.click elSortBySev) $ \_ -> do
     UI.get (dataAttr dataSortBySev) elSortBySev >>= \case
@@ -570,7 +572,7 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
         setErrorsViewMode nsTVar nameOfNode $ sortErrors sortErrorsBySevAsc
         void $ element elSortBySev # set (dataAttr dataSortBySev) desc
                                    # set UI.title__ "Sort by severity level, worst first"
-    immediatelyUpdateErrors nsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
+    immediatelyUpdateErrors nsTVar tmpElsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
 
   let makeResetButtonActive   = void $ element unFilter #. [W3BarItem, W3Button, W3Mobile, W3BorderTop]
       makeResetButtonInactive = void $ element unFilter #. [W3BarItem, W3Button, W3Mobile, W3BorderTop, W3Disabled]
@@ -580,7 +582,7 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
         void $ UI.onEvent (UI.click el) $ \_ -> do
           setErrorsViewMode nsTVar nameOfNode $ filterErrors sev
           makeResetButtonActive
-          immediatelyUpdateErrors nsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
+          immediatelyUpdateErrors nsTVar tmpElsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
 
   registerClickOnFilter filterWarning   Warning
   registerClickOnFilter filterError     Error
@@ -599,13 +601,15 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
 
   void $ UI.onEvent (UI.click unFilter) $ \_ -> do
     setErrorsViewMode nsTVar nameOfNode unFilterErrors
-    immediatelyUpdateErrors nsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
+    immediatelyUpdateErrors nsTVar tmpElsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
     makeResetButtonInactive
     forM_ filterItemsThatCanBeAcive $ \(_, el) -> void $ element el # makeItInactive
 
   void $ UI.onEvent (UI.click elRemoveAllErrors) $ \_ -> do
     setErrorsViewMode nsTVar nameOfNode removeAllErrors
-    immediatelyUpdateErrors nsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
+    immediatelyUpdateErrors nsTVar tmpElsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
+    liftIO $ sleep 0.4
+    UI.runFunction $ UI.ffi goToTab (show NodeInfoTab)
 
   forM_ filterItemsThatCanBeAcive $ \(ix, el) ->
     void $ UI.onEvent (UI.click el) $ \_ ->
@@ -725,7 +729,6 @@ mkNodePane nsTVar NodeState {..} nameOfNode acceptors = do
         , (ElRTSGcElapsed,            elRTSGcElapsed)
         , (ElRTSGcNum,                elRTSGcNum)
         , (ElRTSGcMajorNum,           elRTSGcMajorNum)
-        , (ElDownloadErrorsAsCSV,     elDownloadErrorsAsCSV)
         -- Progress bars
         , (ElMempoolBytesProgress,    elMempoolBytesProgress)
         , (ElMempoolBytesProgressBox, elMempoolBytesProgressBox)
@@ -759,6 +762,7 @@ sortErrors orderF ns = ns { nodeErrors = newMetrics }
   newMetrics = currentMetrics
     { errors = sortBy orderF currentErrors
     , errorsChanged = True
+    , errorsRebuild = True
     }
   currentMetrics = nodeErrors ns
   currentErrors = errors currentMetrics
@@ -772,6 +776,7 @@ filterErrors targetSev ns = ns { nodeErrors = newMetrics }
   newMetrics = currentMetrics
     { errors = map showOnlyThisSeverity currentErrors
     , errorsChanged = True
+    , errorsRebuild = True
     }
   currentMetrics = nodeErrors ns
   currentErrors = errors currentMetrics
@@ -787,6 +792,7 @@ unFilterErrors ns = ns { nodeErrors = newMetrics }
   newMetrics = currentMetrics
     { errors = map makeVisible currentErrors
     , errorsChanged = True
+    , errorsRebuild = True
     }
   currentMetrics = nodeErrors ns
   currentErrors = errors currentMetrics
@@ -800,20 +806,24 @@ removeAllErrors ns = ns { nodeErrors = newMetrics }
   newMetrics = currentMetrics
     { errors = []
     , errorsChanged = True
+    , errorsRebuild = True
     }
   currentMetrics = nodeErrors ns
 
 immediatelyUpdateErrors
   :: TVar NodesState
+  -> TVar TmpElements
   -> Text
   -> Element
   -> Element
   -> Element
   -> UI ()
-immediatelyUpdateErrors nsTVar nameOfNode el elTab elTabBadge = do
+immediatelyUpdateErrors nsTVar tmpElsTVar nameOfNode el elTab elTabBadge = do
   updatedState <- liftIO $ readTVarIO nsTVar
   let NodeState {..} = updatedState ! nameOfNode
-  justUpdateErrorsListAndTab (errors nodeErrors) el elTab elTabBadge
+      errors' = errors nodeErrors
+      shouldWeRebuild = errorsRebuild nodeErrors
+  justUpdateErrorsListAndTab tmpElsTVar errors' shouldWeRebuild el elTab elTabBadge
 
 vSpacer :: HTMLClass -> UI Element
 vSpacer className = UI.div #. [className] #+ []

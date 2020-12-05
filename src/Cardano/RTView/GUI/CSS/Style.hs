@@ -167,6 +167,7 @@ ownCSS = unpack . TL.toStrict . render $ do
     widthPx           15
     marginLeftPx      10
     maxHeightPx       19
+    cursor            pointer
 
   cl ErrorsFilterIcon ? do
     widthPx           15
@@ -182,10 +183,12 @@ ownCSS = unpack . TL.toStrict . render $ do
     widthPx           15
     marginLeftPx      10
     maxHeightPx       17
+    cursor            pointer
 
   cl ErrorsRemoveIcon ? do
     widthPx           15
     maxHeightPx       19
+    cursor            pointer
 
   cl ErrorsBadge ? do
     color             white
