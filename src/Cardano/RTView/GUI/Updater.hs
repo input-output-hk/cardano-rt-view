@@ -11,7 +11,7 @@ module Cardano.RTView.GUI.Updater
 import           Control.Concurrent.STM.TVar (TVar, modifyTVar', readTVarIO)
 import           Control.Monad (void, forM, forM_, unless, when)
 import           Control.Monad.STM (atomically)
-import           Control.Monad.Extra (ifM, whenJust, whenJustM)
+import           Control.Monad.Extra (whenJust)
 import qualified Data.List as L
 import           Data.Maybe (fromJust, isJust)
 import           Data.HashMap.Strict ((!), (!?))
@@ -38,7 +38,6 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..
                                               PeerInfoElements (..), PeerInfoItem (..),
                                               TmpElements (..),
                                               (#.), hideIt, showInline, pageTitle, pageTitleNotify)
-import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames)
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.NodeState.Types
 import           Cardano.RTView.SupportedNodes (supportedNodesVersions, showSupportedNodesVersions)
@@ -51,25 +50,10 @@ updateGUI
   -> TVar NodesState
   -> TVar TmpElements
   -> RTViewParams
-  -> (NodesStateElements, NodesStateElements)
-  -> UI ()
-updateGUI tr window nsTVar tmpElsTVar params (nodesStateElems, gridNodesStateElems) =
-  -- Only one GUI mode can be active now, so check it and update only corresponding elements.
-  whenJustM (UI.getElementById window (show ViewModeButton)) $ \btn ->
-    UI.get UI.value btn >>= \case
-      "paneMode" -> updatePaneGUI tr window nsTVar tmpElsTVar params nodesStateElems
-      _ ->          updateGridGUI tr window nsTVar params gridNodesStateElems
-
-updatePaneGUI
-  :: Trace IO Text
-  -> UI.Window
-  -> TVar NodesState
-  -> TVar TmpElements
-  -> RTViewParams
   -> NodesStateElements
   -> UI ()
-updatePaneGUI tr window tv tmpElsTVar params nodesStateElems = do
-  liftIO $ logDebug tr "Update GUI, Pane View"
+updateGUI tr window tv tmpElsTVar params nodesStateElems = do
+  liftIO $ logDebug tr "Update GUI elements..."
   nodesState <- liftIO $ readTVarIO tv
   resetPageTitleIfNeeded window tv
 
@@ -133,64 +117,7 @@ updatePaneGUI tr window tv tmpElsTVar params nodesStateElems = do
       setSystemStart    tv nName systemStartTime  systemStartTimeChanged els ElSystemStartTime
       setNodeCommit     tv nName nodeCommit nodeShortCommit nodeCommitChanged els ElNodeCommitHref
 
-      updateCharts window nName resourcesMetrics nm
-
-updateGridGUI
-  :: Trace IO Text
-  -> UI.Window
-  -> TVar NodesState
-  -> RTViewParams
-  -> NodesStateElements
-  -> UI ()
-updateGridGUI tr window tv params gridNodesStateElems = do
-  liftIO $ logDebug tr "Update GUI, Grid View"
-  nodesState <- liftIO $ readTVarIO tv
-  forM_ gridNodesStateElems $ \(nName, els, _) -> do
-    let ns@NodeState {..}      = nodesState ! nName
-        PeerMetrics {..}       = peersMetrics
-        MempoolMetrics {..}    = mempoolMetrics
-        ForgeMetrics {..}      = forgeMetrics
-        rm                     = resourcesMetrics
-        RTSMetrics {..}        = rtsMetrics
-        BlockchainMetrics {..} = blockchainMetrics
-        KESMetrics {..}        = kesMetrics
-        nm@NodeMetrics {..}    = nodeMetrics
-
-    liftIO $ logDebug tr $ "Current state for node " <> nName <> ": " <> T.pack (show ns)
-
-    nodeIsIdle <- checkIfNodeIsIdleGrid window params metricsLastUpdate (els ! ElIdleNode) nName
-    unless nodeIsIdle $ do
-      setNodeStartTime  tv nName nodeStartTime nodeStartTimeChanged els ElNodeStarttime
-      setNodeUpTime nodeStartTime els ElNodeUptime
-
-      setNodeVersion    tv nName (TextV    nodeVersion)          nodeVersionChanged        els ElNodeVersion
-      setNodeProtocol   tv nName (TextV    nodeProtocol)         nodeProtocolChanged       els ElNodeProtocol
-      setNodePlatform   tv nName (TextV    nodePlatform)         nodePlatformChanged       els ElNodePlatform
-      setEpoch          tv nName (IntegerV epoch)                epochChanged              els ElEpoch
-      setSlot           tv nName (IntegerV slot)                 slotChanged               els ElSlot
-      setBlocksNumber   tv nName (IntegerV blocksNumber)         blocksNumberChanged       els ElBlocksNumber
-      setChainDensity   tv nName (DoubleV  chainDensity)         chainDensityChanged       els ElChainDensity
-      setForgedNum      tv nName (IntegerV blocksForgedNumber)   blocksForgedNumberChanged els ElBlocksForgedNumber
-      setCannotForge    tv nName (IntegerV nodeCannotForge)      nodeCannotForgeChanged    els ElNodeCannotForge
-      setNodeIsLeader   tv nName (IntegerV nodeIsLeaderNum)      nodeIsLeaderNumChanged    els ElNodeIsLeaderNumber
-      setSlotsMissed    tv nName (IntegerV slotsMissedNumber)    slotsMissedNumberChanged  els ElSlotsMissedNumber
-      setTxsProcessed   tv nName (IntegerV txsProcessed)         txsProcessedChanged       els ElTxsProcessed
-      setMPoolTxsNum    tv nName (IntegerV mempoolTxsNumber)     mempoolTxsNumberChanged   els ElMempoolTxsNumber
-      setMPoolBytes     tv nName (Word64V  mempoolBytes)         mempoolBytesChanged       els ElMempoolBytes
-      setRtsGcCpu       tv nName (DoubleV  rtsGcCpu)             rtsGcCpuChanged           els ElRTSGcCpu
-      setRtsGcElapsed   tv nName (DoubleV  rtsGcElapsed)         rtsGcElapsedChanged       els ElRTSGcElapsed
-      setRtsGcNum       tv nName (IntegerV rtsGcNum)             rtsGcNumChanged           els ElRTSGcNum
-      setRtsGcMajorNum  tv nName (IntegerV rtsGcMajorNum)        rtsGcMajorNumChanged      els ElRTSGcMajorNum
-      setPeers          tv nName (IntV     $ length peersInfo)   peersInfoChanged          els ElPeersNumber
-      setStartKES       tv nName (IntegerV opCertStartKESPeriod)  opCertStartKESPeriodChanged  els ElOpCertStartKESPeriod
-      setExpiryKES      tv nName (IntegerV opCertExpiryKESPeriod) opCertExpiryKESPeriodChanged els ElOpCertExpiryKESPeriod
-      setCurrentKES     tv nName (IntegerV currentKESPeriod)      currentKESPeriodChanged      els ElCurrentKESPeriod
-      setRemKES         tv nName (IntegerV remKESPeriods)       remKESPeriodsChanged       els ElRemainingKESPeriods
-      setRemKESDays     tv nName (IntegerV remKESPeriodsInDays) remKESPeriodsInDaysChanged els ElRemainingKESPeriodsInDays
-      setSystemStart    tv nName systemStartTime systemStartTimeChanged els ElSystemStartTime
-      setNodeCommit     tv nName nodeCommit nodeShortCommit nodeCommitChanged els ElNodeCommitHref
-
-      updateCharts window nName rm nm
+      updateCharts nName resourcesMetrics nm
 
 type Setter = TVar NodesState
               -> Text
@@ -238,7 +165,6 @@ setNodeProtocol
   , setRtsGcElapsed
   , setRtsGcNum
   , setRtsGcMajorNum
-  , setPeers
   , setStartKES
   , setExpiryKES
   , setCurrentKES
@@ -268,7 +194,6 @@ setRtsGcCpu       = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcCp
 setRtsGcElapsed   = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcElapsedChanged       = False } })
 setRtsGcNum       = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcNumChanged           = False } })
 setRtsGcMajorNum  = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcMajorNumChanged      = False } })
-setPeers          = evSetter (\ns -> ns { peersMetrics = (peersMetrics ns) { peersInfoChanged = False } })
 setStartKES       = evSetter (\ns -> ns { kesMetrics = (kesMetrics ns) { opCertStartKESPeriodChanged  = False } })
 setExpiryKES      = evSetter (\ns -> ns { kesMetrics = (kesMetrics ns) { opCertExpiryKESPeriodChanged = False } })
 setCurrentKES     = evSetter (\ns -> ns { kesMetrics = (kesMetrics ns) { currentKESPeriodChanged      = False } })
@@ -607,12 +532,11 @@ showElement w = element w # set UI.style [("display", "inline")]
 hideElement w = element w # set UI.style [("display", "none")]
 
 updateCharts
-  :: UI.Window
-  -> Text
+  :: Text
   -> ResourcesMetrics
   -> NodeMetrics
   -> UI ()
-updateCharts window nameOfNode rm nm = do
+updateCharts nameOfNode rm nm = do
   now <- liftIO getCurrentTime
   let ts :: String
       ts = formatTime defaultTimeLocale "%M:%S" time
@@ -620,30 +544,18 @@ updateCharts window nameOfNode rm nm = do
       timeDiff :: NominalDiffTime
       timeDiff = now `diffUTCTime` nodeStartTime nm
 
-  mcId <- ifM (elementExists mN) (pure mN) (pure mGN)
-  ccId <- ifM (elementExists cN) (pure cN) (pure cGN)
-  dcId <- ifM (elementExists dN) (pure dN) (pure dGN)
-  ncId <- ifM (elementExists nN) (pure nN) (pure nGN)
-
-  UI.runFunction $ UI.ffi Chart.updateMemoryUsageChartJS  mcId ts (memory rm)
-  UI.runFunction $ UI.ffi Chart.updateCPUUsageChartJS     ccId ts (cpuPercent rm)
-  UI.runFunction $ UI.ffi Chart.updateDiskUsageChartJS    dcId ts (diskUsageR rm)     (diskUsageW rm)
-  UI.runFunction $ UI.ffi Chart.updateNetworkUsageChartJS ncId ts (networkUsageIn rm) (networkUsageOut rm)
+  UI.runFunction $ UI.ffi Chart.updateMemoryUsageChartJS  mN ts (memory rm)
+  UI.runFunction $ UI.ffi Chart.updateCPUUsageChartJS     cN ts (cpuPercent rm)
+  UI.runFunction $ UI.ffi Chart.updateDiskUsageChartJS    dN ts (diskUsageR rm)     (diskUsageW rm)
+  UI.runFunction $ UI.ffi Chart.updateNetworkUsageChartJS nN ts (networkUsageIn rm) (networkUsageOut rm)
  where
   mN = showt MemoryUsageChartId  <> nameOfNode
   cN = showt CPUUsageChartId     <> nameOfNode
   dN = showt DiskUsageChartId    <> nameOfNode
   nN = showt NetworkUsageChartId <> nameOfNode
 
-  mGN = showt GridMemoryUsageChartId  <> nameOfNode
-  cGN = showt GridCPUUsageChartId     <> nameOfNode
-  dGN = showt GridDiskUsageChartId    <> nameOfNode
-  nGN = showt GridNetworkUsageChartId <> nameOfNode
-
   showt :: Show a => a -> Text
   showt = pack . show
-
-  elementExists anId = isJust <$> UI.getElementById window (unpack anId)
 
 -- | If no metrics was received from the node for a long time
 --   (more than 'active-node-life') this node is treated as idle.
@@ -661,32 +573,6 @@ checkIfNodeIsIdlePane params metricsLastUpdate idleTag nodePane =
                     idleTag
                     (void $ element nodePane # set UI.style [("opacity", "0.7")])
                     (void $ element nodePane # set UI.style [("opacity", "1.0")])
-
-checkIfNodeIsIdleGrid
-  :: UI.Window
-  -> RTViewParams
-  -> Word64
-  -> Element
-  -> Text
-  -> UI Bool
-checkIfNodeIsIdleGrid window params metricsLastUpdate idleTag nameOfNode =
-  checkIfNodeIsIdle params
-                    metricsLastUpdate
-                    idleTag
-                    (forNodeColumn $ set UI.style [("opacity", "0.7")])
-                    (forNodeColumn $ set UI.style [("opacity", "1.0")])
- where
-  forNodeColumn
-    :: (UI Element -> UI Element)
-    -> UI ()
-  forNodeColumn action = do
-    let cellsIdsForNodeColumn =
-          map (\elemName -> show elemName <> "-" <> unpack nameOfNode)
-              allMetricsNames
-    let allCells = (show GridNodeTH <> unpack nameOfNode) : cellsIdsForNodeColumn
-    forM_ allCells $ \anId ->
-      whenJustM (UI.getElementById window anId) $ \el ->
-        void $ element el # action
 
 checkIfNodeIsIdle
   :: RTViewParams

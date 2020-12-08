@@ -320,24 +320,6 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl NetworkUsageChart ? do
     maxHeightPx       360
 
-  cl GridCPUUsageChart ? do
-    maxWidthPx        320
-
-  cl GridMemoryUsageChart ? do
-    maxWidthPx        320
-
-  cl GridDiskUsageChart ? do
-    maxWidthPx        320
-
-  cl GridNetworkUsageChart ? do
-    maxWidthPx        320
-
-  cl GridNodeNameLabel ? do
-    fontWeight        normal
-
-  cl GridRowCell ? do
-    fontWeight        bold
-
   cl SelectNodeCheckArea ? do
     marginTopPx       8
     marginBottomPx    8
@@ -358,8 +340,8 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl MetricsArea ? do
     minWidthPx        300
 
-  cl ProgressBar ?            progressBarColors greenDark  white
-  cl ProgressBarBox ?         progressBarColors greenLight white
+  cl ProgressBar ?    progressBarColors greenDark  white
+  cl ProgressBarBox ? progressBarColors greenLight white
  where
   cardanoLight    = rgb 31  193 195
   gray40          = rgb 102 102 102

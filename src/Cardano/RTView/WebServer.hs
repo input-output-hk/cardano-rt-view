@@ -61,14 +61,14 @@ mainPage tr config nsTVar tmpElsTVar params acceptors window = do
   addJavaScript window "chart.js"
 
   -- Make page's body (HTML markup).
-  (pageBody, (nodesStateElems, gridNodesStateElems)) <- mkPageBody config nsTVar tmpElsTVar params window acceptors
+  (pageBody, nodesStateElems) <- mkPageBody config nsTVar tmpElsTVar params window acceptors
 
   let guiTr = appendName "GUI" tr
   -- Start the timer for GUI update. Every second it will
   -- call a function which updates node state elements on the page.
   guiUpdateTimer <- timer # set interval 1000
   void $ onEvent (tick guiUpdateTimer) $ \_ ->
-    updateGUI guiTr window nsTVar tmpElsTVar params (nodesStateElems, gridNodesStateElems)
+    updateGUI guiTr window nsTVar tmpElsTVar params nodesStateElems
   start guiUpdateTimer
 
   void $ UI.element pageBody
