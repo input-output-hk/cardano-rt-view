@@ -14,7 +14,9 @@ import qualified Data.Text as T
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, liftIO, set, string, (#), (#+))
 
+import           Cardano.BM.Configuration (Configuration)
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
+
 import           Cardano.RTView.CLI (RTViewParams (..))
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
@@ -26,13 +28,14 @@ import           Cardano.RTView.GUI.Markup.Pane (mkNodesPanes)
 import           Cardano.RTView.NodeState.Types
 
 mkPageBody
-  :: TVar NodesState
+  :: Configuration
+  -> TVar NodesState
   -> TVar TmpElements
   -> RTViewParams
   -> UI.Window
   -> [RemoteAddrNamed]
   -> UI (Element, (NodesStateElements, NodesStateElements))
-mkPageBody nsTVar tmpElsTVar params window acceptors = do
+mkPageBody config nsTVar tmpElsTVar params window acceptors = do
   (paneNodesRootElem, paneNodesElems, panesWithNames) <- mkNodesPanes nsTVar tmpElsTVar acceptors
   (gridNodesRootElem, gridNodesElems) <- mkNodesGrid nsTVar acceptors
 
@@ -102,7 +105,7 @@ mkPageBody nsTVar tmpElsTVar params window acceptors = do
 
   body
     <- UI.getBody window #+
-         [ topNavigation params allSelectors viewModeSelector metricsSelector
+         [ topNavigation config params allSelectors viewModeSelector metricsSelector
          , element bodyRootElem
          ]
 
@@ -203,13 +206,14 @@ forceChangingAllElements nsTVar =
        }
 
 topNavigation
-  :: RTViewParams
+  :: Configuration
+  -> RTViewParams
   -> [UI Element]
   -> [UI Element]
   -> [UI Element]
   -> UI Element
-topNavigation params nodesSelector viewModeSelector metricsSelector = do
-  rtViewInfo <- mkOwnInfo params
+topNavigation config params nodesSelector viewModeSelector metricsSelector = do
+  rtViewInfo <- mkOwnInfo config params
   rtViewInfoButton <- UI.img #. [RTViewInfoIcon]
                              # set UI.src "/static/images/info-light.svg"
                              # set UI.title__ "RTView info"

@@ -7,6 +7,7 @@ module Cardano.RTView.Config
     , configFileIsProvided
     , savedConfigurationFile
     , savedRTViewParamsFile
+    , logFilesDir
     ) where
 
 import           Control.Exception (IOException, catch)
@@ -39,6 +40,7 @@ import           Cardano.BM.Data.BackendKind (BackendKind (..))
 import           Cardano.BM.Data.Configuration (RemoteAddr (..), RemoteAddrNamed (..))
 import           Cardano.BM.Data.Output (ScribeDefinition (..), ScribeFormat (..),
                                          ScribeKind (..), ScribePrivacy (..))
+import           Cardano.BM.Data.Rotation (RotationParameters (..))
 import           Cardano.BM.Data.Severity (Severity (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..), defaultRTViewParams, defaultRTVPort,
@@ -119,6 +121,12 @@ savedRTViewParamsFile = do
   dir <- getXdgDirectory XdgConfig ""
   createDirectoryIfMissing True dir
   return $ dir </> "cardano-rt-view-params.json"
+
+logFilesDir :: IO FilePath
+logFilesDir = do
+  dir <- getXdgDirectory XdgData ""
+  createDirectoryIfMissing True dir
+  return $ dir </> "cardano-rt-view-logs"
 
 checkIfPreviousConfigExists :: IO (Maybe (Configuration, RTViewParams))
 checkIfPreviousConfigExists = do
@@ -217,6 +225,8 @@ startDialogToPrepareConfig = do
                  <> T.pack defaultRTVStatic <> "\"): "
   staticDir <- askAboutStaticDir
 
+  dirForLogs <- logFilesDir
+  let pathToLog = T.pack (dirForLogs </> "cardano-rt-view.log")
   -- Form configuration and params based on user's input.
   config <- CM.empty
   CM.setMinSeverity config Info
@@ -231,8 +241,22 @@ startDialogToPrepareConfig = do
                               , scMaxSev   = maxBound
                               , scRotation = Nothing
                               }
+                            , ScribeDefinition
+                              { scName     = pathToLog
+                              , scKind     = FileSK
+                              , scFormat   = ScText
+                              , scPrivacy  = ScPublic
+                              , scMinSev   = minBound
+                              , scMaxSev   = maxBound
+                              , scRotation = Just $
+                                  RotationParameters
+                                    { rpLogLimitBytes = 50000 -- 50kB
+                                    , rpMaxAgeHours   = 24
+                                    , rpKeepFilesNum  = 10
+                                    }
+                              }
                             ]
-  CM.setDefaultScribes config ["StdoutSK::stdout"]
+  CM.setDefaultScribes config ["StdoutSK::stdout", ("FileSK::" <> pathToLog)]
   CM.setBackends config "cardano-rt-view.acceptor" (Just [ LogBufferBK
                                                          , UserDefinedBK "ErrorBufferBK"
                                                          ])

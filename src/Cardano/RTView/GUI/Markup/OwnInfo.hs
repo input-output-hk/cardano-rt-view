@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Cardano.RTView.GUI.Markup.OwnInfo
@@ -6,29 +7,37 @@ module Cardano.RTView.GUI.Markup.OwnInfo
     ) where
 
 import           Control.Monad (forM, void)
-import           Data.List (intersperse)
+import           Data.List (find, intersperse)
 import qualified Data.Text as T
 import           Data.Version (showVersion)
+import           System.FilePath.Posix (takeDirectory)
 
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, liftIO, set, string, (#), (#+))
 
+import           Cardano.BM.Configuration (Configuration)
+import qualified Cardano.BM.Configuration.Model as CM
+import           Cardano.BM.Data.Output (ScribeDefinition (..), ScribeKind (..))
+
 import           Cardano.RTView.CLI (RTViewParams (..))
-import           Cardano.RTView.Config (configFileIsProvided, savedConfigurationFile,
-                                        savedRTViewParamsFile)
+import           Cardano.RTView.Config (configFileIsProvided, logFilesDir,
+                                        savedConfigurationFile, savedRTViewParamsFile)
 import           Cardano.RTView.GUI.Elements (HTMLClass (..), (#.), hideIt)
 import           Cardano.RTView.GUI.JS.Utils (copyTextToClipboard)
 import           Cardano.RTView.Git.Rev (gitRev)
 import           Cardano.RTView.SupportedNodes (supportedNodesVersions)
 import           Paths_cardano_rt_view (version)
 
-mkOwnInfo :: RTViewParams -> UI Element
-mkOwnInfo params = do
+mkOwnInfo
+  :: Configuration
+  -> RTViewParams
+  -> UI Element
+mkOwnInfo config params = do
   closeButton <- UI.img #. [W3DisplayTopright, RTViewInfoClose]
                         # set UI.src "/static/images/times.svg"
                         # set UI.title__ "Close"
   versions <- nodesVersions
-  (pathToConfigFile, pathToParamsFile) <- liftIO $ getPathsToConfigAndParamsFiles params
+  (pathToConfigFile, pathToParamsFile, pathToLogsDir) <- liftIO $ getPaths config params
 
   copyPathToConfigFile
     <- UI.img #. [RTViewInfoCopyPathIcon]
@@ -38,10 +47,17 @@ mkOwnInfo params = do
     <- UI.img #. [RTViewInfoCopyPathIcon]
               # set UI.src "/static/images/clipboard.svg"
               # set UI.title__ "Copy this path to clipboard"
-  void $ UI.onEvent (UI.click copyPathToConfigFile) $ \_ -> do
+  copyPathToLogsDir
+    <- UI.img #. [RTViewInfoCopyPathIcon]
+              # set UI.src "/static/images/clipboard.svg"
+              # set UI.title__ "Copy this path to clipboard"
+
+  void $ UI.onEvent (UI.click copyPathToConfigFile) $ \_ ->
     UI.runFunction $ UI.ffi copyTextToClipboard pathToConfigFile
-  void $ UI.onEvent (UI.click copyPathToParamsFile) $ \_ -> do
+  void $ UI.onEvent (UI.click copyPathToParamsFile) $ \_ ->
     UI.runFunction $ UI.ffi copyTextToClipboard pathToParamsFile
+  void $ UI.onEvent (UI.click copyPathToLogsDir) $ \_ ->
+    UI.runFunction $ UI.ffi copyTextToClipboard pathToLogsDir
 
   let rtViewVersion = showVersion version
 
@@ -63,6 +79,7 @@ mkOwnInfo params = do
                   , vSpacer
                   , UI.div #+ [string "Configuration file" # set UI.title__ "The path to RTView configuration file"]
                   , UI.div #+ [string "Parameters file"    # set UI.title__ "The path to RTView parameters file"]
+                  , UI.div #+ [string "Logs directory"     # set UI.title__ "The path to RTView logs directory"]
                   , vSpacer
                   ]
               , UI.div #. [W3Half, NodeInfoValues] #+
@@ -95,6 +112,10 @@ mkOwnInfo params = do
                   , UI.div #+
                       [ string (preparePathIfNeeded pathToParamsFile) # set UI.title__ pathToParamsFile
                       , element copyPathToParamsFile
+                      ]
+                  , UI.div #+
+                      [ string (preparePathIfNeeded pathToLogsDir) # set UI.title__ pathToLogsDir
+                      , element copyPathToLogsDir
                       ]
                   , vSpacer
                   ]
@@ -130,14 +151,21 @@ nodesVersions =
                           # set UI.title__ ("See release tag " <> T.unpack ver <> " in cardano-node repository")
                           # set UI.text (T.unpack ver)
 
-getPathsToConfigAndParamsFiles :: RTViewParams -> IO (FilePath, FilePath)
-getPathsToConfigAndParamsFiles params = do
+getPaths
+  :: Configuration
+  -> RTViewParams
+  -> IO (FilePath, FilePath, FilePath)
+getPaths config params = do
+  logsDir <-
+    (find (\sd -> scKind sd == FileSK) <$> CM.getSetupScribes config) >>= \case
+      Nothing -> logFilesDir
+      Just sd -> return . takeDirectory . T.unpack . scName $ sd
   configFile <-
     if configFileIsProvided params
       then return $ rtvConfig params
       else savedConfigurationFile
   paramsFile <- savedRTViewParamsFile
-  return (configFile, paramsFile)
+  return (configFile, paramsFile, logsDir)
 
 preparePathIfNeeded :: FilePath -> String
 preparePathIfNeeded aPath = if tooLongPath then shortenedPath else aPath
