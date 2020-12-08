@@ -1,26 +1,19 @@
 module Analyzers
   (
     Units (..)
-  , ViewMode (..)
-  , changeViewModeTo
   , checkContentOf
   , checkIfMetricCanBeHiddenOrShown
-  , checkIfNodeCanBeHiddenOrShown
-  , metricsRowsWithChecks
   , waitFor
   )
 where
 
 import           Control.Concurrent (threadDelay)
-import           Control.Monad (forM_, when)
+import           Control.Monad (when)
 import           Control.Monad.IO.Class (liftIO)
-import           Data.Text (Text, pack, unpack)
+import           Data.Text (Text, unpack)
 import           System.Exit (die)
 
 import           Test.WebDriver
-
-import           Cardano.RTView.GUI.Elements (HTMLId (..))
-import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames)
 
 data Units = Seconds | Milliseconds
 
@@ -30,19 +23,6 @@ waitFor
   -> WD ()
 waitFor howMany Seconds      = liftIO . threadDelay $ howMany * 1000000
 waitFor howMany Milliseconds = liftIO . threadDelay $ howMany * 1000
-
-data ViewMode = Pane | Grid
-
-instance Show ViewMode where
-  show Pane = "Pane view"
-  show Grid = "Grid view"
-
-changeViewModeTo :: ViewMode -> WD ()
-changeViewModeTo mode = do
-  findElem (ById (pack . show $ ViewModeButton)) >>= click
-  waitFor 2 Seconds
-  findElem (ByLinkText (pack . show $ mode)) >>= click
-  waitFor 3 Seconds
 
 checkContentOf
   :: Text
@@ -54,15 +34,6 @@ checkContentOf elementId content label = do
   when (realContent /= content) $
     liftIO . die $ unpack label <> " is wrong: expected " <> unpack content
                                 <> ", but got " <> unpack realContent
-
-metricsRowsWithChecks :: [(Text, Text)]
-metricsRowsWithChecks = zip metricsRowsIds metricsChecksIds
- where
-  metricsRowsIds = map (pack . show) allMetricsNames
-  metricsChecksIds =
-    map (\n -> "#" <> (pack . show $ SelectMetricButton)
-                   <> " > div > div:nth-child(" <> (pack . show $ n) <> ") > input")
-        [1 .. length allMetricsNames]
 
 checkIfMetricCanBeHiddenOrShown
   :: Text
@@ -84,6 +55,7 @@ checkIfMetricCanBeHiddenOrShown rowId checkId = do
   isDisplayed metricRow >>= \visible -> when (not visible) $
     liftIO . die $ "Metric's row " <> unpack rowId <> " should be visible now, but it's hidden."
 
+{-
 checkIfNodeCanBeHiddenOrShown :: Text -> WD ()
 checkIfNodeCanBeHiddenOrShown nodeName = do
   findElem (ByCSS "body > div.w3-bar.w3-large.TopBar > div:nth-child(3) > button") >>= click
@@ -107,3 +79,4 @@ checkIfNodeCanBeHiddenOrShown nodeName = do
       liftIO . die $ "Metric's cell " <> unpack metricCellId <> " should be visible now, but it's hidden."
  where
   metricsForOneNode = map (\mName -> (pack . show $ mName) <> "-" <> nodeName) allMetricsNames
+-}

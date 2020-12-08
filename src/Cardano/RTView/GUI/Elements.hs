@@ -17,8 +17,6 @@ module Cardano.RTView.GUI.Elements
     , dataAttr
     , showIt
     , showInline
-    , showRow
-    , showCell
     , hideIt
     , pageTitle
     , pageTitleNotify
@@ -158,8 +156,6 @@ data HTMLClass
   | ErrorsFilterDropdownIcon
   | ErrorsRemoveIcon
   | ErrorTimestamp
-  | GridNodeNameLabel
-  | GridRowCell
   | HSpacer
   | IdleNode
   | InfoMark
@@ -202,10 +198,6 @@ data HTMLClass
   | MemoryUsageChart
   | DiskUsageChart
   | NetworkUsageChart
-  | GridCPUUsageChart
-  | GridMemoryUsageChart
-  | GridDiskUsageChart
-  | GridNetworkUsageChart
   -- Error messages
   | WarningMessage
   | WarningMessageTag
@@ -282,8 +274,6 @@ instance Show HTMLClass where
   show ErrorsFilterDropdownIcon = "ErrorsFilterDropdownIcon"
   show ErrorsRemoveIcon       = "ErrorsRemoveIcon"
   show ErrorTimestamp         = "ErrorTimestamp"
-  show GridNodeNameLabel      = "GridNodeNameLabel"
-  show GridRowCell            = "GridRowCell"
   show HSpacer                = "HSpacer"
   show IdleNode               = "IdleNode"
   show InfoMark               = "InfoMark"
@@ -325,10 +315,6 @@ instance Show HTMLClass where
   show MemoryUsageChart       = "MemoryUsageChart"
   show DiskUsageChart         = "DiskUsageChart"
   show NetworkUsageChart      = "NetworkUsageChart"
-  show GridCPUUsageChart      = "GridCPUUsageChart"
-  show GridMemoryUsageChart   = "GridMemoryUsageChart"
-  show GridDiskUsageChart     = "GridDiskUsageChart"
-  show GridNetworkUsageChart  = "GridNetworkUsageChart"
   show WarningMessage         = "WarningMessage"
   show WarningMessageTag      = "WarningMessageTag"
   show WarningMessageTagNoHelp = "WarningMessageTagNoHelp"
@@ -400,11 +386,6 @@ data HTMLId
   | DiskUsageChartId
   | MemoryUsageChartId
   | NetworkUsageChartId
-  | GridCPUUsageChartId
-  | GridDiskUsageChartId
-  | GridMemoryUsageChartId
-  | GridNetworkUsageChartId
-  | GridNodeTH
   deriving Show
 
 (##) :: UI Element -> String  -> UI Element
@@ -415,11 +396,9 @@ data HTMLId
 (#.) el [cl] = el # UI.set UI.class_ (show cl)
 (#.) el cls  = el # UI.set UI.class_ (unwords $ map show cls)
 
-showIt, showInline, showRow, showCell, hideIt :: UI Element -> UI Element
+showIt, showInline, hideIt :: UI Element -> UI Element
 showIt     = UI.set UI.style [("display", "block")]
 showInline = UI.set UI.style [("display", "inline")]
-showRow    = UI.set UI.style [("display", "table-row")]
-showCell   = UI.set UI.style [("display", "table-cell")]
 hideIt     = UI.set UI.style [("display", "none")]
 
 pageTitle, pageTitleNotify :: String

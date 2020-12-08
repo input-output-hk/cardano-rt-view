@@ -1,5 +1,5 @@
-  {-# LANGUAGE LambdaCase #-}
-  {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Cardano.RTView.GUI.Markup.Pane
     ( mkNodesPanes

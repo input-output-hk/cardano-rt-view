@@ -25,7 +25,6 @@ library
                        Cardano.RTView.GUI.Elements
                        Cardano.RTView.GUI.JS.Charts
                        Cardano.RTView.GUI.JS.Utils
-                       Cardano.RTView.GUI.Markup.Grid
                        Cardano.RTView.GUI.Markup.OwnInfo
                        Cardano.RTView.GUI.Markup.PageBody
                        Cardano.RTView.GUI.Markup.Pane

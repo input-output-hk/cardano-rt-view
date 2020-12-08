@@ -293,37 +293,37 @@ For more info about tracers, please read `Technical Details` -> `Understanding M
 
 These are supported tracers:
 
-| Tracer                                     | Metric in Pane mode                    | Metric in Grid mode       |
-| ------------------------------------------ | -------------------------------------- | ------------------------- |
-| `cardano.node.metrics.peersFromNodeKernel` | `Peers` -> peers list                  | `Peers number`            |
-| `cardano.node.metrics`                     | `Node info` -> `Node uptime`           | `Node uptime`             |
-|                                            | `Mempool` -> `Mempool | TXs`           | `TXs in mempool, number`  |
-|                                            | `Mempool` -> `Mempool | bytes`         | `Txs in mempool, bytes`   |
-|                                            | `Mempool` -> `TXs processed`           | `TXs processed`           |
-|                                            | `Blockchain` -> `Forged blocks number` | `Forged blocks number`    |
-|                                            | `Blockchain` -> `Slot leader, number`  | `Slot leader, number`     |
-|                                            | `Blockchain` -> `Cannot forge, number` | `Cannot forge, number`    |
-|                                            | `Blockchain` -> `Missed slots number`  | `Missed slots number`     |
-| `cardano.node-metrics`                     | `Resources` -> `Memory`                | `Memory usage`            |
-|                                            | `Resources` -> `CPU`                   | `CPU usage`               |
-|                                            | `Resources` -> `Disk`                  | `Disk usage`              |
-|                                            | `Resources` -> `Network`               | `Network usage`           |
-|                                            | `Node info` -> `Node platform`         | `Node platform`           |
-|                                            | `RTS GC` -> `GC CPU time`              | `GC CPU time`             |
-|                                            | `RTS GC` -> `GC time elapsed`          | `GC time elapsed`         |
-|                                            | `RTS GC` -> `Number of GC runs`        | `Number of GC runs`       |
-|                                            | `RTS GC` -> `Major GC runs`            | `Major GC runs`           |
-| `cardano.node.ChainDB.metrics`             | `Blockchain` -> `Epoch`                | `Epoch`                   |
-|                                            | `Blockchain` -> `Slot in epoch`        | `Slot in epoch`           |
-|                                            | `Blockchain` -> `Blocks number`        | `Blocks number`           |
-|                                            | `Blockchain` -> `Chain density`        | `Chain density`           |
-| `cardano.node.Forge.metrics`               | `KES` -> `Start KES period`            | `Start KES period`        |
-|                                            | `KES` -> `KES period`                  | `Current KES period`      |
-|                                            | `KES` -> `KES remaining`               | `KES remaining periods`   |
+| Tracer                                     | Metric on web-page                     |
+| ------------------------------------------ | -------------------------------------- |
+| `cardano.node.metrics.peersFromNodeKernel` | `Peers` -> peers list                  |
+| `cardano.node.metrics`                     | `Node info` -> `Node uptime`           |
+|                                            | `Mempool` -> `Mempool | TXs`           |
+|                                            | `Mempool` -> `Mempool | bytes`         |
+|                                            | `Mempool` -> `TXs processed`           |
+|                                            | `Blockchain` -> `Forged blocks number` |
+|                                            | `Blockchain` -> `Slot leader, number`  |
+|                                            | `Blockchain` -> `Cannot forge, number` |
+|                                            | `Blockchain` -> `Missed slots number`  |
+| `cardano.node-metrics`                     | `Resources` -> `Memory`                |
+|                                            | `Resources` -> `CPU`                   |
+|                                            | `Resources` -> `Disk`                  |
+|                                            | `Resources` -> `Network`               |
+|                                            | `Node info` -> `Node platform`         |
+|                                            | `RTS GC` -> `GC CPU time`              |
+|                                            | `RTS GC` -> `GC time elapsed`          |
+|                                            | `RTS GC` -> `Number of GC runs`        |
+|                                            | `RTS GC` -> `Major GC runs`            |
+| `cardano.node.ChainDB.metrics`             | `Blockchain` -> `Epoch`                |
+|                                            | `Blockchain` -> `Slot in epoch`        |
+|                                            | `Blockchain` -> `Blocks number`        |
+|                                            | `Blockchain` -> `Chain density`        |
+| `cardano.node.Forge.metrics`               | `KES` -> `Start KES period`            |
+|                                            | `KES` -> `KES period`                  |
+|                                            | `KES` -> `KES remaining`               |
 
 ## Errors routing
 
-Node forwards not only the metrics; it forwards possible errors as well. To see a particular error in the `Errors` tab in the `Pane view` mode, you should add corresponding tracers' names in the `mapBackends` section in the node's configuration file.
+Node forwards not only the metrics; it forwards possible errors as well. To see a particular error in the `Errors` tab, you should add corresponding tracers' names in the `mapBackends` section in the node's configuration file.
 
 For example, to see all DNS-related problems, add the following lines in the `mapBackends` section:
 

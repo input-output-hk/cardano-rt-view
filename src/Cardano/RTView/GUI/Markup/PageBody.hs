@@ -4,25 +4,22 @@ module Cardano.RTView.GUI.Markup.PageBody
     ( mkPageBody
     ) where
 
-import           Control.Concurrent.STM.TVar (TVar, modifyTVar')
+import           Control.Concurrent.STM.TVar (TVar)
 import           Control.Monad (forM, forM_, void, when)
 import           Control.Monad.Extra (whenJustM)
-import           Control.Monad.STM (atomically)
-import qualified Data.HashMap.Strict as HM
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Graphics.UI.Threepenny as UI
-import           Graphics.UI.Threepenny.Core (Element, UI, element, liftIO, set, string, (#), (#+))
+import           Graphics.UI.Threepenny.Core (Element, UI, element, set, string, (#), (#+))
 
 import           Cardano.BM.Configuration (Configuration)
 import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..))
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
-import           Cardano.RTView.GUI.Elements (ElementName (..), HTMLClass (..),
-                                              HTMLId (..), NodesStateElements, TmpElements,
-                                              hideIt, showCell, showIt, showRow, (##), (#.))
-import           Cardano.RTView.GUI.Markup.Grid (allMetricsNames, metricLabel, mkNodesGrid)
+import           Cardano.RTView.GUI.Elements (HTMLClass (..), HTMLId (..),
+                                              NodesStateElements, TmpElements,
+                                              hideIt, showIt, (##), (#.))
 import           Cardano.RTView.GUI.Markup.OwnInfo (mkOwnInfo)
 import           Cardano.RTView.GUI.Markup.Pane (mkNodesPanes)
 import           Cardano.RTView.NodeState.Types
@@ -34,10 +31,9 @@ mkPageBody
   -> RTViewParams
   -> UI.Window
   -> [RemoteAddrNamed]
-  -> UI (Element, (NodesStateElements, NodesStateElements))
+  -> UI (Element, NodesStateElements)
 mkPageBody config nsTVar tmpElsTVar params window acceptors = do
   (paneNodesRootElem, paneNodesElems, panesWithNames) <- mkNodesPanes nsTVar tmpElsTVar acceptors
-  (gridNodesRootElem, gridNodesElems) <- mkNodesGrid nsTVar acceptors
 
   -- Register clickable selector for nodes (to be able to show only one or all of them).
   nodesSelector <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
@@ -51,16 +47,13 @@ mkPageBody config nsTVar tmpElsTVar params window acceptors = do
         [ element nodeCheckbox
         , UI.label #+ [UI.string $ T.unpack nameOfNode]
         ]
+
     void $ UI.onEvent (UI.checkedChange nodeCheckbox) $ \isChecked -> do
-      whenJustM (UI.getElementById window (show ViewModeButton)) $ \btn ->
-        UI.get UI.value btn >>= \case
-          "paneMode" -> do
-            let action = if isChecked then showIt else hideIt
-            forNodePane nameOfNode panesWithNames action
-          _ -> do
-            let action = if isChecked then showCell else hideIt
-            forNodeColumn window nameOfNode action
+      let action = if isChecked then showIt else hideIt
+      forNodePane nameOfNode panesWithNames action
       changeStatusOfShowAllButton window ShowAllNodesButton SelectNodeCheck
+      changeStatusOfHideAllButton window HideAllNodesButton SelectNodeCheck
+
     return $ element nodeButton
 
   showAndHideAllNodesButtons
@@ -70,18 +63,12 @@ mkPageBody config nsTVar tmpElsTVar params window acceptors = do
            hideAllNodesButton <- hideAllButton HideAllNodesButton
 
            void $ UI.onEvent (UI.click showAllNodesButton) $ \_ -> do
-             whenJustM (UI.getElementById window (show ViewModeButton)) $ \btn ->
-               UI.get UI.value btn >>= \case
-                 "paneMode" -> showAllNodes window panesWithNames
-                 _ -> showAllNodesColumns window panesWithNames
+             showAllNodes window panesWithNames
              void $ element showAllNodesButton #. [W3BarItem, W3Button, W3Disabled]
              void $ element hideAllNodesButton #. [W3BarItem, W3Button, W3BorderBottom]
 
            void $ UI.onEvent (UI.click hideAllNodesButton) $ \_ -> do
-             whenJustM (UI.getElementById window (show ViewModeButton)) $ \btn ->
-               UI.get UI.value btn >>= \case
-                 "paneMode" -> hideAllNodes window panesWithNames
-                 _ -> hideAllNodesColumns window panesWithNames
+             hideAllNodes window panesWithNames
              void $ element showAllNodesButton #. [W3BarItem, W3Button]
              void $ element hideAllNodesButton #. [W3BarItem, W3Button, W3BorderBottom, W3Disabled]
 
@@ -89,41 +76,15 @@ mkPageBody config nsTVar tmpElsTVar params window acceptors = do
          else
            return []
 
-  let allSelectors = showAndHideAllNodesButtons ++ nodesSelector
-
-  -- View mode buttons.
-  paneViewButton <- UI.anchor #. [W3BarItem, W3Button] # set UI.href "#" #+ [UI.string "Pane view"]
-  gridViewButton <- UI.anchor #. [W3BarItem, W3Button] # set UI.href "#" #+ [UI.string "Grid view"]
-  let viewModeSelector :: [UI Element]
-      viewModeSelector = [ element paneViewButton
-                         , element gridViewButton
-                         ]
-
-  metricsSelector <- mkMetricsSelector window
-
-  bodyRootElem <- UI.div #+ [element paneNodesRootElem] -- Pane view mode is the default now.
+  let allNodesSelectors = showAndHideAllNodesButtons ++ nodesSelector
 
   body
     <- UI.getBody window #+
-         [ topNavigation config params allSelectors viewModeSelector metricsSelector
-         , element bodyRootElem
+         [ topNavigation config params allNodesSelectors
+         , element paneNodesRootElem
          ]
 
   UI.runFunction $ UI.ffi Chart.prepareChartsJS
-
-  void $ UI.onEvent (UI.click paneViewButton) $ \_ -> do
-    toggleViewMode window "paneMode" bodyRootElem [element paneNodesRootElem] [element gridNodesRootElem]
-    forceChangingAllElements nsTVar
-    forElementWithId window (show SelectMetricButton) hideIt
-  void $ UI.onEvent (UI.click gridViewButton) $ \_ -> do
-    toggleViewMode window "gridMode" bodyRootElem [element gridNodesRootElem] [element paneNodesRootElem]
-    forceChangingAllElements nsTVar
-    forElementWithId window (show SelectMetricButton) showIt
-    forM_ acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
-      UI.runFunction $ UI.ffi Chart.gridMemoryUsageChartJS  (showt GridMemoryUsageChartId  <> nameOfNode)
-      UI.runFunction $ UI.ffi Chart.gridCPUUsageChartJS     (showt GridCPUUsageChartId     <> nameOfNode)
-      UI.runFunction $ UI.ffi Chart.gridDiskUsageChartJS    (showt GridDiskUsageChartId    <> nameOfNode)
-      UI.runFunction $ UI.ffi Chart.gridNetworkUsageChartJS (showt GridNetworkUsageChartId <> nameOfNode)
 
   forM_ acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
     -- Charts for different metrics.
@@ -132,87 +93,17 @@ mkPageBody config nsTVar tmpElsTVar params window acceptors = do
     UI.runFunction $ UI.ffi Chart.diskUsageChartJS    (showt DiskUsageChartId    <> nameOfNode)
     UI.runFunction $ UI.ffi Chart.networkUsageChartJS (showt NetworkUsageChartId <> nameOfNode)
 
-  return (body, (paneNodesElems, gridNodesElems))
+  return (body, paneNodesElems)
  where
   showt :: Show a => a -> Text
   showt = T.pack . show
-
-forceChangingAllElements :: TVar NodesState -> UI ()
-forceChangingAllElements nsTVar =
-  liftIO . atomically $ modifyTVar' nsTVar $
-    HM.fromList . map (\(nm, ns) -> (nm, setAllChangedFlags ns)) . HM.toList
- where
-  setAllChangedFlags ns =
-    ns { peersMetrics =
-           (peersMetrics ns)
-             { peersInfoChanged = True
-             }
-       , nodeMetrics =
-           (nodeMetrics ns)
-             { nodeProtocolChanged  = True
-             , nodeVersionChanged   = True
-             , nodeCommitChanged    = True
-             , nodePlatformChanged  = True
-             , nodeStartTimeChanged = True
-             , nodeEndpointChanged  = True
-             }
-       , mempoolMetrics =
-           (mempoolMetrics ns)
-             { mempoolTxsNumberChanged    = True
-             , mempoolTxsPercentChanged   = True
-             , mempoolBytesChanged        = True
-             , mempoolBytesPercentChanged = True
-             , mempoolMaxTxsChanged       = True
-             , mempoolMaxBytesChanged     = True
-             , txsProcessedChanged        = True
-             }
-       , forgeMetrics =
-           (forgeMetrics ns)
-             { nodeIsLeaderNumChanged    = True
-             , slotsMissedNumberChanged  = True
-             , nodeCannotForgeChanged    = True
-             , blocksForgedNumberChanged = True
-             }
-       , rtsMetrics =
-           (rtsMetrics ns)
-             { rtsMemoryAllocatedChanged   = True
-             , rtsMemoryUsedChanged        = True
-             , rtsMemoryUsedPercentChanged = True
-             , rtsGcCpuChanged             = True
-             , rtsGcElapsedChanged         = True
-             , rtsGcNumChanged             = True
-             , rtsGcMajorNumChanged        = True
-             }
-       , blockchainMetrics =
-           (blockchainMetrics ns)
-             { systemStartTimeChanged = True
-             , epochChanged           = True
-             , slotChanged            = True
-             , blocksNumberChanged    = True
-             , chainDensityChanged    = True
-             }
-       , kesMetrics =
-           (kesMetrics ns)
-             { remKESPeriodsChanged         = True
-             , remKESPeriodsInDaysChanged   = True
-             , opCertStartKESPeriodChanged  = True
-             , opCertExpiryKESPeriodChanged = True
-             , currentKESPeriodChanged      = True
-             }
-       , nodeErrors =
-           (nodeErrors ns)
-             { errorsChanged = True
-             }
-       }
 
 topNavigation
   :: Configuration
   -> RTViewParams
   -> [UI Element]
-  -> [UI Element]
-  -> [UI Element]
   -> UI Element
-topNavigation config params nodesSelector viewModeSelector metricsSelector = do
+topNavigation config params nodesSelector = do
   rtViewInfo <- mkOwnInfo config params
   rtViewInfoButton <- UI.img #. [RTViewInfoIcon]
                              # set UI.src "/static/images/info-light.svg"
@@ -225,27 +116,11 @@ topNavigation config params nodesSelector viewModeSelector metricsSelector = do
         [ UI.img #. [CardanoLogo] # set UI.src "/static/images/cardano-logo.svg"
         ]
     , UI.div #. [W3DropdownHover, W3Mobile] #+
-        [ UI.button ## show ViewModeButton
-                    #. [W3Button]
-                    # set UI.value "paneMode"
-                    #+ [ string "View mode"
-                       , UI.img #. [TopNavDropdownIcon] # set UI.src "/static/images/dropdown-light.svg"
-                       ]
-        , UI.div #. [W3DropdownContent, W3BarBlock] #+ viewModeSelector
-        ]
-    , UI.div #. [W3DropdownHover, W3Mobile] #+
         [ UI.button #. [W3Button] #+
             [ string "Select node"
             , UI.img #. [TopNavDropdownIcon] # set UI.src "/static/images/dropdown-light.svg"
             ]
         , UI.div #. [W3DropdownContent, W3BarBlock] #+ nodesSelector
-        ]
-    , UI.div ## show SelectMetricButton #. [W3DropdownHover, W3Mobile] # hideIt #+
-        [ UI.button #. [W3Button] #+
-            [ string "Select metric"
-            , UI.img #. [TopNavDropdownIcon] # set UI.src "/static/images/dropdown-light.svg"
-            ]
-        , UI.div #. [W3DropdownContent, W3BarBlock, MetricsArea] #+ metricsSelector
         ]
     , UI.span #. [W3BarItem, W3Mobile] #+
         [ element rtViewInfoButton
@@ -266,19 +141,6 @@ forNodePane nameOfNode panesWithNames' action =
     when (aName == nameOfNode) $
       void $ element pane # action
 
-forNodeColumn
-  :: UI.Window
-  -> Text
-  -> (UI Element -> UI Element)
-  -> UI ()
-forNodeColumn window nameOfNode action = do
-  let cellsIdsForNodeColumn =
-        map (\elemName -> show elemName <> "-" <> T.unpack nameOfNode)
-            allMetricsNames
-  let allCells = (show GridNodeTH <> T.unpack nameOfNode) : cellsIdsForNodeColumn
-  forM_ allCells $ \anId ->
-    forElementWithId window anId action
-
 showAllNodes, hideAllNodes
   :: UI.Window
   -> [(Text, Element)]
@@ -297,41 +159,6 @@ changeNodesVisibility showThem window panesWithNames' = do
   nodesCheckboxes <- UI.getElementsByClassName window (show SelectNodeCheck)
   forM_ nodesCheckboxes $ \checkbox ->
     void $ element checkbox # set UI.checked showThem
-
-showAllNodesColumns, hideAllNodesColumns
-  :: UI.Window
-  -> [(Text, Element)]
-  -> UI ()
-showAllNodesColumns = changeNodesColumnsVisibility True
-hideAllNodesColumns = changeNodesColumnsVisibility False
-
-changeNodesColumnsVisibility
-  :: Bool
-  -> UI.Window
-  -> [(Text, Element)]
-  -> UI ()
-changeNodesColumnsVisibility showThem window panesWithNames' = do
-  forM_ panesWithNames' $ \(nameOfNode, _) ->
-    forNodeColumn window nameOfNode $ if showThem then showCell else hideIt
-  nodesCheckboxes <- UI.getElementsByClassName window (show SelectNodeCheck)
-  forM_ nodesCheckboxes $ \checkbox ->
-    void $ element checkbox # set UI.checked showThem
-
-toggleViewMode
-  :: UI.Window
-  -> String
-  -> Element
-  -> [UI Element]
-  -> [UI Element]
-  -> UI ()
-toggleViewMode window newValue rootElem childrenToAdd childrenToDelete = do
-  -- Store current view mode in the view mode button.
-  forElementWithId window (show ViewModeButton) (set UI.value newValue)
-  -- Delete these elements from DOM.
-  mapM_ (fmap UI.delete) childrenToDelete
-  -- Explicitly remove current children of rootElem and set the new ones.
-  void $ element rootElem # set UI.children []
-  void $ element rootElem #+ childrenToAdd
 
 -- | If all checkboxes are checked - "Show all" button should be disabled.
 --   If at least one of them are unchecked - "Show all" button should be enabled.
@@ -362,80 +189,6 @@ changeStatusOfHideAllButton window anId aClass =
     if all (False ==) statuses
       then void $ element button #. [W3BarItem, W3Button, W3BorderBottom, W3Disabled]
       else void $ element button #. [W3BarItem, W3Button, W3BorderBottom]
-
-mkMetricsSelector
-  :: UI.Window
-  -> UI [UI Element]
-mkMetricsSelector window = do
-  showAllMetricsButton <- showAllButton ShowAllMetricsButton
-  hideAllMetricsButton <- hideAllButton HideAllMetricsButton
-
-  void $ UI.onEvent (UI.click showAllMetricsButton) $ \_ -> do
-    showAllMetrics window allMetricsNames
-    void $ element showAllMetricsButton #. [W3BarItem, W3Button, W3Disabled]
-    void $ element hideAllMetricsButton #. [W3BarItem, W3Button, W3BorderBottom]
-
-  void $ UI.onEvent (UI.click hideAllMetricsButton) $ \_ -> do
-    hideAllMetrics window allMetricsNames
-    void $ element showAllMetricsButton #. [W3BarItem, W3Button]
-    void $ element hideAllMetricsButton #. [W3BarItem, W3Button, W3BorderBottom, W3Disabled]
-
-  checkboxes <-
-    forM allMetricsNames $ \aName ->
-      element <$> mkCheckbox window aName
-
-  return $    [element showAllMetricsButton]
-           ++ [element hideAllMetricsButton]
-           ++ checkboxes
-
-mkCheckbox
-  :: UI.Window
-  -> ElementName
-  -> UI Element
-mkCheckbox window elemName = do
-  metricCheckbox
-    <- UI.input #. [W3Check, SelectMetricCheck]
-                # set UI.type_ "checkbox"
-                # set UI.checked True
-                #+ []
-  void $ UI.onEvent (UI.checkedChange metricCheckbox) $ \isChecked -> do
-    let action = if isChecked then showRow else hideIt
-    forElementWithId window (show elemName) action
-    changeStatusOfShowAllButton window ShowAllMetricsButton SelectMetricCheck
-    changeStatusOfHideAllButton window HideAllMetricsButton SelectMetricCheck
-
-  UI.div #. [SelectMetricCheckArea] #+
-    [ element metricCheckbox
-    , UI.label #+ [UI.string $ fst $ metricLabel elemName]
-    ]
-
-forElementWithId
-  :: UI.Window
-  -> String
-  -> (UI Element -> UI Element)
-  -> UI ()
-forElementWithId window anId action =
-  whenJustM (UI.getElementById window anId) $ \el ->
-    void $ element el # action
-
-showAllMetrics, hideAllMetrics
-  :: UI.Window
-  -> [ElementName]
-  -> UI ()
-showAllMetrics = changeMetricsVisibility True
-hideAllMetrics = changeMetricsVisibility False
-
-changeMetricsVisibility
-  :: Bool
-  -> UI.Window
-  -> [ElementName]
-  -> UI ()
-changeMetricsVisibility showThem window metricsElems = do
-  forM_ metricsElems $ \elemName ->
-    forElementWithId window (show elemName) (if showThem then showRow else hideIt)
-  metricsCheckboxes <- UI.getElementsByClassName window (show SelectMetricCheck)
-  forM_ metricsCheckboxes $ \checkbox ->
-    void $ element checkbox # set UI.checked showThem
 
 showAllButton, hideAllButton :: HTMLId -> UI Element
 showAllButton anId = mkButton anId [W3BarItem, W3Button, W3Disabled]     "show.svg" "Show all"

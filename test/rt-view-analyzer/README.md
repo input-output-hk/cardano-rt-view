@@ -68,6 +68,5 @@ Run `./runTest.sh <options> PATH_TO_SELENIUM_SERVER_JAR` script which launches:
 
 `analyzer` checks the visual behavior of RTView UI (complete HTML-page):
 
-1. changing view mode (both pane and grid),
-2. checks if metrics and/or node can be hidden/shown,
-3. validates the real values of displayed metrics (for comparing them with values from predefined JSON-file with `LogObject`s).
+1. checks if node can be hidden/shown,
+2. validates the real values of displayed metrics (for comparing them with values from predefined JSON-file with `LogObject`s).

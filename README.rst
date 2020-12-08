@@ -34,9 +34,9 @@ How it looks like
 
 The default view mode looks like this:
 
-.. image:: https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/images/screenshot-pane-mode.png
+.. image:: https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/images/screenshot.png
   :width: 500
-  :alt: Pane Mode
+  :alt: Screenshot
 
 Download
 ========
