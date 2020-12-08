@@ -32,7 +32,7 @@ Key features
 How it looks like
 =================
 
-The default view mode looks like this:
+The web-page with 3 nodes may look like this:
 
 .. image:: https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/images/screenshot.png
   :width: 500
