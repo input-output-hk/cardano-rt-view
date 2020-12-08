@@ -104,3 +104,23 @@ It is possible to provide a configuration file explicitly, via `--config` comman
 ```
 cardano-rt-view --config /path/to/your/cardano-rt-view.json
 ```
+
+## Logging
+
+RTView has its log files. You can find the directory path where log files will be stored in `RTView Info` modal window: click to info icon at the top bar. Another way to find this path is to check RTView configuration file: see the section
+
+```
+"FileSK","/full/path/to/cardano-rt-view-logs/cardano-rt-view.log"
+```
+
+Please note that the minimum severity level for logging is `Info` by default. If you need to see detailed debugging information in the log, please set the minimum severity level to `Debug`. To do it, open RTView configuration file and change the line
+
+```
+"minSeverity":"Info"
+```
+
+to
+
+```
+"minSeverity":"Debug"
+```

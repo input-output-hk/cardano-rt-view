@@ -62,7 +62,7 @@ data PeerInfo = PeerInfo
   , piBlocksInF  :: !String
   , piSlotNumber :: !String
   , piStatus     :: !String
-  } deriving (Eq, Generic, NFData)
+  } deriving (Eq, Generic, NFData, Show)
 
 -- Severity type already has Generic instance.
 instance NFData Severity
@@ -72,7 +72,7 @@ data NodeError = NodeError
   , eSeverity  :: !Severity
   , eMessage   :: !String
   , eVisible   :: !Bool
-  } deriving (Generic, NFData)
+  } deriving (Generic, NFData, Show)
 
 sortErrorsByTimeAsc
   , sortErrorsByTimeDesc
@@ -94,12 +94,12 @@ data NodeState = NodeState
   , nodeMetrics       :: !NodeMetrics
   , nodeErrors        :: !ErrorsMetrics
   , metricsLastUpdate :: !Word64
-  } deriving (Generic, NFData)
+  } deriving (Generic, NFData, Show)
 
 data PeerMetrics = PeerMetrics
   { peersInfo :: ![PeerInfo]
   , peersInfoChanged :: !Bool
-  } deriving (Generic, NFData)
+  } deriving (Generic, NFData, Show)
 
 data MempoolMetrics = MempoolMetrics
   { mempoolTxsNumber           :: !Integer
@@ -116,7 +116,7 @@ data MempoolMetrics = MempoolMetrics
   , mempoolMaxBytesChanged     :: !Bool
   , txsProcessed               :: !Integer
   , txsProcessedChanged        :: !Bool
-  } deriving (Generic, NFData)
+  } deriving (Generic, NFData, Show)
 
 data ForgeMetrics = ForgeMetrics
   { nodeIsLeaderNum           :: !Integer
@@ -127,7 +127,7 @@ data ForgeMetrics = ForgeMetrics
   , nodeCannotForgeChanged    :: !Bool
   , blocksForgedNumber        :: !Integer
   , blocksForgedNumberChanged :: !Bool
-  } deriving (Generic, NFData)
+  } deriving (Generic, NFData, Show)
 
 data ResourcesMetrics = ResourcesMetrics
   { memory              :: !Double
@@ -146,7 +146,7 @@ data ResourcesMetrics = ResourcesMetrics
   , networkUsageOut     :: !Double
   , networkUsageOutLast :: !Word64
   , networkUsageOutNs   :: !Word64
-  } deriving (Generic, NFData)
+  } deriving (Generic, NFData, Show)
 
 data RTSMetrics = RTSMetrics
   { rtsMemoryAllocated          :: !Double
@@ -163,7 +163,7 @@ data RTSMetrics = RTSMetrics
   , rtsGcNumChanged             :: !Bool
   , rtsGcMajorNum               :: !Integer
   , rtsGcMajorNumChanged        :: !Bool
-  } deriving (Generic, NFData)
+  } deriving (Generic, NFData, Show)
 
 data BlockchainMetrics = BlockchainMetrics
   { systemStartTime        :: !UTCTime
@@ -176,7 +176,7 @@ data BlockchainMetrics = BlockchainMetrics
   , blocksNumberChanged    :: !Bool
   , chainDensity           :: !Double
   , chainDensityChanged    :: !Bool
-  } deriving (Generic, NFData)
+  } deriving (Generic, NFData, Show)
 
 data KESMetrics = KESMetrics
   { remKESPeriods                :: !Integer
@@ -189,7 +189,7 @@ data KESMetrics = KESMetrics
   , opCertExpiryKESPeriodChanged :: !Bool
   , currentKESPeriod             :: !Integer
   , currentKESPeriodChanged      :: !Bool
-  } deriving (Generic, NFData)
+  } deriving (Generic, NFData, Show)
 
 data NodeMetrics = NodeMetrics
   { nodeProtocol         :: !Text
@@ -204,13 +204,13 @@ data NodeMetrics = NodeMetrics
   , nodeStartTime        :: !UTCTime
   , nodeStartTimeChanged :: !Bool
   , nodeEndpointChanged  :: !Bool
-  } deriving (Generic, NFData)
+  } deriving (Generic, NFData, Show)
 
 data ErrorsMetrics = ErrorsMetrics
   { errors        :: ![NodeError]
   , errorsChanged :: !Bool
   , errorsRebuild :: !Bool
-  } deriving (Generic, NFData)
+  } deriving (Generic, NFData, Show)
 
 initialNodesState
   :: Configuration

@@ -15,7 +15,6 @@ module Cardano.RTView.NodeState.Updater
     ( launchNodeStateUpdater
     ) where
 
-import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.STM.TVar (TVar, modifyTVar')
 import           Control.Monad (forever, forM_)
 import           Control.Monad.STM (atomically)
@@ -27,13 +26,14 @@ import qualified Data.Text as T
 import           Data.Time.Clock (UTCTime)
 import           Data.Word (Word64)
 import           GHC.Clock (getMonotonicTimeNSec)
+import           System.Time.Extra (sleep)
 
 import           Cardano.BM.Backend.Switchboard (Switchboard, readLogBuffer)
 import           Cardano.BM.Data.Aggregated (Measurable (..))
 import           Cardano.BM.Data.Counter (Platform (..))
 import           Cardano.BM.Data.LogItem (LOContent (..), LOMeta (..), LogObject (..),
                                           MonitorAction (..), utc2ns)
-import           Cardano.BM.Trace (Trace)
+import           Cardano.BM.Trace (Trace, logDebug)
 
 import           Cardano.RTView.ErrorBuffer (ErrorBuffer, readErrorBuffer)
 import           Cardano.RTView.NodeState.Parsers (extractPeersInfo)
@@ -49,27 +49,30 @@ launchNodeStateUpdater
   -> ErrorBuffer Text
   -> TVar NodesState
   -> IO ()
-launchNodeStateUpdater _tr switchBoard errBuff nsTVar = forever $ do
-  -- logDebug tr "Try to update nodes' state..."
+launchNodeStateUpdater tr switchBoard errBuff nsTVar = forever $ do
   -- Take current |LogObject|s from the |ErrorBuffer|.
   currentErrLogObjects <- readErrorBuffer errBuff
   forM_ currentErrLogObjects $ \(loggerName, errLogObject) ->
-    updateNodesStateErrors nsTVar loggerName errLogObject
+    updateNodesStateErrors tr nsTVar loggerName errLogObject
   -- Take current |LogObject|s from the |LogBuffer|.
   currentLogObjects <- readLogBuffer switchBoard
   forM_ currentLogObjects $ \(loggerName, logObject) ->
-    updateNodesState nsTVar loggerName logObject
+    updateNodesState tr nsTVar loggerName logObject
   -- Check for updates in the |LogBuffer| every second.
-  threadDelay 1000000
+  sleep 1.0
 
 -- | Update NodeState for particular node based on loggerName.
 --   Please note that this function updates only Error-messages (if errors occurred).
 updateNodesStateErrors
-  :: TVar NodesState
+  :: Trace IO Text
+  -> TVar NodesState
   -> Text
   -> LogObject Text
   -> IO ()
-updateNodesStateErrors nsTVar loggerName (LogObject _ aMeta aContent) = do
+updateNodesStateErrors tr nsTVar loggerName (LogObject aName aMeta aContent) = do
+  logDebug tr $ "New error, name: " <> aName
+              <> ", meta: " <> T.pack (show aMeta)
+              <> ", content: " <> T.pack (show aContent)
   -- Check the name of the node this logObject came from.
   -- It is assumed that configuration contains correct names of remote nodes and
   -- loggers for them, for example:
@@ -114,11 +117,15 @@ updateNodeErrors ns (LOMeta timeStamp _ _ sev _) aContent = ns { nodeErrors = ne
 
 -- | Update NodeState for particular node based on loggerName.
 updateNodesState
-  :: TVar NodesState
+  :: Trace IO Text
+  -> TVar NodesState
   -> Text
   -> LogObject Text
   -> IO ()
-updateNodesState nsTVar loggerName (LogObject aName aMeta aContent) = do
+updateNodesState tr nsTVar loggerName (LogObject aName aMeta aContent) = do
+  logDebug tr $ "New logObject, name: " <> aName
+                <> ", meta: " <> T.pack (show aMeta)
+                <> ", content: " <> T.pack (show aContent)
   -- Check the name of the node this logObject came from.
   -- It is assumed that configuration contains correct names of remote nodes and
   -- loggers for them, for example:

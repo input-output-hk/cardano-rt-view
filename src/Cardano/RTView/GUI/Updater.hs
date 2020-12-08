@@ -29,6 +29,7 @@ import           Graphics.UI.Threepenny.Core (Element, UI, children, element, li
                                               text, (#), (#+))
 
 import           Cardano.BM.Data.Severity (Severity (..))
+import           Cardano.BM.Trace (Trace, logDebug)
 
 import           Cardano.RTView.CLI (RTViewParams (..))
 import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..),
@@ -45,33 +46,35 @@ import           Cardano.RTView.SupportedNodes (supportedNodesVersions, showSupp
 -- | This function is calling by the timer. It updates the node' state elements
 --   on the page automatically, because threepenny-gui is based on websockets.
 updateGUI
-  :: UI.Window
+  :: Trace IO Text
+  -> UI.Window
   -> TVar NodesState
   -> TVar TmpElements
   -> RTViewParams
   -> (NodesStateElements, NodesStateElements)
   -> UI ()
-updateGUI window nsTVar tmpElsTVar params (nodesStateElems, gridNodesStateElems) =
+updateGUI tr window nsTVar tmpElsTVar params (nodesStateElems, gridNodesStateElems) =
   -- Only one GUI mode can be active now, so check it and update only corresponding elements.
   whenJustM (UI.getElementById window (show ViewModeButton)) $ \btn ->
     UI.get UI.value btn >>= \case
-      "paneMode" -> updatePaneGUI window nsTVar tmpElsTVar params nodesStateElems
-      _ ->          updateGridGUI window nsTVar params gridNodesStateElems
+      "paneMode" -> updatePaneGUI tr window nsTVar tmpElsTVar params nodesStateElems
+      _ ->          updateGridGUI tr window nsTVar params gridNodesStateElems
 
 updatePaneGUI
-  :: UI.Window
+  :: Trace IO Text
+  -> UI.Window
   -> TVar NodesState
   -> TVar TmpElements
   -> RTViewParams
   -> NodesStateElements
   -> UI ()
-updatePaneGUI window tv tmpElsTVar params nodesStateElems = do
+updatePaneGUI tr window tv tmpElsTVar params nodesStateElems = do
+  liftIO $ logDebug tr "Update GUI, Pane View"
   nodesState <- liftIO $ readTVarIO tv
-
   resetPageTitleIfNeeded window tv
 
   forM_ nodesStateElems $ \(nName, els, peerInfoItems) -> do
-    let NodeState {..}         = nodesState ! nName
+    let ns@NodeState {..}      = nodesState ! nName
         PeerMetrics {..}       = peersMetrics
         MempoolMetrics {..}    = mempoolMetrics
         ForgeMetrics {..}      = forgeMetrics
@@ -80,6 +83,8 @@ updatePaneGUI window tv tmpElsTVar params nodesStateElems = do
         KESMetrics {..}        = kesMetrics
         nm@NodeMetrics {..}    = nodeMetrics
         ErrorsMetrics {..}     = nodeErrors
+
+    liftIO $ logDebug tr $ "Current state for node " <> nName <> ": " <> T.pack (show ns)
 
     updateErrorsListAndTab window tv tmpElsTVar nName errors errorsChanged els
                            ElNodeErrors ElNodeErrorsTab ElNodeErrorsTabBadge
@@ -131,15 +136,17 @@ updatePaneGUI window tv tmpElsTVar params nodesStateElems = do
       updateCharts window nName resourcesMetrics nm
 
 updateGridGUI
-  :: UI.Window
+  :: Trace IO Text
+  -> UI.Window
   -> TVar NodesState
   -> RTViewParams
   -> NodesStateElements
   -> UI ()
-updateGridGUI window tv params gridNodesStateElems = do
+updateGridGUI tr window tv params gridNodesStateElems = do
+  liftIO $ logDebug tr "Update GUI, Grid View"
   nodesState <- liftIO $ readTVarIO tv
   forM_ gridNodesStateElems $ \(nName, els, _) -> do
-    let NodeState {..}         = nodesState ! nName
+    let ns@NodeState {..}      = nodesState ! nName
         PeerMetrics {..}       = peersMetrics
         MempoolMetrics {..}    = mempoolMetrics
         ForgeMetrics {..}      = forgeMetrics
@@ -148,6 +155,8 @@ updateGridGUI window tv params gridNodesStateElems = do
         BlockchainMetrics {..} = blockchainMetrics
         KESMetrics {..}        = kesMetrics
         nm@NodeMetrics {..}    = nodeMetrics
+
+    liftIO $ logDebug tr $ "Current state for node " <> nName <> ": " <> T.pack (show ns)
 
     nodeIsIdle <- checkIfNodeIsIdleGrid window params metricsLastUpdate (els ! ElIdleNode) nName
     unless nodeIsIdle $ do

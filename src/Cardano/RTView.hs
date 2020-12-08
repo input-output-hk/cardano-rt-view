@@ -47,12 +47,14 @@ runCardanoRTView params' = do
   -- This TVar contains temporary Elements which should be deleted explicitly.
   tmpElsTVar :: TVar TmpElements <- newTVarIO initialTmpElements
 
+  let nsTr = appendName "nodeState" tr
+      wsTr = appendName "webServer" tr
   -- Launch 3 threads:
   --   1. acceptor plugin (it launches |TraceAcceptor| plugin),
   --   2. node state updater (it gets metrics from |LogBuffer| and updates NodeState),
   --   3. web server (it serves requests from user's browser and shows nodes' metrics in the real time).
   acceptorThr <- async $ launchMetricsAcceptor config accTr switchBoard
-  updaterThr  <- async $ launchNodeStateUpdater tr switchBoard be nsTVar
-  serverThr   <- async $ launchWebServer nsTVar tmpElsTVar params acceptors
+  updaterThr  <- async $ launchNodeStateUpdater nsTr switchBoard be nsTVar
+  serverThr   <- async $ launchWebServer wsTr config nsTVar tmpElsTVar params acceptors
 
   void $ waitAnyCancel [acceptorThr, updaterThr, serverThr]
