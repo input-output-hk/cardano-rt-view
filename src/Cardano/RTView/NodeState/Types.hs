@@ -149,20 +149,17 @@ data ResourcesMetrics = ResourcesMetrics
   } deriving (Generic, NFData, Show)
 
 data RTSMetrics = RTSMetrics
-  { rtsMemoryAllocated          :: !Double
-  , rtsMemoryAllocatedChanged   :: !Bool
-  , rtsMemoryUsed               :: !Double
-  , rtsMemoryUsedChanged        :: !Bool
-  , rtsMemoryUsedPercent        :: !Double
-  , rtsMemoryUsedPercentChanged :: !Bool
-  , rtsGcCpu                    :: !Double
-  , rtsGcCpuChanged             :: !Bool
-  , rtsGcElapsed                :: !Double
-  , rtsGcElapsedChanged         :: !Bool
-  , rtsGcNum                    :: !Integer
-  , rtsGcNumChanged             :: !Bool
-  , rtsGcMajorNum               :: !Integer
-  , rtsGcMajorNumChanged        :: !Bool
+  { rtsMemoryUsed        :: !Double
+  , rtsGcMajorNum        :: !Integer
+  , rtsGcMajorNumChanged :: !Bool
+  , rtsGcMinorNum        :: !Integer
+  , rtsGcMinorNumChanged :: !Bool
+  , rtsGCPercent         :: !Double
+  , rtsGCLast            :: !Integer
+  , rtsGCNs              :: !Word64
+  , rtsMutPercent        :: !Double
+  , rtsMutLast           :: !Integer
+  , rtsMutNs             :: !Word64
   } deriving (Generic, NFData, Show)
 
 data BlockchainMetrics = BlockchainMetrics
@@ -281,20 +278,17 @@ initialNodeState now = NodeState
         }
   , rtsMetrics =
       RTSMetrics
-        { rtsMemoryAllocated          = -0.1
-        , rtsMemoryAllocatedChanged   = False
-        , rtsMemoryUsed               = -0.1
-        , rtsMemoryUsedChanged        = False
-        , rtsMemoryUsedPercent        = -0.1
-        , rtsMemoryUsedPercentChanged = False
-        , rtsGcCpu                    = -0.1
-        , rtsGcCpuChanged             = False
-        , rtsGcElapsed                = -0.1
-        , rtsGcElapsedChanged         = False
-        , rtsGcNum                    = -1
-        , rtsGcNumChanged             = False
-        , rtsGcMajorNum               = -1
-        , rtsGcMajorNumChanged        = False
+        { rtsMemoryUsed        = 0.1
+        , rtsGcMajorNum        = -1
+        , rtsGcMajorNumChanged = False
+        , rtsGcMinorNum        = -1
+        , rtsGcMinorNumChanged = False
+        , rtsGCPercent         = 0.1
+        , rtsGCLast            = 0
+        , rtsGCNs              = 10000
+        , rtsMutPercent        = 0.1
+        , rtsMutLast           = 0
+        , rtsMutNs             = 10000
         }
   , blockchainMetrics =
       BlockchainMetrics

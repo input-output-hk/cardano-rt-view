@@ -65,7 +65,7 @@ updateGUI tr window tv tmpElsTVar params nodesStateElems = do
         RTSMetrics {..}        = rtsMetrics
         BlockchainMetrics {..} = blockchainMetrics
         KESMetrics {..}        = kesMetrics
-        nm@NodeMetrics {..}    = nodeMetrics
+        NodeMetrics {..}       = nodeMetrics
         ErrorsMetrics {..}     = nodeErrors
 
     liftIO $ logDebug tr $ "Current state for node " <> nName <> ": " <> T.pack (show ns)
@@ -77,7 +77,6 @@ updateGUI tr window tv tmpElsTVar params nodesStateElems = do
     -- TODO: temporary solution, progress bars will be replaced by charts soon.
     updateProgressBar mempoolBytesPercent  els ElMempoolBytesProgress
     updateProgressBar mempoolTxsPercent    els ElMempoolTxsProgress
-    updateProgressBar rtsMemoryUsedPercent els ElRTSMemoryProgress
 
     nodeIsIdle <- checkIfNodeIsIdlePane params metricsLastUpdate (els ! ElIdleNode) (els ! ElNodePane)
     unless nodeIsIdle $ do
@@ -102,13 +101,8 @@ updateGUI tr window tv tmpElsTVar params nodesStateElems = do
       setMPoolBytesPerc tv nName (DoubleV  mempoolBytesPercent)  mempoolBytesPercentChanged els ElMempoolBytesPercent
       setMPoolMaxTxs    tv nName (IntegerV mempoolMaxTxs)        mempoolMaxTxsChanged      els ElMempoolMaxTxs
       setMPoolMaxBytes  tv nName (IntegerV mempoolMaxBytes)      mempoolMaxBytesChanged    els ElMempoolMaxBytes
-      setRtsMemAlloc    tv nName (DoubleV  rtsMemoryAllocated)   rtsMemoryAllocatedChanged els ElRTSMemoryAllocated
-      setRtsMemUsed     tv nName (DoubleV  rtsMemoryUsed)        rtsMemoryUsedChanged      els ElRTSMemoryUsed
-      setRtsMemUsedPerc tv nName (DoubleV  rtsMemoryUsedPercent) rtsMemoryUsedPercentChanged els ElRTSMemoryUsedPercent
-      setRtsGcCpu       tv nName (DoubleV  rtsGcCpu)             rtsGcCpuChanged           els ElRTSGcCpu
-      setRtsGcElapsed   tv nName (DoubleV  rtsGcElapsed)         rtsGcElapsedChanged       els ElRTSGcElapsed
-      setRtsGcNum       tv nName (IntegerV rtsGcNum)             rtsGcNumChanged           els ElRTSGcNum
       setRtsGcMajorNum  tv nName (IntegerV rtsGcMajorNum)        rtsGcMajorNumChanged      els ElRTSGcMajorNum
+      setRtsGcMinorNum  tv nName (IntegerV rtsGcMinorNum)        rtsGcMinorNumChanged      els ElRTSGcMinorNum
       setStartKES       tv nName (IntegerV opCertStartKESPeriod)  opCertStartKESPeriodChanged  els ElOpCertStartKESPeriod
       setExpiryKES      tv nName (IntegerV opCertExpiryKESPeriod) opCertExpiryKESPeriodChanged els ElOpCertExpiryKESPeriod
       setCurrentKES     tv nName (IntegerV currentKESPeriod)      currentKESPeriodChanged      els ElCurrentKESPeriod
@@ -117,7 +111,7 @@ updateGUI tr window tv tmpElsTVar params nodesStateElems = do
       setSystemStart    tv nName systemStartTime  systemStartTimeChanged els ElSystemStartTime
       setNodeCommit     tv nName nodeCommit nodeShortCommit nodeCommitChanged els ElNodeCommitHref
 
-      updateCharts nName resourcesMetrics nm
+      updateCharts nName resourcesMetrics rtsMetrics nodeMetrics
 
 type Setter = TVar NodesState
               -> Text
@@ -158,13 +152,8 @@ setNodeProtocol
   , setMPoolBytesPerc
   , setMPoolMaxTxs
   , setMPoolMaxBytes
-  , setRtsMemAlloc
-  , setRtsMemUsed
-  , setRtsMemUsedPerc
-  , setRtsGcCpu
-  , setRtsGcElapsed
-  , setRtsGcNum
   , setRtsGcMajorNum
+  , setRtsGcMinorNum
   , setStartKES
   , setExpiryKES
   , setCurrentKES
@@ -187,13 +176,8 @@ setMPoolBytes     = evSetter (\ns -> ns { mempoolMetrics = (mempoolMetrics ns) {
 setMPoolBytesPerc = evSetter (\ns -> ns { mempoolMetrics = (mempoolMetrics ns) { mempoolBytesPercentChanged = False } })
 setMPoolMaxTxs    = evSetter (\ns -> ns { mempoolMetrics = (mempoolMetrics ns) { mempoolMaxTxsChanged       = False } })
 setMPoolMaxBytes  = evSetter (\ns -> ns { mempoolMetrics = (mempoolMetrics ns) { mempoolMaxBytesChanged     = False } })
-setRtsMemAlloc    = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsMemoryAllocatedChanged = False } })
-setRtsMemUsed     = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsMemoryUsedChanged      = False } })
-setRtsMemUsedPerc = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsMemoryUsedPercentChanged = False } })
-setRtsGcCpu       = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcCpuChanged           = False } })
-setRtsGcElapsed   = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcElapsedChanged       = False } })
-setRtsGcNum       = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcNumChanged           = False } })
-setRtsGcMajorNum  = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcMajorNumChanged      = False } })
+setRtsGcMajorNum  = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcMajorNumChanged = False } })
+setRtsGcMinorNum  = evSetter (\ns -> ns { rtsMetrics = (rtsMetrics ns) { rtsGcMinorNumChanged = False } })
 setStartKES       = evSetter (\ns -> ns { kesMetrics = (kesMetrics ns) { opCertStartKESPeriodChanged  = False } })
 setExpiryKES      = evSetter (\ns -> ns { kesMetrics = (kesMetrics ns) { opCertExpiryKESPeriodChanged = False } })
 setCurrentKES     = evSetter (\ns -> ns { kesMetrics = (kesMetrics ns) { currentKESPeriodChanged      = False } })
@@ -534,9 +518,10 @@ hideElement w = element w # set UI.style [("display", "none")]
 updateCharts
   :: Text
   -> ResourcesMetrics
+  -> RTSMetrics
   -> NodeMetrics
   -> UI ()
-updateCharts nameOfNode rm nm = do
+updateCharts nameOfNode rm rtm nm = do
   now <- liftIO getCurrentTime
   let ts :: String
       ts = formatTime defaultTimeLocale "%M:%S" time
@@ -544,9 +529,9 @@ updateCharts nameOfNode rm nm = do
       timeDiff :: NominalDiffTime
       timeDiff = now `diffUTCTime` nodeStartTime nm
 
-  UI.runFunction $ UI.ffi Chart.updateMemoryUsageChartJS  mN ts (memory rm)
-  UI.runFunction $ UI.ffi Chart.updateCPUUsageChartJS     cN ts (cpuPercent rm)
-  UI.runFunction $ UI.ffi Chart.updateDiskUsageChartJS    dN ts (diskUsageR rm)     (diskUsageW rm)
+  UI.runFunction $ UI.ffi Chart.updateMemoryUsageChartJS  mN ts (memory rm) (rtsMemoryUsed rtm)
+  UI.runFunction $ UI.ffi Chart.updateCPUUsageChartJS     cN ts (cpuPercent rm) (rtsMutPercent rtm) (rtsGCPercent rtm)
+  UI.runFunction $ UI.ffi Chart.updateDiskUsageChartJS    dN ts (diskUsageR rm) (diskUsageW rm)
   UI.runFunction $ UI.ffi Chart.updateNetworkUsageChartJS nN ts (networkUsageIn rm) (networkUsageOut rm)
  where
   mN = showt MemoryUsageChartId  <> nameOfNode

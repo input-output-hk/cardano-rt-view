@@ -10,8 +10,8 @@ import           Data.Text (Text, intercalate)
 --   of nodes' versions that works with this release of RTView.
 supportedNodesVersions :: [Text]
 supportedNodesVersions =
-  [ "1.22.1"
-  , "1.23.0"
+  [ "1.24.1"
+  , "1.24.2"
   ]
 
 showSupportedNodesVersions :: Text

@@ -117,13 +117,8 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
   elMempoolBytesPercent       <- string $ showDouble  mempoolBytesPercent
   elMempoolMaxTxs             <- string $ showInteger mempoolMaxTxs
   elMempoolMaxBytes           <- string $ showInteger mempoolMaxBytes
-  elRTSMemoryAllocated        <- string $ showDouble  rtsMemoryAllocated
-  elRTSMemoryUsed             <- string $ showDouble  rtsMemoryUsed
-  elRTSMemoryUsedPercent      <- string $ showDouble  rtsMemoryUsedPercent
-  elRTSGcCpu                  <- string $ showDouble  rtsGcCpu
-  elRTSGcElapsed              <- string $ showDouble  rtsGcElapsed
-  elRTSGcNum                  <- string $ showInteger rtsGcNum
   elRTSGcMajorNum             <- string $ showInteger rtsGcMajorNum
+  elRTSGcMinorNum             <- string $ showInteger rtsGcMinorNum
 
   elNodeCommitHref
     <- if T.null nodeShortCommit
@@ -155,20 +150,14 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
                                  ]
   elMempoolTxsProgressBox   <- UI.div #. [ProgressBarBox] #+ [element elMempoolTxsProgress]
 
-  elRTSMemoryProgress       <- UI.div #. [ProgressBar] #+
-                                 [ UI.span #. [HSpacer] #+ []
-                                 , element elRTSMemoryUsed
-                                 , string "MB" #. [BarValueUnit]
-                                 ]
-  elRTSMemoryProgressBox    <- UI.div #. [ProgressBarBox] #+ [element elRTSMemoryProgress]
-
   -- Create content area for each tab.
   nodeTabContent
     <- UI.div #. [TabContainer, W3Row] # showIt #+
          [ UI.div #. [W3Half] #+
              [ UI.div #+ [string "Node protocol"   # set UI.title__ "Node's protocol"]
              , UI.div #+ [string "Node version"    # set UI.title__ "Version of the node"]
-             , UI.div #+ [string "Node platform"   # set UI.title__ "Platform the node is working on"]
+             -- TODO: platform will be traced in nodeBasicInfo.
+             -- , UI.div #+ [string "Node platform"   # set UI.title__ "Platform the node is working on"]
              , UI.div #+ [string "Node commit"     # set UI.title__ "Git commit the node was built from"]
              , vSpacer NodeInfoVSpacer
              , UI.div #+ [string "Node start time" # set UI.title__ "The time when this node has started"]
@@ -180,7 +169,8 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
          , UI.div #. [W3Half, NodeInfoValues] #+
              [ UI.div #+ [element elNodeProtocol]
              , UI.div #+ [element elNodeVersion]
-             , UI.div #+ [element elNodePlatform]
+             -- TODO: platform will be traced in nodeBasicInfo.
+             -- , UI.div #+ [element elNodePlatform]
              , UI.div #. [CommitLink] #+ [element elNodeCommitHref]
              , vSpacer NodeInfoVSpacer
              , UI.div #+ [element elNodeStarttime]
@@ -385,37 +375,14 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
 
   ghcRTSTabContent
     <- UI.div #. [TabContainer] # hideIt #+
-         [ UI.div #. [W3Container] #+
-             [ UI.div #. [W3Row] #+
-                 [ UI.div #. [W3Half] #+
-                     [string "RTS live memory"
-                        # set UI.title__ "Total amount of live data in the heap, in MB (updated after every GC)"]
-                 , UI.div #. [W3Half, W3RightAlign] #+
-                     [ element elRTSMemoryAllocated
-                     , UI.span #. [ValueUnit] #+ [string "MB"]
-                     ]
-                 ]
-             , element elRTSMemoryProgressBox
-             ]
-         , vSpacer NodeMetricsVSpacer
-         , UI.div #. [W3Row] #+
+         [ UI.div #. [W3Row] #+
              [ UI.div #. [W3Half] #+
-                 [ UI.div #+ [string "GC CPU time"       # set UI.title__ "Total CPU time used by the GC, in seconds"]
-                 , UI.div #+ [string "GC time elapsed"   # set UI.title__ "Total elapsed time used by the GC, in seconds"]
-                 , UI.div #+ [string "Number of GC runs" # set UI.title__ "Total number of GCs"]
-                 , UI.div #+ [string "Major GC runs"     # set UI.title__ "Total number of major (oldest generation) GCs"]
+                 [ UI.div #+ [string "Number of major GC runs" # set UI.title__ "Total number of major (oldest generation) GCs"]
+                 , UI.div #+ [string "Number of minor GC runs" # set UI.title__ "Total number of minor GCs"]
                  ]
              , UI.div #. [W3Half, NodeInfoValues] #+
-                 [ UI.div #+
-                     [ element elRTSGcCpu
-                     , string "s" #. [ValueUnit]
-                     ]
-                 , UI.div #+
-                     [ element elRTSGcElapsed
-                     , string "s" #. [ValueUnit]
-                     ]
-                 , UI.div #+ [element elRTSGcNum]
-                 , UI.div #+ [element elRTSGcMajorNum]
+                 [ UI.div #+ [element elRTSGcMajorNum]
+                 , UI.div #+ [element elRTSGcMinorNum]
                  ]
              ]
          , vSpacer NodeMetricsVSpacer
@@ -623,20 +590,23 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
   resourcesTabDisk    <- anchorButton "Disk" "disk.svg"
   resourcesTabNetwork <- anchorButton "Network" "network.svg"
 
-  resourcesTab  <- UI.div #. [W3DropdownHover, W3Mobile] #+
-                     [ UI.button #. [W3Button]
-                                 # set UI.title__ "Resources"
-                                 #+
-                         [ UI.img #. [NodeMenuIcon] # set UI.src "/static/images/resources.svg"
-                         , UI.img #. [ResourcesDropdownIcon] # set UI.src "/static/images/dropdown-blue.svg"
-                         ]
-                     , UI.div #. [W3DropdownContent, W3BarBlock] #+
-                         [ element resourcesTabMemory
-                         , element resourcesTabCPU
-                         , element resourcesTabDisk
-                         , element resourcesTabNetwork
-                         ]
-                     ]
+  resourcesTab
+    <- UI.div #. [W3DropdownHover, W3Mobile] #+
+         [ UI.button #. [W3Button]
+                     # set UI.title__ "Resources"
+                     #+
+             [ UI.img #. [NodeMenuIcon] # set UI.src "/static/images/resources.svg"
+             , UI.img #. [ResourcesDropdownIcon] # set UI.src "/static/images/dropdown-blue.svg"
+             ]
+         , UI.div #. [W3DropdownContent, W3BarBlock] #+
+             [ element resourcesTabMemory
+             , element resourcesTabCPU
+             , element resourcesTabDisk
+                 #. [W3BarItem, W3Button, W3Mobile, W3Disabled] # set UI.title__ "Disabled in this release"
+             , element resourcesTabNetwork
+                 #. [W3BarItem, W3Button, W3Mobile, W3Disabled] # set UI.title__ "Disabled in this release"
+             ]
+         ]
 
   let tabs :: [((Element, Element), Int)]
       tabs =
@@ -647,8 +617,9 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
                       , (mempoolTab,          mempoolTabContent)
                       , (resourcesTabMemory,  resourcesTabMemoryContent)
                       , (resourcesTabCPU,     resourcesTabCPUContent)
-                      , (resourcesTabDisk,    resourcesTabDiskContent)
-                      , (resourcesTabNetwork, resourcesTabNetworkContent)
+                      -- Temporarily removed (new metrics in iohk-monitoring should be implemented).
+                      -- , (resourcesTabDisk,    resourcesTabDiskContent)
+                      -- , (resourcesTabNetwork, resourcesTabNetworkContent)
                       , (errorsTab,           errorsTabContent)
                       , (ghcRTSTab,           ghcRTSTabContent)
                       ]
@@ -722,20 +693,13 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
         , (ElMempoolBytesPercent,     elMempoolBytesPercent)
         , (ElMempoolMaxTxs,           elMempoolMaxTxs)
         , (ElMempoolMaxBytes,         elMempoolMaxBytes)
-        , (ElRTSMemoryAllocated,      elRTSMemoryAllocated)
-        , (ElRTSMemoryUsed,           elRTSMemoryUsed)
-        , (ElRTSMemoryUsedPercent,    elRTSMemoryUsedPercent)
-        , (ElRTSGcCpu,                elRTSGcCpu)
-        , (ElRTSGcElapsed,            elRTSGcElapsed)
-        , (ElRTSGcNum,                elRTSGcNum)
         , (ElRTSGcMajorNum,           elRTSGcMajorNum)
+        , (ElRTSGcMinorNum,           elRTSGcMinorNum)
         -- Progress bars
         , (ElMempoolBytesProgress,    elMempoolBytesProgress)
         , (ElMempoolBytesProgressBox, elMempoolBytesProgressBox)
         , (ElMempoolTxsProgress,      elMempoolTxsProgress)
         , (ElMempoolTxsProgressBox,   elMempoolTxsProgressBox)
-        , (ElRTSMemoryProgress,       elRTSMemoryProgress)
-        , (ElRTSMemoryProgressBox,    elRTSMemoryProgressBox)
         ]
 
   return (nodePane, nodeStateElems, peerInfoItems)
