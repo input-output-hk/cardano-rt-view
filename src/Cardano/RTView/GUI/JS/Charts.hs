@@ -24,9 +24,15 @@ memoryUsageChartJS = concat
   , "  data: {"
   , "    labels: [],"
   , "    datasets: [{"
-  , "      label: 'Memory usage',"
+  , "      label: 'Memory | kernel',"
   , "      backgroundColor: '#FF8000',"
   , "      borderColor: '#FF8000',"
+  , "      data: [],"
+  , "      fill: false"
+  , "    },{"
+  , "      label: 'Memory | RTS',"
+  , "      backgroundColor: '#DC143C',"
+  , "      borderColor: '#DC143C',"
   , "      data: [],"
   , "      fill: false"
   , "    }]"
@@ -57,9 +63,21 @@ cpuUsageChartJS = concat
   , "  data: {"
   , "    labels: [],"
   , "    datasets: [{"
-  , "      label: 'CPU usage',"
+  , "      label: 'CPU | total',"
   , "      backgroundColor: '#FE2E2E',"
   , "      borderColor: '#FE2E2E',"
+  , "      data: [],"
+  , "      fill: false"
+  , "    },{"
+  , "      label: 'CPU | code',"
+  , "      backgroundColor: '#008B8B',"
+  , "      borderColor: '#008B8B',"
+  , "      data: [],"
+  , "      fill: false"
+  , "    },{"
+  , "      label: 'CPU | GC',"
+  , "      backgroundColor: '#8B0000',"
+  , "      borderColor: '#8B0000',"
   , "      data: [],"
   , "      fill: false"
   , "    }]"
@@ -163,16 +181,18 @@ networkUsageChartJS = concat
 -- Chart updaters.
 -- Please note that after 900 data points (which are collected in every 30 minutes)
 -- we remove outdated points. It allows to avoid too compressed, narrow charts.
+-- This is a temporary solution, it will be improved in the future releases.
 
 updateMemoryUsageChartJS
   , updateCPUUsageChartJS
   , updateDiskUsageChartJS
   , updateNetworkUsageChartJS :: String
-updateMemoryUsageChartJS  = updateSingleDatasetChartJS
-updateCPUUsageChartJS     = updateSingleDatasetChartJS
+updateMemoryUsageChartJS  = updateDoubleDatasetChartJS
+updateCPUUsageChartJS     = updateThreeDatasetsChartJS
 updateDiskUsageChartJS    = updateDoubleDatasetChartJS
 updateNetworkUsageChartJS = updateDoubleDatasetChartJS
 
+{-
 updateSingleDatasetChartJS :: String
 updateSingleDatasetChartJS = concat
   [ "window.charts.get(%1).data.labels.push(%2);"
@@ -184,6 +204,7 @@ updateSingleDatasetChartJS = concat
   , "window.charts.get(%1).data.datasets[0].data.push(%3);"
   , "window.charts.get(%1).update({duration: 0});"
   ]
+-}
 
 updateDoubleDatasetChartJS :: String
 updateDoubleDatasetChartJS = concat
@@ -196,5 +217,21 @@ updateDoubleDatasetChartJS = concat
   , "}"
   , "window.charts.get(%1).data.datasets[0].data.push(%3);"
   , "window.charts.get(%1).data.datasets[1].data.push(%4);"
+  , "window.charts.get(%1).update({duration: 0});"
+  ]
+
+updateThreeDatasetsChartJS :: String
+updateThreeDatasetsChartJS = concat
+  [ "window.charts.get(%1).data.labels.push(%2);"
+  , "var len = window.charts.get(%1).data.labels.length;"
+  , "if (len == 900) {"
+  , "  window.charts.get(%1).data.datasets[0].data.splice(0, len);"
+  , "  window.charts.get(%1).data.datasets[1].data.splice(0, len);"
+  , "  window.charts.get(%1).data.datasets[2].data.splice(0, len);"
+  , "  window.charts.get(%1).data.labels.splice(0, len);"
+  , "}"
+  , "window.charts.get(%1).data.datasets[0].data.push(%3);"
+  , "window.charts.get(%1).data.datasets[1].data.push(%4);"
+  , "window.charts.get(%1).data.datasets[2].data.push(%5);"
   , "window.charts.get(%1).update({duration: 0});"
   ]

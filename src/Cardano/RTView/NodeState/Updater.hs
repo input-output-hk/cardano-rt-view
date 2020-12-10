@@ -151,13 +151,28 @@ updateNodesState tr nsTVar loggerName (LogObject aName aMeta aContent) = do
     in
     case currentNodesState !? nameOfNode of
       Just ns ->
-        if | itIs "cardano.node.metrics.peersFromNodeKernel" ->
+        if | itIs "basicInfo.protocol" ->
+             textValue $ updateNodeProtocol ns now
+           | itIs "basicInfo.version" ->
+             textValue $ updateNodeVersion ns now
+           | itIs "basicInfo.commit" ->
+             textValue $ updateNodeCommit ns now
+           | itIs "basicInfo.nodeStartTime" ->
+             textValue $ updateNodeStartTime ns now
+           | itIs "basicInfo.systemStartTime" ->
+             textValue $ updateSystemStartTime ns now
+           | otherwise ->
             case aContent of
               LogStructured newPeersInfo ->
                 nsWith $ updatePeersInfo ns newPeersInfo now
-              _ -> currentNodesState
-           | itIs "cardano.node.metrics" ->
-            case aContent of
+              LogValue "density" (PureD density) ->
+                nsWith $ updateChainDensity ns density now
+              LogValue "blockNum" (PureI blockNum) ->
+                nsWith $ updateBlocksNumber ns blockNum now
+              LogValue "slotInEpoch" (PureI slotNum) ->
+                nsWith $ updateSlotInEpoch ns slotNum now
+              LogValue "epoch" (PureI epoch') ->
+                nsWith $ updateEpoch ns epoch' now
               LogValue "txsInMempool" (PureI txsInMempool) ->
                 nsWith $ updateMempoolTxs ns txsInMempool now
               LogValue "mempoolBytes" (PureI mempoolBytes') ->
@@ -172,9 +187,6 @@ updateNodesState tr nsTVar loggerName (LogObject aName aMeta aContent) = do
                 nsWith $ updateNodeIsLeader ns leaderNum now
               LogValue "slotsMissedNum" (PureI missedSlotsNum) ->
                 nsWith $ updateSlotsMissed ns missedSlotsNum now
-              _ -> currentNodesState
-           | itIs "cardano.node-metrics" ->
-            case aContent of
 #ifdef WINDOWS
               LogValue "Stat.CPUTime" (Microseconds microsecs) ->
                 nsWith $ updateCPUSecs ns (microsecs * 1000) aMeta now
@@ -190,8 +202,8 @@ updateNodesState tr nsTVar loggerName (LogObject aName aMeta aContent) = do
                 nsWith $ updateNetworkOut ns outBytes aMeta now
 #endif
 #ifdef LINUX
-              LogValue "Mem.resident" (PureI pages) ->
-                nsWith $ updateMemoryPages ns pages now
+              LogValue "Mem.resident" (PureI bytes) ->
+                nsWith $ updateMemoryBytes ns bytes now
               LogValue "IO.rchar" (Bytes bytesWereRead) ->
                 nsWith $ updateDiskRead ns bytesWereRead aMeta now
               LogValue "IO.wchar" (Bytes bytesWereWritten) ->
@@ -205,21 +217,6 @@ updateNodesState tr nsTVar loggerName (LogObject aName aMeta aContent) = do
 #endif
               LogValue "Sys.Platform" (PureI pfid) ->
                 nsWith $ updateNodePlatform ns (fromIntegral pfid) now
-              LogValue "RTS.maxUsedMemBytes" (Bytes bytesAllocated) ->
-                nsWith $ updateRTSBytesAllocated ns bytesAllocated now
-              LogValue "RTS.gcLiveBytes" (Bytes usedMemBytes) ->
-                nsWith $ updateRTSBytesUsed ns usedMemBytes now
-              LogValue "RTS.gcCpuNs" (Nanoseconds gcCpuNs) ->
-                nsWith $ updateGcCpuNs ns gcCpuNs now
-              LogValue "RTS.gcElapsedNs" (Nanoseconds gcElapsedNs) ->
-                nsWith $ updateGcElapsedNs ns gcElapsedNs now
-              LogValue "RTS.gcNum" (PureI gcNum) ->
-                nsWith $ updateGcNum ns gcNum now
-              LogValue "RTS.gcMajorNum" (PureI gcMajorNum) ->
-                nsWith $ updateGcMajorNum ns gcMajorNum now
-              _ -> currentNodesState
-           | itIs "cardano.node.Forge.metrics" ->
-            case aContent of
               LogValue "operationalCertificateStartKESPeriod" (PureI oCertStartKesPeriod) ->
                 nsWith $ updateCertStartKESPeriod ns oCertStartKesPeriod now
               LogValue "operationalCertificateExpiryKESPeriod" (PureI oCertExpiryKesPeriod) ->
@@ -228,27 +225,16 @@ updateNodesState tr nsTVar loggerName (LogObject aName aMeta aContent) = do
                 nsWith $ updateCurrentKESPeriod ns currentKesPeriod now
               LogValue "remainingKESPeriods" (PureI kesPeriodsUntilExpiry) ->
                 nsWith $ updateRemainingKESPeriods ns kesPeriodsUntilExpiry now
-              _ -> currentNodesState
-           | itIs "basicInfo.protocol" ->
-             textValue $ updateNodeProtocol ns now
-           | itIs "basicInfo.version" ->
-             textValue $ updateNodeVersion ns now
-           | itIs "basicInfo.commit" ->
-             textValue $ updateNodeCommit ns now
-           | itIs "basicInfo.nodeStartTime" ->
-             textValue $ updateNodeStartTime ns now
-           | itIs "basicInfo.systemStartTime" ->
-             textValue $ updateSystemStartTime ns now
-           | otherwise ->
-            case aContent of
-              LogValue "density" (PureD density) ->
-                nsWith $ updateChainDensity ns density now
-              LogValue "blockNum" (PureI blockNum) ->
-                nsWith $ updateBlocksNumber ns blockNum now
-              LogValue "slotInEpoch" (PureI slotNum) ->
-                nsWith $ updateSlotInEpoch ns slotNum now
-              LogValue "epoch" (PureI epoch') ->
-                nsWith $ updateEpoch ns epoch' now
+              LogValue "RTS.gcLiveBytes" (PureI usedMemBytes) ->
+                nsWith $ updateRTSBytesUsed ns usedMemBytes now
+              LogValue "RTS.gcMajorNum" (PureI gcMajorNum) ->
+                nsWith $ updateGcMajorNum ns gcMajorNum now
+              LogValue "RTS.gcMinorNum" (PureI gcMinorNum) ->
+                nsWith $ updateGcMinorNum ns gcMinorNum now
+              LogValue "RTS.gcticks" (PureI ticks) ->
+                nsWith $ updateGCTicks ns ticks aMeta now
+              LogValue "RTS.mutticks" (PureI ticks) ->
+                nsWith $ updateMutTicks ns ticks aMeta now
               _ -> currentNodesState
       Nothing ->
         -- This is a problem, because it means that configuration is unexpected one:
@@ -325,22 +311,16 @@ updateNodePlatform ns platfId now = ns { nodeMetrics = newNodeMetrics, metricsLa
   currentMetrics = nodeMetrics ns
   platformName = T.pack . show $ (toEnum platfId :: Platform)
 
-#ifdef LINUX
-updateMemoryPages :: NodeState -> Integer -> Word64 -> NodeState
-updateMemoryPages ns pages now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
- where
-  newMetrics     = currentMetrics { memory = mBytes }
-  currentMetrics = resourcesMetrics ns
-  mBytes         = fromIntegral (pages * pageSize) / 1024 / 1024 :: Double
-  pageSize       = 4096 :: Integer
-#endif
-
-#ifdef DARWIN
-updateMemoryBytes :: NodeState -> Word64 -> Word64 -> NodeState
+#if defined(DARWIN) || defined(LINUX)
+updateMemoryBytes :: NodeState -> Integer -> Word64 -> NodeState
 updateMemoryBytes ns bytes now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
-  newMetrics     = currentMetrics { memory = mBytes }
+  newMetrics     = currentMetrics { memory = if bytes == 0
+                                               then currentMemory
+                                               else mBytes
+                                  }
   currentMetrics = resourcesMetrics ns
+  currentMemory  = memory currentMetrics
   mBytes         = fromIntegral bytes / 1024 / 1024 :: Double
 #endif
 
@@ -541,59 +521,16 @@ updateSlotsMissed ns slotsMissed now = ns { forgeMetrics = newMetrics, metricsLa
     }
   currentMetrics = forgeMetrics ns
 
-updateRTSBytesAllocated :: NodeState -> Word64 -> Word64 -> NodeState
-updateRTSBytesAllocated ns bytesAllocated now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
- where
-  newMetrics = currentMetrics
-    { rtsMemoryAllocated  = newRTSMemoryAllocated
-    , rtsMemoryAllocatedChanged = rtsMemoryAllocated currentMetrics /= newRTSMemoryAllocated
-    }
-  currentMetrics = rtsMetrics ns
-  newRTSMemoryAllocated = fromIntegral bytesAllocated / 1024 / 1024 :: Double
-
-updateRTSBytesUsed :: NodeState -> Word64 -> Word64 -> NodeState
+updateRTSBytesUsed :: NodeState -> Integer -> Word64 -> NodeState
 updateRTSBytesUsed ns usedMemBytes now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
  where
-  newMetrics = currentMetrics
-    { rtsMemoryUsed = mBytes
-    , rtsMemoryUsedChanged = changed
-    , rtsMemoryUsedPercent =   mBytes
-                             / rtsMemoryAllocated currentMetrics
-                             * 100.0
-    , rtsMemoryUsedPercentChanged = changed
-    }
+  newMetrics     = currentMetrics { rtsMemoryUsed = if usedMemBytes == 0
+                                                      then currentRTSMem
+                                                      else mBytes
+                                  }
   currentMetrics = rtsMetrics ns
-  mBytes = fromIntegral usedMemBytes / 1024 / 1024 :: Double
-  changed = rtsMemoryUsed currentMetrics /= mBytes
-
-updateGcCpuNs :: NodeState -> Word64 -> Word64 -> NodeState
-updateGcCpuNs ns gcCpuNs now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
- where
-  newMetrics = currentMetrics
-    { rtsGcCpu = newGcCpu
-    , rtsGcCpuChanged = rtsGcCpu currentMetrics /= newGcCpu
-    }
-  currentMetrics = rtsMetrics ns
-  newGcCpu = fromIntegral gcCpuNs / 1000000000 :: Double
-
-updateGcElapsedNs :: NodeState -> Word64 -> Word64 -> NodeState
-updateGcElapsedNs ns gcElapsedNs now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
- where
-  newMetrics = currentMetrics
-    { rtsGcElapsed = newGcElapsed
-    , rtsGcElapsedChanged = rtsGcElapsed currentMetrics /= newGcElapsed
-    }
-  currentMetrics = rtsMetrics ns
-  newGcElapsed = fromIntegral gcElapsedNs / 1000000000 :: Double
-
-updateGcNum :: NodeState -> Integer -> Word64 -> NodeState
-updateGcNum ns gcNum now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
- where
-  newMetrics = currentMetrics
-    { rtsGcNum = gcNum
-    , rtsGcNumChanged = rtsGcNum currentMetrics /= gcNum
-    }
-  currentMetrics = rtsMetrics ns
+  currentRTSMem  = rtsMemoryUsed currentMetrics
+  mBytes         = fromIntegral usedMemBytes / 1024 / 1024 :: Double
 
 updateGcMajorNum :: NodeState -> Integer -> Word64 -> NodeState
 updateGcMajorNum ns gcMajorNum now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
@@ -603,6 +540,51 @@ updateGcMajorNum ns gcMajorNum now = ns { rtsMetrics = newMetrics, metricsLastUp
     , rtsGcMajorNumChanged = rtsGcMajorNum currentMetrics /= gcMajorNum
     }
   currentMetrics = rtsMetrics ns
+
+updateGcMinorNum :: NodeState -> Integer -> Word64 -> NodeState
+updateGcMinorNum ns gcMinorNum now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
+ where
+  newMetrics = currentMetrics
+    { rtsGcMinorNum = gcMinorNum
+    , rtsGcMinorNumChanged = rtsGcMinorNum currentMetrics /= gcMinorNum
+    }
+  currentMetrics = rtsMetrics ns
+
+updateGCTicks :: NodeState -> Integer -> LOMeta -> Word64 -> NodeState
+updateGCTicks ns ticks meta now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
+ where
+  newMetrics =
+    currentMetrics
+      { rtsGCPercent = newGCPercent
+      , rtsGCLast    = ticks
+      , rtsGCNs      = tns
+      }
+  currentMetrics = rtsMetrics ns
+  newGCPercent   = if gcPerc < 0
+                     then 0.0
+                     else gcPerc * 100.0
+  gcPerc         = fromIntegral (ticks - rtsGCLast currentMetrics) / fromIntegral clktck / tdiff
+  clktck         = 100 :: Integer
+  tdiff          = max 0.1 $ fromIntegral (tns - rtsGCNs currentMetrics) / 1000000000 :: Double
+  tns            = utc2ns $ tstamp meta
+
+updateMutTicks :: NodeState -> Integer -> LOMeta -> Word64 -> NodeState
+updateMutTicks ns ticks meta now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
+ where
+  newMetrics =
+    currentMetrics
+      { rtsMutPercent = newMutPercent
+      , rtsMutLast    = ticks
+      , rtsMutNs      = tns
+      }
+  currentMetrics = rtsMetrics ns
+  newMutPercent  = if mutPerc < 0
+                     then 0.0
+                     else mutPerc * 100.0
+  mutPerc        = fromIntegral (ticks - rtsMutLast currentMetrics) / fromIntegral clktck / tdiff
+  clktck         = 100 :: Integer
+  tdiff          = max 0.1 $ fromIntegral (tns - rtsMutNs currentMetrics) / 1000000000 :: Double
+  tns            = utc2ns $ tstamp meta
 
 updateCertStartKESPeriod :: NodeState -> Integer -> Word64 -> NodeState
 updateCertStartKESPeriod ns oCertStartKesPeriod now = ns { kesMetrics = newMetrics, metricsLastUpdate = now }

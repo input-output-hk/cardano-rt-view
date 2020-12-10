@@ -79,20 +79,13 @@ data ElementName
   | ElMempoolBytesPercent
   | ElMempoolMaxTxs
   | ElMempoolMaxBytes
-  | ElRTSMemoryAllocated
-  | ElRTSMemoryUsed
-  | ElRTSMemoryUsedPercent
-  | ElRTSGcCpu
-  | ElRTSGcElapsed
-  | ElRTSGcNum
   | ElRTSGcMajorNum
+  | ElRTSGcMinorNum
   -- Progress bars.
   | ElMempoolBytesProgress
   | ElMempoolBytesProgressBox
   | ElMempoolTxsProgress
   | ElMempoolTxsProgressBox
-  | ElRTSMemoryProgress
-  | ElRTSMemoryProgressBox
   -- Charts
   | ElMemoryUsageChart
   | ElCPUUsageChart
