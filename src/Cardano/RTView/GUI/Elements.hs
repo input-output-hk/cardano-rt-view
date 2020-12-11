@@ -163,6 +163,7 @@ data HTMLClass
   | NodeMenuIcon
   | NodeName
   | NodeNameArea
+  | NodePaneArea
   | PercentsSlashHSpacer
   | ProgressBar
   | ProgressBarBox
@@ -187,10 +188,7 @@ data HTMLClass
   | ValueUnit
   | ValueUnitPercent
   -- Charts
-  | CPUUsageChart
-  | MemoryUsageChart
-  | DiskUsageChart
-  | NetworkUsageChart
+  | ChartArea
   -- Error messages
   | WarningMessage
   | WarningMessageTag
@@ -218,6 +216,7 @@ data HTMLClass
   | W3BorderBottom
   | W3BorderTop
   | W3Button
+  | W3Card2
   | W3Card4
   | W3Check
   | W3Col
@@ -246,7 +245,10 @@ data HTMLClass
   | W3Third
   | W3TwoThird
   | W3Quarter
+  | W3L3
+  | W3L4
   | W3L6
+  | W3L12
   | W3M12
   | W3S12
 
@@ -281,6 +283,7 @@ instance Show HTMLClass where
   show NodeMenuIcon           = "NodeMenuIcon"
   show NodeName               = "NodeName"
   show NodeNameArea           = "NodeNameArea"
+  show NodePaneArea           = "NodePaneArea"
   show PercentsSlashHSpacer   = "PercentsSlashHSpacer"
   show ProgressBar            = "ProgressBar"
   show ProgressBarBox         = "ProgressBarBox"
@@ -304,10 +307,7 @@ instance Show HTMLClass where
   show UnsupportedVersion     = "UnsupportedVersion"
   show ValueUnit              = "ValueUnit"
   show ValueUnitPercent       = "ValueUnitPercent"
-  show CPUUsageChart          = "CPUUsageChart"
-  show MemoryUsageChart       = "MemoryUsageChart"
-  show DiskUsageChart         = "DiskUsageChart"
-  show NetworkUsageChart      = "NetworkUsageChart"
+  show ChartArea              = "ChartArea"
   show WarningMessage         = "WarningMessage"
   show WarningMessageTag      = "WarningMessageTag"
   show WarningMessageTagNoHelp = "WarningMessageTagNoHelp"
@@ -334,6 +334,7 @@ instance Show HTMLClass where
   show W3BorderBottom    = "w3-border-bottom"
   show W3BorderTop       = "w3-border-top"
   show W3Button          = "w3-button"
+  show W3Card2           = "w3-card-2"
   show W3Card4           = "w3-card-4"
   show W3Check           = "w3-check"
   show W3Col             = "w3-col"
@@ -362,7 +363,10 @@ instance Show HTMLClass where
   show W3Third           = "w3-third"
   show W3TwoThird        = "w3-twothird"
   show W3Quarter         = "w3-quarter"
+  show W3L3              = "l3"
+  show W3L4              = "l4"
   show W3L6              = "l6"
+  show W3L12             = "l12"
   show W3M12             = "m12"
   show W3S12             = "s12"
 

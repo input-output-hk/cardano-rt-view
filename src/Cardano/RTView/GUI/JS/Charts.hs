@@ -10,6 +10,7 @@ module Cardano.RTView.GUI.JS.Charts
     , updateCPUUsageChartJS
     , updateDiskUsageChartJS
     , updateNetworkUsageChartJS
+    , resizeChartJS
     ) where
 
 prepareChartsJS :: String
@@ -38,6 +39,7 @@ memoryUsageChartJS = concat
   , "    }]"
   , "  },"
   , "  options: {"
+  , "    responsive: true,"
   , "    scales: {"
   , "      yAxes: [{"
   , "        display: true,"
@@ -83,6 +85,7 @@ cpuUsageChartJS = concat
   , "    }]"
   , "  },"
   , "  options: {"
+  , "    responsive: true,"
   , "    scales: {"
   , "      yAxes: [{"
   , "        display: true,"
@@ -122,6 +125,7 @@ diskUsageChartJS = concat
   , "    }]"
   , "  },"
   , "  options: {"
+  , "    responsive: true,"
   , "    scales: {"
   , "      yAxes: [{"
   , "        display: true,"
@@ -161,6 +165,7 @@ networkUsageChartJS = concat
   , "    }]"
   , "  },"
   , "  options: {"
+  , "    responsive: true,"
   , "    scales: {"
   , "      yAxes: [{"
   , "        display: true,"
@@ -203,6 +208,7 @@ updateSingleDatasetChartJS = concat
   , "}"
   , "window.charts.get(%1).data.datasets[0].data.push(%3);"
   , "window.charts.get(%1).update({duration: 0});"
+  , "window.charts.get(%1).resize();"
   ]
 -}
 
@@ -218,6 +224,7 @@ updateDoubleDatasetChartJS = concat
   , "window.charts.get(%1).data.datasets[0].data.push(%3);"
   , "window.charts.get(%1).data.datasets[1].data.push(%4);"
   , "window.charts.get(%1).update({duration: 0});"
+  , "window.charts.get(%1).resize();"
   ]
 
 updateThreeDatasetsChartJS :: String
@@ -234,4 +241,9 @@ updateThreeDatasetsChartJS = concat
   , "window.charts.get(%1).data.datasets[1].data.push(%4);"
   , "window.charts.get(%1).data.datasets[2].data.push(%5);"
   , "window.charts.get(%1).update({duration: 0});"
+  , "window.charts.get(%1).resize();"
   ]
+
+-- During changing of panes' size we have to explicitly recise charts.
+resizeChartJS :: String
+resizeChartJS = "window.charts.get(%1).resize();"

@@ -33,7 +33,8 @@ mkPageBody
   -> [RemoteAddrNamed]
   -> UI (Element, NodesStateElements)
 mkPageBody config nsTVar tmpElsTVar params window acceptors = do
-  (paneNodesRootElem, paneNodesElems, panesWithNames) <- mkNodesPanes nsTVar tmpElsTVar acceptors
+  (paneNodesRootElem, paneNodesElems, panesWithNames)
+    <- mkNodesPanes nsTVar tmpElsTVar acceptors
 
   -- Register clickable selector for nodes (to be able to show only one or all of them).
   nodesSelector <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
@@ -80,7 +81,7 @@ mkPageBody config nsTVar tmpElsTVar params window acceptors = do
 
   body
     <- UI.getBody window #+
-         [ topNavigation config params allNodesSelectors
+         [ topNavigation window acceptors config params allNodesSelectors
          , element paneNodesRootElem
          ]
 
@@ -94,22 +95,34 @@ mkPageBody config nsTVar tmpElsTVar params window acceptors = do
     UI.runFunction $ UI.ffi Chart.networkUsageChartJS (showt NetworkUsageChartId <> nameOfNode)
 
   return (body, paneNodesElems)
- where
-  showt :: Show a => a -> Text
-  showt = T.pack . show
+
+showt :: Show a => a -> Text
+showt = T.pack . show
 
 topNavigation
-  :: Configuration
+  :: UI.Window
+  -> [RemoteAddrNamed]
+  -> Configuration
   -> RTViewParams
   -> [UI Element]
   -> UI Element
-topNavigation config params nodesSelector = do
+topNavigation window acceptors config params nodesSelector = do
   rtViewInfo <- mkOwnInfo config params
   rtViewInfoButton <- UI.img #. [RTViewInfoIcon]
                              # set UI.src "/static/images/info-light.svg"
                              # set UI.title__ "RTView info"
-  void $ UI.onEvent (UI.click rtViewInfoButton) $ \_ -> do
+  void $ UI.onEvent (UI.click rtViewInfoButton) $ \_ ->
     element rtViewInfo # showIt
+
+  nodesColumns1 <- UI.anchor #. [W3BarItem, W3Button, W3Mobile]            #+ [UI.string "1 node"]
+  nodesColumns2 <- UI.anchor #. [W3BarItem, W3Button, W3Mobile, ActiveTab] #+ [UI.string "2 nodes"]
+  nodesColumns3 <- UI.anchor #. [W3BarItem, W3Button, W3Mobile]            #+ [UI.string "3 nodes"]
+
+  makeColumnsItemsActive [nodesColumns1, nodesColumns2, nodesColumns3]
+
+  changeColumns window acceptors nodesColumns1 [W3L12, W3M12, W3S12]
+  changeColumns window acceptors nodesColumns2 [W3L6,  W3M12, W3S12]
+  changeColumns window acceptors nodesColumns3 [W3L4,  W3M12, W3S12]
 
   UI.div #. [W3Bar, W3Large, TopBar] #+
     [ UI.anchor #. [W3BarItem, W3Mobile] # set UI.href "https://cardano.org/" #+
@@ -120,7 +133,18 @@ topNavigation config params nodesSelector = do
             [ string "Select node"
             , UI.img #. [TopNavDropdownIcon] # set UI.src "/static/images/dropdown-light.svg"
             ]
-        , UI.div #. [W3DropdownContent, W3BarBlock] #+ nodesSelector
+        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] #+ nodesSelector
+        ]
+    , UI.div #. [W3DropdownHover, W3Mobile] #+
+        [ UI.button #. [W3Button] #+
+            [ string "Columns"
+            , UI.img #. [TopNavDropdownIcon] # set UI.src "/static/images/dropdown-light.svg"
+            ]
+        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] #+
+            [ element nodesColumns1
+            , element nodesColumns2
+            , element nodesColumns3
+            ]
         ]
     , UI.span #. [W3BarItem, W3Mobile] #+
         [ element rtViewInfoButton
@@ -130,6 +154,40 @@ topNavigation config params nodesSelector = do
         [ string "Cardano Node Real-time View"
         ]
     ]
+
+makeColumnsItemsActive
+  :: [Element]
+  -> UI ()
+makeColumnsItemsActive cols = do
+  let nodesCols = zip cols [1 :: Int .. length cols]
+  forM_ nodesCols $ \(el, num) ->
+    void $ UI.onEvent (UI.click el) $ \_ ->
+      forM_ nodesCols $ \(el', num') ->
+        if num == num'
+          then void $ element el' #. [W3BarItem, W3Button, W3Mobile, ActiveTab]
+          else void $ element el' #. [W3BarItem, W3Button, W3Mobile]
+
+changeColumns
+  :: UI.Window
+  -> [RemoteAddrNamed]
+  -> Element
+  -> [HTMLClass]
+  -> UI ()
+changeColumns window acceptors colItem colWidthClasses =
+  void $ UI.onEvent (UI.click colItem) $ \_ -> do
+    changeColumnsWidth
+    changeChartsWidth
+ where
+  changeColumnsWidth =
+    UI.getElementsByClassName window (show NodePaneArea) >>=
+      mapM_ (\area -> void $ element area #. ([W3Col, NodePaneArea] ++ colWidthClasses))
+
+  changeChartsWidth =
+    forM_ acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
+      UI.runFunction $ UI.ffi Chart.resizeChartJS (showt MemoryUsageChartId  <> nameOfNode)
+      UI.runFunction $ UI.ffi Chart.resizeChartJS (showt CPUUsageChartId     <> nameOfNode)
+      UI.runFunction $ UI.ffi Chart.resizeChartJS (showt DiskUsageChartId    <> nameOfNode)
+      UI.runFunction $ UI.ffi Chart.resizeChartJS (showt NetworkUsageChartId <> nameOfNode)
 
 forNodePane
   :: Text
