@@ -50,7 +50,7 @@ mkNodesPanes nsTVar tmpElsTVar acceptors = do
 
   panesAreas
     <- forM nodePanesWithElems $ \(_, pane, _, _) ->
-         return $ UI.div #. [W3Col, W3L6, W3M12, W3S12] #+ [element pane]
+         return $ UI.div #. [W3Col, W3L6, W3M12, W3S12, NodePaneArea] #+ [element pane]
 
   let nodesEls       = [(name, elems, piItems) | (name, _,    elems, piItems) <- nodePanesWithElems]
       panesWithNames = [(name, pane)           | (name, pane, _,     _)       <- nodePanesWithElems]
@@ -348,28 +348,28 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
   resourcesTabMemoryContent
     <- UI.div #. [W3Container, TabContainer] # hideIt #+
          [ UI.canvas ## (show MemoryUsageChartId <> T.unpack nameOfNode)
-                     #. [MemoryUsageChart]
+                     #. [ChartArea]
                      #+ []
          ]
 
   resourcesTabCPUContent
     <- UI.div #. [W3Container, TabContainer] # hideIt #+
          [ UI.canvas ## (show CPUUsageChartId <> T.unpack nameOfNode)
-                     #. [CPUUsageChart]
+                     #. [ChartArea]
                      #+ []
          ]
 
   resourcesTabDiskContent
     <- UI.div #. [W3Container, TabContainer] # hideIt #+
          [ UI.canvas ## (show DiskUsageChartId <> T.unpack nameOfNode)
-                     #. [DiskUsageChart]
+                     #. [ChartArea]
                      #+ []
          ]
 
   resourcesTabNetworkContent
     <- UI.div #. [W3Container, TabContainer] # hideIt #+
          [ UI.canvas ## (show NetworkUsageChartId <> T.unpack nameOfNode)
-                     #. [NetworkUsageChart]
+                     #. [ChartArea]
                      #+ []
          ]
 
@@ -463,7 +463,7 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
                          , UI.div #. [W3DropdownHover, W3Mobile] #+
                              [ element elFilterBySev
                              , UI.img #. [ErrorsFilterDropdownIcon] # set UI.src "/static/images/dropdown-dark.svg"
-                             , UI.div #. [W3DropdownContent, W3BarBlock] #+
+                             , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] #+
                                  [ element filterWarning
                                  , element filterError
                                  , element filterCritical
@@ -501,7 +501,6 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
 
       anchorButton title iconName =
         UI.anchor #. [W3BarItem, W3Button, W3Mobile]
-                  # set UI.href "#"
                   #+ [ UI.img #. [ResourcesIcon]
                               # set UI.src ("/static/images/" <> iconName)
                      , string title
@@ -598,7 +597,7 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
              [ UI.img #. [NodeMenuIcon] # set UI.src "/static/images/resources.svg"
              , UI.img #. [ResourcesDropdownIcon] # set UI.src "/static/images/dropdown-blue.svg"
              ]
-         , UI.div #. [W3DropdownContent, W3BarBlock] #+
+         , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] #+
              [ element resourcesTabMemory
              , element resourcesTabCPU
              , element resourcesTabDisk
@@ -617,7 +616,7 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
                       , (mempoolTab,          mempoolTabContent)
                       , (resourcesTabMemory,  resourcesTabMemoryContent)
                       , (resourcesTabCPU,     resourcesTabCPUContent)
-                      -- Temporarily removed (new metrics in iohk-monitoring should be implemented).
+                      -- Temporarily disabled (new metrics in iohk-monitoring should be implemented).
                       -- , (resourcesTabDisk,    resourcesTabDiskContent)
                       -- , (resourcesTabNetwork, resourcesTabNetworkContent)
                       , (errorsTab,           errorsTabContent)
@@ -629,7 +628,7 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
 
   -- Make a widget for one node.
   nodePane <-
-    UI.div #. [W3Container, W3Margin, W3Border, NodeContainer] #+
+    UI.div #. [W3Container, W3Margin, W3Border, W3Card2, NodeContainer] #+
       [ UI.div #. [NodeNameArea] #+
           [ string "Name: "
           , string (T.unpack nameOfNode) #. [NodeName]

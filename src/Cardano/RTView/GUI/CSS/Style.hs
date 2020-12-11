@@ -239,7 +239,7 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl EmergencyMessageTagNoHelp ? errorTag red        4 5 pointer
 
   cl NodeContainer ? do
-    minHeightPx       500
+    minHeightPx       502
     backgroundColor   "#eeeeee"
 
   cl NodeMenuIcon ? do
@@ -308,17 +308,9 @@ ownCSS = unpack . TL.toStrict . render $ do
   cl NodeMetricsValues ? do
     fontWeight        bold
 
-  cl CPUUsageChart ? do
-    maxHeightPx       360
-
-  cl MemoryUsageChart ? do
-    maxHeightPx       360
-
-  cl DiskUsageChart ? do
-    maxHeightPx       360
-
-  cl NetworkUsageChart ? do
-    maxHeightPx       360
+  cl ChartArea ? do
+    important $
+      widthPct        100
 
   cl SelectNodeCheckArea ? do
     marginTopPx       8
@@ -363,6 +355,7 @@ ownCSS = unpack . TL.toStrict . render $ do
   fontSizePct     = fontSize . pct
 
   heightPx        = height . px
+  -- heightPct       = height . pct
   minHeightPx     = minHeight . px
   maxHeightPx     = maxHeight . px
 
