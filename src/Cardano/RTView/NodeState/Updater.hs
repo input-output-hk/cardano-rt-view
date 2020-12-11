@@ -311,7 +311,20 @@ updateNodePlatform ns platfId now = ns { nodeMetrics = newNodeMetrics, metricsLa
   currentMetrics = nodeMetrics ns
   platformName = T.pack . show $ (toEnum platfId :: Platform)
 
-#if defined(DARWIN) || defined(LINUX)
+#if defined(DARWIN)
+updateMemoryBytes :: NodeState -> Word64 -> Word64 -> NodeState
+updateMemoryBytes ns bytes now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
+ where
+  newMetrics     = currentMetrics { memory = if bytes == 0
+                                               then currentMemory
+                                               else mBytes
+                                  }
+  currentMetrics = resourcesMetrics ns
+  currentMemory  = memory currentMetrics
+  mBytes         = fromIntegral bytes / 1024 / 1024 :: Double
+#endif
+
+#if defined(LINUX)
 updateMemoryBytes :: NodeState -> Integer -> Word64 -> NodeState
 updateMemoryBytes ns bytes now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
