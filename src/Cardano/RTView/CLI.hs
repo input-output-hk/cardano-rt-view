@@ -5,13 +5,14 @@ module Cardano.RTView.CLI
     ( RTViewParams (..)
     , defaultRTViewParams
     , defaultRTVConfig
+    , defaultRTVNotifications
     , defaultRTVStatic
     , defaultRTVPort
     , defaultRTVActiveNodeLife
     , parseRTViewParams
     ) where
 
-import           Data.Aeson (FromJSON (..), ToJSON, (.:), withObject)
+import           Data.Aeson (FromJSON (..), ToJSON, (.:), (.:?), (.!=), withObject)
 import           GHC.Generics (Generic)
 import           Options.Applicative (HasCompleter, HasMetavar, HasName, HasValue, Mod, Parser,
                                       auto, bashCompleter, completer, help, long, metavar, option,
@@ -20,6 +21,7 @@ import           Options.Applicative (HasCompleter, HasMetavar, HasName, HasValu
 -- | Type for CLI parameters required for the service.
 data RTViewParams = RTViewParams
   { rtvConfig         :: !FilePath
+  , rtvNotifications  :: !FilePath
   , rtvStatic         :: !FilePath
   , rtvPort           :: !Int
   , rtvActiveNodeLife :: !Int
@@ -27,21 +29,24 @@ data RTViewParams = RTViewParams
 
 instance FromJSON RTViewParams where
   parseJSON = withObject "RTViewParams" $ \v -> RTViewParams
-    <$> v .: "rtvConfig"
-    <*> v .: "rtvStatic"
-    <*> v .: "rtvPort"
-    <*> v .: "rtvActiveNodeLife"
+    <$> v .:  "rtvConfig"
+    <*> v .:? "rtvNotifications" .!= defaultRTVNotifications
+    <*> v .:  "rtvStatic"
+    <*> v .:  "rtvPort"
+    <*> v .:  "rtvActiveNodeLife"
 
 defaultRTViewParams :: RTViewParams
 defaultRTViewParams = RTViewParams
   { rtvConfig         = defaultRTVConfig
+  , rtvNotifications  = defaultRTVNotifications
   , rtvStatic         = defaultRTVStatic
   , rtvPort           = defaultRTVPort
   , rtvActiveNodeLife = defaultRTVActiveNodeLife
   }
 
-defaultRTVConfig, defaultRTVStatic :: FilePath
+defaultRTVConfig, defaultRTVNotifications, defaultRTVStatic :: FilePath
 defaultRTVConfig = ""
+defaultRTVNotifications = ""
 defaultRTVStatic = "static"
 
 defaultRTVPort :: Int
@@ -58,6 +63,11 @@ parseRTViewParams =
           "file"
           "Configuration file for RTView service. If not provided, interactive dialog will be started."
           defaultRTVConfig
+    <*> parseFilePath
+          "notifications"
+          "file"
+          "Configuration file for notifications"
+          defaultRTVNotifications
     <*> parseFilePath
           "static"
           "directory"

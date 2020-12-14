@@ -46,6 +46,11 @@ ownCSS = unpack . TL.toStrict . render $ do
   a # visited # hover ? do
     color             "#4b0082"
 
+  cl RequiredInput ? do
+    color             red
+    fontWeight        bold
+    paddingLeftPx     5
+
   cl TopBar ? do
     backgroundColor   "#1b2238"
     color             whitesmoke
@@ -67,8 +72,46 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl RTViewInfoIcon ? do
     widthPx           25
-    paddingTopPx      8
+    paddingTopPx      9
     cursor            pointer
+
+  cl NotificationsIcon ? do
+    widthPx           23
+    paddingTopPx      9
+    marginLeftPx      4
+    cursor            pointer
+
+  cl NotificationsIconSlash ? do
+    widthPx           31
+    paddingTopPx      9
+    cursor            pointer
+
+  cl NotificationsEventsHeader ? do
+    fontSizePct       115
+    paddingBottomPx   8
+
+  cl NotificationsHR ? do
+    borderTop         solid (px 2) "#ddd"
+    marginTopPx       17
+    marginBottomPx    10
+
+  cl NotificationsInput ? do
+    color             "#444"
+    fontSizePct       98
+
+  cl NotificationsMainSwitch ? do
+    paddingTopPx      21
+    paddingBottomPx   17
+
+  cl NotificationsSwitch ? do
+    paddingTopPx      8
+    paddingBottomPx   8
+
+  cl NotificationsSwitches ? do
+    paddingLeftPx     13
+
+  cl NotificationsVSpacer ? do
+    paddingTopPx      22
 
   cl RTViewInfoCopyPathIcon ? do
     widthPx           12
@@ -153,6 +196,17 @@ ownCSS = unpack . TL.toStrict . render $ do
     important $
       color           cardanoLight
 
+  cl NotificationsBar ? do
+    important $
+      backgroundColor "#364679"
+    important $
+      color           whitesmoke
+    fontSizePct       108
+
+  cl NotificationsBar ** cl W3Button # hover ? do
+    important $
+      color           cardanoLight
+
   cl ActiveTab ? do
     important $
       backgroundColor "#1b2238"
@@ -162,6 +216,11 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl TabContainer ? do
     paddingTopPx      16
+
+  cl NotificationsTabContainer ? do
+    paddingTopPx      16
+    paddingBottomPx   16
+    color             black
 
   cl ErrorsSortIcon ? do
     widthPx           15
@@ -334,6 +393,52 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl ProgressBar ?    progressBarColors greenDark  white
   cl ProgressBarBox ? progressBarColors greenLight white
+
+  cl SwitchContainer ? do
+    widthPx           68
+
+  cl Switch ? do
+    position          relative
+    display           inlineBlock
+    widthPx           52
+    heightPx          25
+
+  cl Switch ** input ? do
+    widthPx           0
+    heightPx          0
+    opacity           0
+
+  cl Slider ? do
+    position          absolute
+    cursor            pointer
+    topPx             0
+    leftPx            0
+    rightPx           0
+    bottomPx          0
+    backgroundColor   "#ccc"
+    transition        "" (sec 0.2) linear (sec 0)
+
+  cl Slider # before ? do
+    position          absolute
+    content           (stringContent "")
+    heightPx          18
+    widthPx           19
+    leftPx            4
+    bottomPx          4
+    backgroundColor   white
+    transition        "" (sec 0.2) linear (sec 0)
+
+  input # checked |+ cl Slider ? do
+    backgroundColor   "#1fc1c3"
+
+  input # checked |+ cl Slider # before ? do
+    transform         (translateX $ px 25)
+
+  cl Slider ? do
+    borderRadiusPx    34
+
+  cl Slider # before ? do
+    borderRadiusPct   50
  where
   cardanoLight    = rgb 31  193 195
   gray40          = rgb 102 102 102
@@ -364,7 +469,13 @@ ownCSS = unpack . TL.toStrict . render $ do
   minWidthPx      = minWidth . px
   maxWidthPx      = maxWidth . px
 
-  borderRadiusPx v = borderRadius (px v) (px v) (px v) (px v)
+  topPx           = top . px
+  leftPx          = left . px
+  rightPx         = right . px
+  bottomPx        = bottom . px
+
+  borderRadiusPx  v = borderRadius (px v) (px v) (px v) (px v)
+  borderRadiusPct v = borderRadius (pct v) (pct v) (pct v) (pct v)
 
   progressBarColors bg c = do
     backgroundColor   bg

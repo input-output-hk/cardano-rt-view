@@ -19,17 +19,19 @@ import           Cardano.RTView.GUI.Elements (TmpElements, pageTitle)
 import           Cardano.RTView.GUI.Markup.PageBody (mkPageBody)
 import           Cardano.RTView.GUI.Updater (updateGUI)
 import           Cardano.RTView.NodeState.Types (NodesState)
+import           Cardano.RTView.Notifications.Types (NotificationSettings)
 
 launchWebServer
   :: Trace IO Text
   -> Configuration
   -> TVar NodesState
   -> TVar TmpElements
+  -> TVar NotificationSettings
   -> RTViewParams
   -> [RemoteAddrNamed]
   -> IO ()
-launchWebServer tr config nsTVar tmpElsTVar params acceptors =
-  UI.startGUI wsConfig $ mainPage tr config nsTVar tmpElsTVar params acceptors
+launchWebServer tr config nsTVar tmpElsTVar notifyTVar params acceptors =
+  UI.startGUI wsConfig $ mainPage tr config nsTVar tmpElsTVar notifyTVar params acceptors
  where
   wsConfig = UI.defaultConfig
     { UI.jsStatic = Just $ rtvStatic params
@@ -44,11 +46,12 @@ mainPage
   -> Configuration
   -> TVar NodesState
   -> TVar TmpElements
+  -> TVar NotificationSettings
   -> RTViewParams
   -> [RemoteAddrNamed]
   -> UI.Window
   -> UI ()
-mainPage tr config nsTVar tmpElsTVar params acceptors window = do
+mainPage tr config nsTVar tmpElsTVar notifyTVar params acceptors window = do
   liftIO $ logNotice tr "Web page loading..."
 
   void $ return window # set UI.title pageTitle
@@ -61,8 +64,13 @@ mainPage tr config nsTVar tmpElsTVar params acceptors window = do
   addJavaScript window "chart.js"
 
   -- Make page's body (HTML markup).
-  (pageBody, nodesStateElems) <- mkPageBody config nsTVar tmpElsTVar params window acceptors
-
+  (pageBody, nodesStateElems) <- mkPageBody config
+                                            nsTVar
+                                            tmpElsTVar
+                                            notifyTVar
+                                            params
+                                            window
+                                            acceptors
   let guiTr = appendName "GUI" tr
   -- Start the timer for GUI update. Every second it will
   -- call a function which updates node state elements on the page.

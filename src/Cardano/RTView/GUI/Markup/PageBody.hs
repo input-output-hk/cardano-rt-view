@@ -20,19 +20,22 @@ import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.GUI.Elements (HTMLClass (..), HTMLId (..),
                                               NodesStateElements, TmpElements,
                                               hideIt, showIt, (##), (#.))
+import           Cardano.RTView.GUI.Markup.Notifications (mkNotifications)
 import           Cardano.RTView.GUI.Markup.OwnInfo (mkOwnInfo)
 import           Cardano.RTView.GUI.Markup.Pane (mkNodesPanes)
 import           Cardano.RTView.NodeState.Types
+import           Cardano.RTView.Notifications.Types
 
 mkPageBody
   :: Configuration
   -> TVar NodesState
   -> TVar TmpElements
+  -> TVar NotificationSettings
   -> RTViewParams
   -> UI.Window
   -> [RemoteAddrNamed]
   -> UI (Element, NodesStateElements)
-mkPageBody config nsTVar tmpElsTVar params window acceptors = do
+mkPageBody config nsTVar tmpElsTVar notifyTVar params window acceptors = do
   (paneNodesRootElem, paneNodesElems, panesWithNames)
     <- mkNodesPanes nsTVar tmpElsTVar acceptors
 
@@ -81,7 +84,7 @@ mkPageBody config nsTVar tmpElsTVar params window acceptors = do
 
   body
     <- UI.getBody window #+
-         [ topNavigation window acceptors config params allNodesSelectors
+         [ topNavigation window acceptors config params notifyTVar allNodesSelectors
          , element paneNodesRootElem
          ]
 
@@ -104,15 +107,23 @@ topNavigation
   -> [RemoteAddrNamed]
   -> Configuration
   -> RTViewParams
+  -> TVar NotificationSettings
   -> [UI Element]
   -> UI Element
-topNavigation window acceptors config params nodesSelector = do
+topNavigation window acceptors config params notifyTVar nodesSelector = do
   rtViewInfo <- mkOwnInfo config params
   rtViewInfoButton <- UI.img #. [RTViewInfoIcon]
                              # set UI.src "/static/images/info-light.svg"
                              # set UI.title__ "RTView info"
   void $ UI.onEvent (UI.click rtViewInfoButton) $ \_ ->
     element rtViewInfo # showIt
+
+  rtViewNotificationsButton <- UI.img #. [NotificationsIcon]
+                                      # set UI.src "/static/images/bell.svg"
+                                      # set UI.title__ "RTView notifications"
+  rtViewNotifications <- mkNotifications window config params notifyTVar rtViewNotificationsButton
+  void $ UI.onEvent (UI.click rtViewNotificationsButton) $ \_ ->
+    element rtViewNotifications # showIt
 
   nodesColumns1 <- UI.anchor #. [W3BarItem, W3Button, W3Mobile]            #+ [UI.string "1 node"]
   nodesColumns2 <- UI.anchor #. [W3BarItem, W3Button, W3Mobile, ActiveTab] #+ [UI.string "2 nodes"]
@@ -149,6 +160,10 @@ topNavigation window acceptors config params nodesSelector = do
     , UI.span #. [W3BarItem, W3Mobile] #+
         [ element rtViewInfoButton
         , element rtViewInfo
+        ]
+    , UI.span #. [W3BarItem, W3Mobile] #+
+        [ element rtViewNotificationsButton
+        , element rtViewNotifications
         ]
     , UI.span #. [W3Right, W3HideMedium, W3HideSmall, ServiceName] #+
         [ string "Cardano Node Real-time View"
