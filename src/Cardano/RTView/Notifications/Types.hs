@@ -20,8 +20,6 @@ import           Data.Text (Text)
 import           Data.Time.Clock (UTCTime (..))
 import           GHC.Generics (Generic)
 
-import           Cardano.RTView.NodeState.Types (nullTime)
-
 -- | Some event we should notify about.
 data NotifyEvent = NotifyEvent
   { evTime     :: !UTCTime

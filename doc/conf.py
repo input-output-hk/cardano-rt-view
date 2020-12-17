@@ -24,7 +24,7 @@ copyright = '2020, IOHK'
 author = 'IOHK'
 
 # The full version, including alpha/beta/rc tags
-release = '0.2.0'
+release = '0.3.0'
 
 # -- General configuration ---------------------------------------------------
 master_doc = 'index'
