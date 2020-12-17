@@ -5,14 +5,19 @@
 module Cardano.RTView.Config
     ( prepareConfigAndParams
     , configFileIsProvided
+    , notificationsFileIsProvided
     , savedConfigurationFile
+    , savedNotificationsFile
     , savedRTViewParamsFile
+    , saveNotificationsForNextSessions
     , logFilesDir
     ) where
 
 import           Control.Exception (IOException, catch)
 import           Control.Monad (forM_, unless, void, when)
-import           Data.Aeson (eitherDecodeFileStrict, encodeFile)
+import           Data.Aeson (eitherDecodeFileStrict)
+import           Data.Aeson.Encode.Pretty (encodePretty)
+import qualified Data.ByteString.Lazy as BSL
 import           Data.List (nub, nubBy)
 import           Data.Maybe (fromJust)
 import           Data.Text (Text)
@@ -46,6 +51,7 @@ import           Cardano.BM.Data.Severity (Severity (..))
 import           Cardano.RTView.CLI (RTViewParams (..), defaultRTViewParams, defaultRTVPort,
                                      defaultRTVStatic)
 import           Cardano.RTView.SupportedNodes (showSupportedNodesVersions)
+import           Cardano.RTView.Notifications.Types
 
 -- | There are few possible ways how we can prepare RTView configuration:
 --   1. By running interactive dialog with the user. If `--config` CLI-option
@@ -59,7 +65,7 @@ import           Cardano.RTView.SupportedNodes (showSupportedNodesVersions)
 --      and by default that configuration will be used again.
 prepareConfigAndParams
   :: RTViewParams
-  -> IO (Configuration, RTViewParams, [RemoteAddrNamed])
+  -> IO (Configuration, NotificationSettings, RTViewParams, [RemoteAddrNamed])
 prepareConfigAndParams params' = do
   (config, params) <-
     if configFileIsProvided params'
@@ -74,17 +80,26 @@ prepareConfigAndParams params' = do
             askAboutPrevConfig prevConfig prevParams
           Nothing ->
             startDialogToPrepareConfig
+  notifySettings <-
+    if notificationsFileIsProvided params'
+      then readNotificationsFile $ rtvNotifications params'
+      else checkIfPreviousNotificationsExists >>= \case
+        Just prevNotify -> return prevNotify
+        Nothing -> return initialNotificationSettings
+
   acceptors <- checkIfTraceAcceptorIsDefined config
   makeSureTraceAcceptorsAreUnique acceptors
   -- To prevent TraceAcceptorPipeError "Network.Socket.bind: resource busy...
   rmPipesIfNeeded acceptors
   -- Configuration and parameters look good, save it for next sessions.
   saveConfigurationForNextSessions config
+  saveNotificationsForNextSessions notifySettings
   saveRTViewParamsForNextSessions params
-  return (config, params, acceptors)
+  return (config, notifySettings, params, acceptors)
 
-configFileIsProvided :: RTViewParams -> Bool
+configFileIsProvided, notificationsFileIsProvided :: RTViewParams -> Bool
 configFileIsProvided params = not . null $ rtvConfig params
+notificationsFileIsProvided params = not . null $ rtvNotifications params
 
 -- | Reads the program's configuration file (path is passed via '--config' CLI option).
 readConfigFile :: FilePath -> IO Configuration
@@ -104,6 +119,13 @@ readRTViewParamsFile pathToParams =
                             <> pathToParams <> ", error: " <> errMsg
     Right (params :: RTViewParams) -> return params
 
+readNotificationsFile :: FilePath -> IO NotificationSettings
+readNotificationsFile pathToNotify =
+  eitherDecodeFileStrict pathToNotify >>= \case
+    Left errMsg -> Ex.die $ "Error while reading notifications file "
+                            <> pathToNotify <> ", error: " <> errMsg
+    Right (notify :: NotificationSettings) -> return notify
+
 -- | If `cardano-rt-view` already was used on this computer,
 --   the configuration was saved in user's local directory, which
 --   differs on different platforms.
@@ -115,6 +137,12 @@ savedConfigurationFile = do
   dir <- getXdgDirectory XdgConfig ""
   createDirectoryIfMissing True dir
   return $ dir </> "cardano-rt-view.json"
+
+savedNotificationsFile :: IO FilePath
+savedNotificationsFile = do
+  dir <- getXdgDirectory XdgConfig ""
+  createDirectoryIfMissing True dir
+  return $ dir </> "cardano-rt-view-notifications.json"
 
 savedRTViewParamsFile :: IO FilePath
 savedRTViewParamsFile = do
@@ -137,6 +165,16 @@ checkIfPreviousConfigExists = do
       config <- savedConfigurationFile >>= readConfigFile
       params <- savedRTViewParamsFile >>= readRTViewParamsFile
       return $ Just (config, params)
+    else
+      return Nothing
+
+checkIfPreviousNotificationsExists :: IO (Maybe NotificationSettings)
+checkIfPreviousNotificationsExists = do
+  notifyExists <- savedNotificationsFile >>= doesFileExist
+  if notifyExists
+    then do
+      config <- savedNotificationsFile >>= readNotificationsFile
+      return $ Just config
     else
       return Nothing
 
@@ -604,12 +642,17 @@ rmPipesIfNeeded acceptors = do
 saveConfigurationForNextSessions :: Configuration -> IO ()
 saveConfigurationForNextSessions config = do
   path <- savedConfigurationFile
-  CM.toRepresentation config >>= encodeFile path
+  CM.toRepresentation config >>= BSL.writeFile path . encodePretty
+
+saveNotificationsForNextSessions :: NotificationSettings -> IO ()
+saveNotificationsForNextSessions settings = do
+  path <- savedNotificationsFile
+  BSL.writeFile path $ encodePretty settings
 
 saveRTViewParamsForNextSessions :: RTViewParams -> IO ()
 saveRTViewParamsForNextSessions params = do
   path <- savedRTViewParamsFile
-  encodeFile path params
+  BSL.writeFile path $ encodePretty params
 
 -- | RTView requires at least one |TraceAcceptor|.
 checkIfTraceAcceptorIsDefined

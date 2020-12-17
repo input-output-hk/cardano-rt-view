@@ -164,11 +164,24 @@ data HTMLClass
   | NodeName
   | NodeNameArea
   | NodePaneArea
+  | NotificationsBar
+  | NotificationsEventsHeader
+  | NotificationsIcon
+  | NotificationsIconSlash
+  | NotificationsInput
+  | NotificationsHR
+  | NotificationsMainSwitch
+  | NotificationsSwitch
+  | NotificationsSwitches
+  | NotificationsTabContainer
+  | NotificationsVSpacer
   | PercentsSlashHSpacer
   | ProgressBar
   | ProgressBarBox
   | ResourcesIcon
   | ResourcesDropdownIcon
+  | RequiredInput
+  | Round
   | RTViewInfoClose
   | RTViewInfoContainer
   | RTViewInfoCopyPathIcon
@@ -180,6 +193,9 @@ data HTMLClass
   | SelectNodeCheckArea
   | ServiceName
   | ShowHideIcon
+  | Slider
+  | Switch
+  | SwitchContainer
   | TabContainer
   | TopBar
   | TopNavDropdownIcon
@@ -228,6 +244,7 @@ data HTMLClass
   | W3Half
   | W3HideMedium
   | W3HideSmall
+  | W3Input
   | W3Large
   | W3Margin
   | W3Mobile
@@ -239,6 +256,8 @@ data HTMLClass
   | W3Right
   | W3RightAlign
   | W3Row
+  | W3RowPadding
+  | W3Select
   | W3Sidebar
   | W3Table
   | W3Theme
@@ -253,76 +272,92 @@ data HTMLClass
   | W3S12
 
 instance Show HTMLClass where
-  show NoClass                = ""
-  show ActiveTab              = "ActiveTab"
-  show BarValueUnit           = "BarValueUnit"
-  show CardanoLogo            = "CardanoLogo"
-  show CommitLink             = "CommitLink"
-  show DensityPercent         = "DensityPercent"
-  show ErrorRow               = "ErrorRow"
-  show ErrorsBadge            = "ErrorsBadge"
-  show ErrorsTabHeader        = "ErrorsTabHeader"
-  show ErrorsTabList          = "ErrorsTabList"
-  show ErrorsDownloadIcon     = "ErrorsDownloadIcon"
-  show ErrorsSortIcon         = "ErrorsSortIcon"
-  show ErrorsFilterIcon       = "ErrorsFilterIcon"
-  show ErrorsFilterDropdownIcon = "ErrorsFilterDropdownIcon"
-  show ErrorsRemoveIcon       = "ErrorsRemoveIcon"
-  show ErrorTimestamp         = "ErrorTimestamp"
-  show HSpacer                = "HSpacer"
-  show IdleNode               = "IdleNode"
-  show InfoMark               = "InfoMark"
-  show InfoMarkImg            = "InfoMarkImg"
-  show MetricsArea            = "MetricsArea"
-  show NodeContainer          = "NodeContainer"
-  show NodeBar                = "NodeBar"
-  show NodeInfoValues         = "NodeInfoValues"
-  show NodeInfoVSpacer        = "NodeInfoVSpacer"
-  show NodeMetricsValues      = "NodeMetricsValues"
-  show NodeMetricsVSpacer     = "NodeMetricsVSpacer"
-  show NodeMenuIcon           = "NodeMenuIcon"
-  show NodeName               = "NodeName"
-  show NodeNameArea           = "NodeNameArea"
-  show NodePaneArea           = "NodePaneArea"
-  show PercentsSlashHSpacer   = "PercentsSlashHSpacer"
-  show ProgressBar            = "ProgressBar"
-  show ProgressBarBox         = "ProgressBarBox"
-  show ResourcesIcon          = "ResourcesIcon"
-  show ResourcesDropdownIcon  = "ResourcesDropdownIcon"
-  show RTViewInfoClose        = "RTViewInfoClose"
-  show RTViewInfoContainer    = "RTViewInfoContainer"
-  show RTViewInfoCopyPathIcon = "RTViewInfoCopyPathIcon"
-  show RTViewInfoIcon         = "RTViewInfoIcon"
-  show RTViewInfoTop          = "RTViewInfoTop"
-  show SelectMetricCheck      = "SelectMetricCheck"
-  show SelectMetricCheckArea  = "SelectMetricCheckArea"
-  show SelectNodeCheck        = "SelectNodeCheck"
-  show SelectNodeCheckArea    = "SelectNodeCheckArea"
-  show ServiceName            = "ServiceName"
-  show ShowHideIcon           = "ShowHideIcon"
-  show TabContainer           = "TabContainer"
-  show TopBar                 = "TopBar"
-  show TopNavDropdownIcon     = "TopNavDropdownIcon"
-  show TXsProcessed           = "TXsProcessed"
-  show UnsupportedVersion     = "UnsupportedVersion"
-  show ValueUnit              = "ValueUnit"
-  show ValueUnitPercent       = "ValueUnitPercent"
-  show ChartArea              = "ChartArea"
-  show WarningMessage         = "WarningMessage"
-  show WarningMessageTag      = "WarningMessageTag"
-  show WarningMessageTagNoHelp = "WarningMessageTagNoHelp"
-  show ErrorMessage           = "ErrorMessage"
-  show ErrorMessageTag        = "ErrorMessageTag"
-  show ErrorMessageTagNoHelp  = "ErrorMessageTagNoHelp"
-  show CriticalMessage        = "CriticalMessage"
-  show CriticalMessageTag     = "CriticalMessageTag"
-  show CriticalMessageTagNoHelp = "CriticalMessageTagNoHelp"
-  show AlertMessage           = "AlertMessage"
-  show AlertMessageTag        = "AlertMessageTag"
-  show AlertMessageTagNoHelp  = "AlertMessageTagNoHelp"
-  show EmergencyMessage       = "EmergencyMessage"
-  show EmergencyMessageTag    = "EmergencyMessageTag"
-  show EmergencyMessageTagNoHelp = "EmergencyMessageTagNoHelp"
+  show NoClass                    = ""
+  show ActiveTab                  = "ActiveTab"
+  show BarValueUnit               = "BarValueUnit"
+  show CardanoLogo                = "CardanoLogo"
+  show CommitLink                 = "CommitLink"
+  show DensityPercent             = "DensityPercent"
+  show ErrorRow                   = "ErrorRow"
+  show ErrorsBadge                = "ErrorsBadge"
+  show ErrorsTabHeader            = "ErrorsTabHeader"
+  show ErrorsTabList              = "ErrorsTabList"
+  show ErrorsDownloadIcon         = "ErrorsDownloadIcon"
+  show ErrorsSortIcon             = "ErrorsSortIcon"
+  show ErrorsFilterIcon           = "ErrorsFilterIcon"
+  show ErrorsFilterDropdownIcon   = "ErrorsFilterDropdownIcon"
+  show ErrorsRemoveIcon           = "ErrorsRemoveIcon"
+  show ErrorTimestamp             = "ErrorTimestamp"
+  show HSpacer                    = "HSpacer"
+  show IdleNode                   = "IdleNode"
+  show InfoMark                   = "InfoMark"
+  show InfoMarkImg                = "InfoMarkImg"
+  show MetricsArea                = "MetricsArea"
+  show NodeContainer              = "NodeContainer"
+  show NodeBar                    = "NodeBar"
+  show NodeInfoValues             = "NodeInfoValues"
+  show NodeInfoVSpacer            = "NodeInfoVSpacer"
+  show NodeMetricsValues          = "NodeMetricsValues"
+  show NodeMetricsVSpacer         = "NodeMetricsVSpacer"
+  show NodeMenuIcon               = "NodeMenuIcon"
+  show NodeName                   = "NodeName"
+  show NodeNameArea               = "NodeNameArea"
+  show NodePaneArea               = "NodePaneArea"
+  show NotificationsBar           = "NotificationsBar"
+  show NotificationsEventsHeader  = "NotificationsEventsHeader"
+  show NotificationsIcon          = "NotificationsIcon"
+  show NotificationsIconSlash     = "NotificationsIconSlash"
+  show NotificationsInput         = "NotificationsInput"
+  show NotificationsHR            = "NotificationsHR"
+  show NotificationsMainSwitch    = "NotificationsMainSwitch"
+  show NotificationsSwitch        = "NotificationsSwitch"
+  show NotificationsSwitches      = "NotificationsSwitches"
+  show NotificationsTabContainer  = "NotificationsTabContainer"
+  show NotificationsVSpacer       = "NotificationsVSpacer"
+  show PercentsSlashHSpacer       = "PercentsSlashHSpacer"
+  show ProgressBar                = "ProgressBar"
+  show ProgressBarBox             = "ProgressBarBox"
+  show ResourcesIcon              = "ResourcesIcon"
+  show ResourcesDropdownIcon      = "ResourcesDropdownIcon"
+  show RequiredInput              = "RequiredInput"
+  show Round                      = "Round"
+  show RTViewInfoClose            = "RTViewInfoClose"
+  show RTViewInfoContainer        = "RTViewInfoContainer"
+  show RTViewInfoCopyPathIcon     = "RTViewInfoCopyPathIcon"
+  show RTViewInfoIcon             = "RTViewInfoIcon"
+  show RTViewInfoTop              = "RTViewInfoTop"
+  show SelectMetricCheck          = "SelectMetricCheck"
+  show SelectMetricCheckArea      = "SelectMetricCheckArea"
+  show SelectNodeCheck            = "SelectNodeCheck"
+  show SelectNodeCheckArea        = "SelectNodeCheckArea"
+  show ServiceName                = "ServiceName"
+  show ShowHideIcon               = "ShowHideIcon"
+  show Slider                     = "Slider"
+  show Switch                     = "Switch"
+  show SwitchContainer            = "SwitchContainer"
+  show TabContainer               = "TabContainer"
+  show TopBar                     = "TopBar"
+  show TopNavDropdownIcon         = "TopNavDropdownIcon"
+  show TXsProcessed               = "TXsProcessed"
+  show UnsupportedVersion         = "UnsupportedVersion"
+  show ValueUnit                  = "ValueUnit"
+  show ValueUnitPercent           = "ValueUnitPercent"
+  show ChartArea                  = "ChartArea"
+  show WarningMessage             = "WarningMessage"
+  show WarningMessageTag          = "WarningMessageTag"
+  show WarningMessageTagNoHelp    = "WarningMessageTagNoHelp"
+  show ErrorMessage               = "ErrorMessage"
+  show ErrorMessageTag            = "ErrorMessageTag"
+  show ErrorMessageTagNoHelp      = "ErrorMessageTagNoHelp"
+  show CriticalMessage            = "CriticalMessage"
+  show CriticalMessageTag         = "CriticalMessageTag"
+  show CriticalMessageTagNoHelp   = "CriticalMessageTagNoHelp"
+  show AlertMessage               = "AlertMessage"
+  show AlertMessageTag            = "AlertMessageTag"
+  show AlertMessageTagNoHelp      = "AlertMessageTagNoHelp"
+  show EmergencyMessage           = "EmergencyMessage"
+  show EmergencyMessageTag        = "EmergencyMessageTag"
+  show EmergencyMessageTagNoHelp  = "EmergencyMessageTagNoHelp"
   -- Names of these classes are taken from W3C-library.
   show W3AnimateTop      = "w3-animate-top"
   show W3Badge           = "w3-badge"
@@ -346,6 +381,7 @@ instance Show HTMLClass where
   show W3Half            = "w3-half"
   show W3HideMedium      = "w3-hide-medium"
   show W3HideSmall       = "w3-hide-small"
+  show W3Input           = "w3-input"
   show W3Large           = "w3-large"
   show W3Margin          = "w3-margin"
   show W3Mobile          = "w3-mobile"
@@ -357,6 +393,8 @@ instance Show HTMLClass where
   show W3Right           = "w3-right"
   show W3RightAlign      = "w3-right-align"
   show W3Row             = "w3-row"
+  show W3RowPadding      = "w3-row-padding"
+  show W3Select          = "w3-select"
   show W3Sidebar         = "w3-sidebar"
   show W3Table           = "w3-table"
   show W3Theme           = "w3-theme"
@@ -383,6 +421,15 @@ data HTMLId
   | DiskUsageChartId
   | MemoryUsageChartId
   | NetworkUsageChartId
+  -- Form inputs
+  | EmailFromInput
+  | EmailToInput
+  | PasswordInput
+  | ServerHostInput
+  | ServerPortInput
+  | SSLInput
+  | SubjectInput
+  | UsernameInput
   deriving Show
 
 (##) :: UI Element -> String  -> UI Element

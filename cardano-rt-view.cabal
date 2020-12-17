@@ -25,6 +25,7 @@ library
                        Cardano.RTView.GUI.Elements
                        Cardano.RTView.GUI.JS.Charts
                        Cardano.RTView.GUI.JS.Utils
+                       Cardano.RTView.GUI.Markup.Notifications
                        Cardano.RTView.GUI.Markup.OwnInfo
                        Cardano.RTView.GUI.Markup.PageBody
                        Cardano.RTView.GUI.Markup.Pane
@@ -38,6 +39,11 @@ library
                        Cardano.RTView.NodeState.Types
                        Cardano.RTView.NodeState.Updater
 
+                       Cardano.RTView.Notifications.CheckEvents
+                       Cardano.RTView.Notifications.Send
+                       Cardano.RTView.Notifications.Send.Email
+                       Cardano.RTView.Notifications.Types
+
                        Cardano.RTView.SupportedNodes
 
                        Cardano.RTView.WebServer
@@ -45,6 +51,7 @@ library
   other-modules:       Paths_cardano_rt_view
 
   build-depends:       aeson
+                     , aeson-pretty
                      , ansi-terminal
                      , async
                      , base >=4.12 && <5
@@ -60,8 +67,10 @@ library
                      , hashable
                      , iohk-monitoring
                      , lobemo-backend-trace-acceptor
+                     , mime-mail
                      , optparse-applicative
                      , process
+                     , smtp-mail == 0.3.0.0
                      , stm
                      , template-haskell
                      , text

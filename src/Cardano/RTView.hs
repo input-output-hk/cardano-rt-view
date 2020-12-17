@@ -21,6 +21,8 @@ import           Cardano.RTView.GUI.Elements (TmpElements, initialTmpElements)
 import           Cardano.RTView.ErrorBuffer (ErrorBuffer, effectuate, realize, unrealize)
 import           Cardano.RTView.NodeState.Types (NodesState, initialNodesState)
 import           Cardano.RTView.NodeState.Updater (launchNodeStateUpdater)
+import           Cardano.RTView.Notifications.CheckEvents (launchNotifications)
+import           Cardano.RTView.Notifications.Types (NotificationSettings)
 import           Cardano.RTView.WebServer (launchWebServer)
 
 -- | Run the service.
@@ -28,7 +30,7 @@ runCardanoRTView :: RTViewParams -> IO ()
 runCardanoRTView params' = do
   TIO.putStrLn "RTView: real-time watching for Cardano nodes"
 
-  (config, params, acceptors) <- prepareConfigAndParams params'
+  (config, notifySettings, params, acceptors) <- prepareConfigAndParams params'
 
   (tr :: Trace IO Text, switchBoard) <- Setup.setupTrace_ config "cardano-rt-view"
   let accTr = appendName "acceptor" tr
@@ -46,15 +48,20 @@ runCardanoRTView params' = do
   nsTVar :: TVar NodesState <- newTVarIO =<< initialNodesState config
   -- This TVar contains temporary Elements which should be deleted explicitly.
   tmpElsTVar :: TVar TmpElements <- newTVarIO initialTmpElements
+  -- This TVar contains complete notification settings.
+  notifyTVar :: TVar NotificationSettings <- newTVarIO notifySettings
 
   let nsTr = appendName "nodeState" tr
       wsTr = appendName "webServer" tr
-  -- Launch 3 threads:
+      ntTr = appendName "notifications" tr
+  -- Launch 4 threads:
   --   1. acceptor plugin (it launches |TraceAcceptor| plugin),
   --   2. node state updater (it gets metrics from |LogBuffer| and updates NodeState),
   --   3. web server (it serves requests from user's browser and shows nodes' metrics in the real time).
+  --   4. notifications: check events and notify the user about them.
   acceptorThr <- async $ launchMetricsAcceptor config accTr switchBoard
   updaterThr  <- async $ launchNodeStateUpdater nsTr switchBoard be nsTVar
-  serverThr   <- async $ launchWebServer wsTr config nsTVar tmpElsTVar params acceptors
+  serverThr   <- async $ launchWebServer wsTr config nsTVar tmpElsTVar notifyTVar params acceptors
+  notifyThr   <- async $ launchNotifications ntTr nsTVar notifyTVar
 
-  void $ waitAnyCancel [acceptorThr, updaterThr, serverThr]
+  void $ waitAnyCancel [acceptorThr, updaterThr, serverThr, notifyThr]

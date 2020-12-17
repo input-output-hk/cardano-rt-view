@@ -20,8 +20,9 @@ import qualified Cardano.BM.Configuration.Model as CM
 import           Cardano.BM.Data.Output (ScribeDefinition (..), ScribeKind (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..))
-import           Cardano.RTView.Config (configFileIsProvided, logFilesDir,
-                                        savedConfigurationFile, savedRTViewParamsFile)
+import           Cardano.RTView.Config (configFileIsProvided, notificationsFileIsProvided,
+                                        logFilesDir, savedConfigurationFile,
+                                        savedNotificationsFile, savedRTViewParamsFile)
 import           Cardano.RTView.GUI.Elements (HTMLClass (..), (#.), hideIt)
 import           Cardano.RTView.GUI.JS.Utils (copyTextToClipboard)
 import           Cardano.RTView.Git.Rev (gitRev)
@@ -37,9 +38,14 @@ mkOwnInfo config params = do
                         # set UI.src "/static/images/times.svg"
                         # set UI.title__ "Close"
   versions <- nodesVersions
-  (pathToConfigFile, pathToParamsFile, pathToLogsDir) <- liftIO $ getPaths config params
+  (pathToConfigFile, pathToNotificationsFile, pathToParamsFile, pathToLogsDir)
+    <- liftIO $ getPaths config params
 
   copyPathToConfigFile
+    <- UI.img #. [RTViewInfoCopyPathIcon]
+              # set UI.src "/static/images/clipboard.svg"
+              # set UI.title__ "Copy this path to clipboard"
+  copyPathToNotificationsFile
     <- UI.img #. [RTViewInfoCopyPathIcon]
               # set UI.src "/static/images/clipboard.svg"
               # set UI.title__ "Copy this path to clipboard"
@@ -54,6 +60,8 @@ mkOwnInfo config params = do
 
   void $ UI.onEvent (UI.click copyPathToConfigFile) $ \_ ->
     UI.runFunction $ UI.ffi copyTextToClipboard pathToConfigFile
+  void $ UI.onEvent (UI.click copyPathToNotificationsFile) $ \_ ->
+    UI.runFunction $ UI.ffi copyTextToClipboard pathToNotificationsFile
   void $ UI.onEvent (UI.click copyPathToParamsFile) $ \_ ->
     UI.runFunction $ UI.ffi copyTextToClipboard pathToParamsFile
   void $ UI.onEvent (UI.click copyPathToLogsDir) $ \_ ->
@@ -78,6 +86,7 @@ mkOwnInfo config params = do
                   , UI.div #+ [string "Supported nodes" # set UI.title__ "Versions of the nodes RTView was tested with"]
                   , vSpacer
                   , UI.div #+ [string "Configuration file" # set UI.title__ "The path to RTView configuration file"]
+                  , UI.div #+ [string "Notifications file" # set UI.title__ "The path to RTView notifications file"]
                   , UI.div #+ [string "Parameters file"    # set UI.title__ "The path to RTView parameters file"]
                   , UI.div #+ [string "Logs directory"     # set UI.title__ "The path to RTView logs directory"]
                   , vSpacer
@@ -109,6 +118,10 @@ mkOwnInfo config params = do
                       [ string (preparePathIfNeeded pathToConfigFile) # set UI.title__ pathToConfigFile
                       , element copyPathToConfigFile
                       ]
+                  , UI.div #+
+                      [ string (preparePathIfNeeded pathToNotificationsFile) # set UI.title__ pathToNotificationsFile
+                      , element copyPathToNotificationsFile
+                      ] 
                   , UI.div #+
                       [ string (preparePathIfNeeded pathToParamsFile) # set UI.title__ pathToParamsFile
                       , element copyPathToParamsFile
@@ -154,7 +167,7 @@ nodesVersions =
 getPaths
   :: Configuration
   -> RTViewParams
-  -> IO (FilePath, FilePath, FilePath)
+  -> IO (FilePath, FilePath, FilePath, FilePath)
 getPaths config params = do
   logsDir <-
     (find (\sd -> scKind sd == FileSK) <$> CM.getSetupScribes config) >>= \case
@@ -164,8 +177,12 @@ getPaths config params = do
     if configFileIsProvided params
       then return $ rtvConfig params
       else savedConfigurationFile
+  notificationsFile <-
+    if notificationsFileIsProvided params
+      then return $ rtvNotifications params
+      else savedNotificationsFile
   paramsFile <- savedRTViewParamsFile
-  return (configFile, paramsFile, logsDir)
+  return (configFile, notificationsFile, paramsFile, logsDir)
 
 preparePathIfNeeded :: FilePath -> String
 preparePathIfNeeded aPath = if tooLongPath then shortenedPath else aPath
