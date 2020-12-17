@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                rt-view-analyzer
-version:             0.2.0
+version:             0.3.0
 description:         HTML page analyzer for RTView automatic testing
 license:             Apache-2.0
 license-files:
