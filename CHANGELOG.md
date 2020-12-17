@@ -1,6 +1,24 @@
 Changelog
 =========
 
+## [0.3.0]
+
+### Added
+
+- Email notifications ([#121](https://github.com/input-output-hk/cardano-rt-view/pull/121))
+- Display RTView information ([#112](https://github.com/input-output-hk/cardano-rt-view/pull/112))
+- Add RTView local log ([#116](https://github.com/input-output-hk/cardano-rt-view/pull/116))
+- Configure node panes' placement on the web-page ([#119](https://github.com/input-output-hk/cardano-rt-view/pull/119))
+
+### Fixed
+
+- Space leak fixed ([#113](https://github.com/input-output-hk/cardano-rt-view/pull/113))
+
+### Changed
+
+- One single view mode instead of two ones ([#117](https://github.com/input-output-hk/cardano-rt-view/pull/117))
+- Update node's metrics namespaces ([#118](https://github.com/input-output-hk/cardano-rt-view/pull/118))
+
 ## [0.2.0]
 
 ### Added
