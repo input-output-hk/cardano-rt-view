@@ -56,12 +56,12 @@ import           Cardano.BM.Data.Severity (Severity (..))
 type NodesState = HashMap Text NodeState
 
 data PeerInfo = PeerInfo
-  { piEndpoint   :: !String
-  , piBytesInF   :: !String
-  , piReqsInF    :: !String
-  , piBlocksInF  :: !String
-  , piSlotNumber :: !String
-  , piStatus     :: !String
+  { piEndpoint   :: !Text
+  , piBytesInF   :: !Text
+  , piReqsInF    :: !Text
+  , piBlocksInF  :: !Text
+  , piSlotNumber :: !Text
+  , piStatus     :: !Text
   } deriving (Eq, Generic, NFData, Show)
 
 -- Severity type already has Generic instance.
@@ -70,7 +70,7 @@ instance NFData Severity
 data NodeError = NodeError
   { eTimestamp :: !UTCTime
   , eSeverity  :: !Severity
-  , eMessage   :: !String
+  , eMessage   :: !Text
   , eVisible   :: !Bool
   } deriving (Generic, NFData, Show)
 

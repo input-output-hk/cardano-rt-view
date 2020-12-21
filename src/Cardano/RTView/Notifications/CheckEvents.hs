@@ -66,7 +66,7 @@ checkErrors ErrorsEvents {..} nodesState =
       _         -> False
 
   mkErrMessage sev msg =
-    "Error occurred: severity '" <> pack (show sev) <> "', message: " <> pack msg
+    "Error occurred: severity '" <> pack (show sev) <> "', message: " <> msg
 
 checkBlockchainErrors
   :: BlockchainEvents

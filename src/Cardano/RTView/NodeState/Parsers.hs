@@ -7,7 +7,6 @@ module Cardano.RTView.NodeState.Parsers
 import           Data.Aeson (Object, (.:))
 import qualified Data.Aeson as A
 import           Data.Text (Text)
-import qualified Data.Text as T
 
 import           Cardano.RTView.NodeState.Types (PeerInfo (..))
 
@@ -17,12 +16,12 @@ extractPeersInfo peersObj =
     A.Success (ConnectedPeers cPeers) ->
       flip map cPeers $ \p ->
         PeerInfo
-          { piEndpoint   = T.unpack $ peerAddress p
-          , piBytesInF   = T.unpack $ peerBytesInF p
-          , piReqsInF    = T.unpack $ peerReqsInF p
-          , piBlocksInF  = T.unpack $ peerBlocksInF p
-          , piSlotNumber = T.unpack $ peerSlotNo p
-          , piStatus     = T.unpack $ peerStatus p
+          { piEndpoint   = peerAddress p
+          , piBytesInF   = peerBytesInF p
+          , piReqsInF    = peerReqsInF p
+          , piBlocksInF  = peerBlocksInF p
+          , piSlotNumber = peerSlotNo p
+          , piStatus     = peerStatus p
           }
     A.Error _ -> []
  where
