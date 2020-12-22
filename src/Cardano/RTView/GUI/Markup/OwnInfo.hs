@@ -15,6 +15,8 @@ import           System.FilePath.Posix (takeDirectory)
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, liftIO, set, string, (#), (#+))
 
+import           Cardano.Config.Git.Rev (gitRev)
+
 import           Cardano.BM.Configuration (Configuration)
 import qualified Cardano.BM.Configuration.Model as CM
 import           Cardano.BM.Data.Output (ScribeDefinition (..), ScribeKind (..))
@@ -25,7 +27,6 @@ import           Cardano.RTView.Config (configFileIsProvided, notificationsFileI
                                         savedNotificationsFile, savedRTViewParamsFile)
 import           Cardano.RTView.GUI.Elements (HTMLClass (..), (#.), hideIt)
 import           Cardano.RTView.GUI.JS.Utils (copyTextToClipboard)
-import           Cardano.RTView.Git.Rev (gitRev)
 import           Cardano.RTView.SupportedNodes (supportedNodesVersions)
 import           Paths_cardano_rt_view (version)
 
@@ -105,10 +106,10 @@ mkOwnInfo config params = do
                   , UI.div #+
                       [ UI.anchor #. [CommitLink]
                                   # set UI.href ("https://github.com/input-output-hk/cardano-rt-view/commit/"
-                                                 <> gitRev)
+                                                 <> T.unpack gitRev)
                                   # set UI.target "_blank"
                                   # set UI.title__ "Browse cardano-rt-view repository on this commit"
-                                  # set UI.text (take 7 gitRev)
+                                  # set UI.text (T.unpack $ T.take 7 gitRev)
                       ]
                   , UI.div #+ [string rtViewPlaform]
                   , vSpacer
@@ -121,7 +122,7 @@ mkOwnInfo config params = do
                   , UI.div #+
                       [ string (preparePathIfNeeded pathToNotificationsFile) # set UI.title__ pathToNotificationsFile
                       , element copyPathToNotificationsFile
-                      ] 
+                      ]
                   , UI.div #+
                       [ string (preparePathIfNeeded pathToParamsFile) # set UI.title__ pathToParamsFile
                       , element copyPathToParamsFile

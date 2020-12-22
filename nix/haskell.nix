@@ -64,10 +64,10 @@ let
           "--ghc-option=-Wall"
         ];
       }
-      ({ pkgs, ... }: lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
-        # systemd can't be statically linked
-        packages.cardano-config.flags.systemd = !pkgs.stdenv.hostPlatform.isMusl;
-      })
+      {
+        # systemd not needed here
+        packages.cardano-config.flags.systemd = false;
+      }
       # Musl libc fully static build
       (lib.optionalAttrs stdenv.hostPlatform.isMusl (let
         # Module options which adds GHC flags and libraries for a fully static build
