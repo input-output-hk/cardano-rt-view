@@ -1,8 +1,8 @@
-index-state: 2020-10-22T00:00:00Z
+index-state: 2020-11-15T00:00:00Z
 
 packages:
-    ./*.cabal
-    test/rt-view-analyzer/*.cabal
+    ./
+    test/rt-view-analyzer/
 
 allow-newer: base
 
