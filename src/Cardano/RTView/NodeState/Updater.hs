@@ -106,11 +106,11 @@ updateNodeErrors ns (LOMeta timeStamp _ _ sev _) aContent = ns { nodeErrors = ne
   currentErrors = errors currentMetrics
   errorMessage =
     case aContent of
-      LogMessage msg -> show msg
-      LogError eMsg -> T.unpack eMsg
-      LogStructured obj -> show obj
-      LogStructuredText _ txt -> T.unpack txt
-      MonitoringEffect (MonitorAlert msg) -> "Monitor alert: " <> T.unpack msg
+      LogMessage msg -> T.pack (show msg)
+      LogError eMsg -> eMsg
+      LogStructured obj -> T.pack (show obj)
+      LogStructuredText _ txt -> txt
+      MonitoringEffect (MonitorAlert msg) -> "Monitor alert: " <> msg
       MonitoringEffect _ -> ""
       _ -> "UNPARSED_ERROR_MESSAGE"
   visible = True

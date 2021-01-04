@@ -359,12 +359,12 @@ updatePeersList tv nameOfNode peersInfo' True peersInfoItems = do
     let item  = peersInfoItems L.!! i
         PeerInfoElements {..} = piItemElems item
     -- Update internal elements of item using actual values.
-    void $ setElement (StringV piEndpoint)   pieEndpoint
-    void $ setElement (StringV piBytesInF)   pieBytesInF
-    void $ setElement (StringV piReqsInF)    pieReqsInF
-    void $ setElement (StringV piBlocksInF)  pieBlocksInF
-    void $ setElement (StringV piSlotNumber) pieSlotNumber
-    void $ setElement (StringV piStatus)     pieStatus
+    void $ setElement (TextV piEndpoint)   pieEndpoint
+    void $ setElement (TextV piBytesInF)   pieBytesInF
+    void $ setElement (TextV piReqsInF)    pieReqsInF
+    void $ setElement (TextV piBlocksInF)  pieBlocksInF
+    void $ setElement (TextV piSlotNumber) pieSlotNumber
+    void $ setElement (TextV piStatus)     pieStatus
     -- Make item visible.
     showElement $ piItem item
   setChangedFlag tv
@@ -472,7 +472,7 @@ justUpdateErrorsListAndTab tmpElsTVar
           ]
       , UI.div #. [W3TwoThird] #+
           [ UI.string aTag #. [aTagClass] # set UI.title__ aTagTitle
-          , UI.string msg  #. [aClass]
+          , UI.string (unpack msg) #. [aClass]
           ]
       ]
 

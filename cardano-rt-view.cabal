@@ -58,6 +58,7 @@ library
                      , bytestring
                      , clay
                      , cassava
+                     , containers
                      , deepseq
                      , directory
                      , extra
