@@ -50,7 +50,7 @@ The next question is:
 Input the names of the nodes (default are "node-1", "node-2", "node-3"), one at a time:
 ```
 
-From RTView's point of view, each `cardano-node` process that forwards its metrics to RTView, should be identified by a unique name. You can use any name you want (please note that name should not include spaces).
+From RTView's point of view, each `cardano-node` process that forwards its metrics to RTView, should be identified by a unique name. You can use any name you want. **IMPORTANT**: please note that name must not include _spaces_ or _dots_!
 
 The next question is:
 
