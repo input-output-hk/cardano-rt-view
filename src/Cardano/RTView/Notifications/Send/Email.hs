@@ -3,9 +3,12 @@
 
 module Cardano.RTView.Notifications.Send.Email
     ( createAndSendEmails
+    , createAndSendTestEmail
     ) where
 
 import           Control.Exception (IOException, try)
+import           Control.Monad (void)
+import           Control.Monad.Extra (whenJust)
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
@@ -29,7 +32,13 @@ createAndSendEmails tr eSettings events = do
   -- we create only one email with all events in it.
   let email = createEmail eSettings events
   logDebug tr $ "Email notifications, new email: " <> T.pack (show email)
-  sendEmail tr eSettings email
+  void $ sendEmail (Just tr) eSettings email
+
+createAndSendTestEmail
+  :: EmailSettings
+  -> IO Text
+createAndSendTestEmail eSettings =
+  sendEmail Nothing eSettings $ createTestEmail eSettings
 
 createEmail
   :: EmailSettings
@@ -45,19 +54,27 @@ createEmail EmailSettings {..} events =
   mkBodyPart NotifyEvent {..} =
     T.pack (show evTime) <> ", from the node '" <> evNodeName <> "': " <> evMessage
 
+createTestEmail
+  :: EmailSettings
+  -> Mail
+createTestEmail EmailSettings {..} =
+  simpleMail' to from emSubject body
+ where
+  to   = Address Nothing emEmailTo
+  from = Address (Just "Cardano RTView") emEmailFrom
+  body = "This is a test email from Cardano RTView. Congrats: your email notification settings are correct!"
+
 sendEmail
-  :: Trace IO Text
+  :: Maybe (Trace IO Text)
   -> EmailSettings
   -> Mail
-  -> IO ()
-sendEmail tr eSet@EmailSettings {..} mail =
+  -> IO Text
+sendEmail tr EmailSettings {..} mail =
   if cannotBeSent
-    then logError tr $ "Email cannot be sent because of lack of required email settings: "
-                       <> T.pack (show eSet)
-    else do
-      try (sender host port user pass mail) >>= \case
-        Left (e :: IOException) -> logError tr $ "Unable to send email: " <> T.pack (show e)
-        Right _ -> logNotice tr $ "Email notification to " <> emEmailTo <> " sent."
+    then logAndReturn logError cannotBeSentMessage
+    else try (sender host port user pass mail) >>= \case
+           Left (e :: IOException) -> logAndReturn logError $ unableToSendMessage <> T.pack (show e)
+           Right _ -> logAndReturn logNotice sentMessage
  where
   sender = case emSSL of
              TLS      -> sendMailWithLoginTLS'
@@ -72,3 +89,7 @@ sendEmail tr eSet@EmailSettings {..} mail =
                  || null user
                  || null pass
                  || T.null emEmailTo
+  cannotBeSentMessage = "Email cannot be sent: please fill in all inputs marked by an asterisk."
+  unableToSendMessage = "Unable to send email: "
+  sentMessage = "Yay! Email notification to " <> emEmailTo <> " sent."
+  logAndReturn logger message = whenJust tr (flip logger message) >> return message
