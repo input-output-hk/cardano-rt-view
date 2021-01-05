@@ -197,6 +197,13 @@ data HTMLClass
   | Switch
   | SwitchContainer
   | TabContainer
+  | TestEmailButton
+  | TestEmailButtonArea
+  | TestEmailContainer
+  | TestEmailDismiss
+  | TestEmailResult
+  | TestEmailResultSuccess
+  | TestEmailResultError
   | TopBar
   | TopNavDropdownIcon
   | TXsProcessed
@@ -255,6 +262,7 @@ data HTMLClass
   | W3Rest
   | W3Right
   | W3RightAlign
+  | W3Round
   | W3Row
   | W3RowPadding
   | W3Select
@@ -336,6 +344,13 @@ instance Show HTMLClass where
   show Switch                     = "Switch"
   show SwitchContainer            = "SwitchContainer"
   show TabContainer               = "TabContainer"
+  show TestEmailButton            = "TestEmailButton"
+  show TestEmailButtonArea        = "TestEmailButtonArea"
+  show TestEmailContainer         = "TestEmailContainer"
+  show TestEmailDismiss           = "TestEmailDismiss"
+  show TestEmailResult            = "TestEmailResult"
+  show TestEmailResultSuccess     = "TestEmailResultSuccess"
+  show TestEmailResultError       = "TestEmailResultError"
   show TopBar                     = "TopBar"
   show TopNavDropdownIcon         = "TopNavDropdownIcon"
   show TXsProcessed               = "TXsProcessed"
@@ -392,6 +407,7 @@ instance Show HTMLClass where
   show W3Rest            = "w3-rest"
   show W3Right           = "w3-right"
   show W3RightAlign      = "w3-right-align"
+  show W3Round           = "w3-round"
   show W3Row             = "w3-row"
   show W3RowPadding      = "w3-row-padding"
   show W3Select          = "w3-select"

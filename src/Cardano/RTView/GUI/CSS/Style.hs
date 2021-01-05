@@ -439,6 +439,32 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl Slider # before ? do
     borderRadiusPct   50
+
+  cl TestEmailContainer ? do
+    marginTopPx       20
+    marginBottomPx    2
+
+  cl TestEmailButtonArea ? do
+    widthPx           120
+
+  cl TestEmailButton ? do
+    backgroundColor   "#364679"
+    color             whitesmoke
+
+  cl TestEmailDismiss ? do
+    cursor            pointer
+    textDecoration    underline
+    color             "#364679"
+    fontSizePct       90
+
+  cl TestEmailResult ? do
+    marginTopPx       8
+
+  cl TestEmailResultSuccess ? do
+    color             green
+
+  cl TestEmailResultError ? do
+    color             red
  where
   cardanoLight    = rgb 31  193 195
   gray40          = rgb 102 102 102
