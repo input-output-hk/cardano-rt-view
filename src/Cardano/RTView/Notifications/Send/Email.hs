@@ -6,7 +6,7 @@ module Cardano.RTView.Notifications.Send.Email
     , createAndSendTestEmail
     ) where
 
-import           Control.Exception (IOException, try)
+import           Control.Exception (SomeException, try)
 import           Control.Monad (void)
 import           Control.Monad.Extra (whenJust)
 import           Data.Text (Text)
@@ -73,7 +73,7 @@ sendEmail tr EmailSettings {..} mail =
   if cannotBeSent
     then logAndReturn logError cannotBeSentMessage
     else try (sender host port user pass mail) >>= \case
-           Left (e :: IOException) -> logAndReturn logError $ unableToSendMessage <> T.pack (show e)
+           Left (e :: SomeException) -> logAndReturn logError $ unableToSendMessage <> T.pack (show e)
            Right _ -> logAndReturn logNotice sentMessage
  where
   sender = case emSSL of
