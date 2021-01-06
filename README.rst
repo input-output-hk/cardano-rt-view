@@ -65,6 +65,7 @@ Additional topics:
 * `Build RTView from sources <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/building-rt-view-from-sources.md>`_
 * `Learn more about RTView configuration <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/getting-started/rt-view-configuration.md>`_
 * `Understanding node's metrics <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/technical-details/understanding-metrics.md>`_
+* `Email notifications <https://github.com/input-output-hk/cardano-rt-view/blob/master/doc/technical-details/email-notifications.md>`_
 
 Use cases:
 
