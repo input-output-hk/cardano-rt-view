@@ -516,6 +516,11 @@ mkNodePane nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
   errorsBadge   <- UI.span #. [W3Badge, ErrorsBadge] # hideIt #+ [string ""]
   errorsTab     <- tabButton "Errors" "bugs.svg" (Just errorsBadge) # set UI.enabled False
 
+  -- If we already have some errors in the node's state - update the list in "Errors" tab right now.
+  let errors' = errors nodeErrors
+      shouldWeRebuild = True
+  justUpdateErrorsListAndTab tmpElsTVar errors' shouldWeRebuild elNodeErrorsList errorsTab errorsBadge
+
   void $ UI.onEvent (UI.click elSortByTime) $ \_ -> do
     UI.get (dataAttr dataSortByTime) elSortByTime >>= \case
       "desc" -> do
