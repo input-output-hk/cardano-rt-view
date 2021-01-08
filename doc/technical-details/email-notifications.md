@@ -10,7 +10,7 @@ You can use `Test email` button to check if your email settings are correct.
 
 ## Note for Gmail users
 
-If you want to set up email notifications using your Gmail account, please check your authentication settings in `Google Account` -> `Security`. And if you use 2FA (most likely you are), you _cannot_ use your regular email password to send notifications from RTView. Instead, go to `Security` -> `App passwords` and generate the new app password (if you don't have one already).
+If you want to set up email notifications using your Gmail account, please make sure that `2-Step Verification` is enabled. You can check it in `Google Account` -> `Security`. After you enabled `2-Step Verification`, please generate the new app password (if you don't have one already) in `Security` -> `App passwords`. You'll need this app password for RTView settings.
 
 Now you can set up RTView notifications:
 
