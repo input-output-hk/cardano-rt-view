@@ -416,6 +416,7 @@ justUpdateErrorsListAndTab
   -> Element
   -> Element
   -> UI ()
+justUpdateErrorsListAndTab _ [] _ _ _ _ = return ()
 justUpdateErrorsListAndTab tmpElsTVar
                            nodeErrors'
                            shouldWeRebuild
