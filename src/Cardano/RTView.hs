@@ -47,7 +47,7 @@ runCardanoRTView params' = do
   -- This TVar contains state (info, metrics) for all nodes we receive metrics from.
   nsTVar :: TVar NodesState <- newTVarIO =<< initialNodesState config
   -- This TVar contains temporary Elements which should be deleted explicitly.
-  tmpElsTVar :: TVar TmpElements <- newTVarIO initialTmpElements
+  tmpElsTVar :: TVar TmpElements <- newTVarIO $ initialTmpElements acceptors
   -- This TVar contains complete notification settings.
   notifyTVar :: TVar NotificationSettings <- newTVarIO notifySettings
 

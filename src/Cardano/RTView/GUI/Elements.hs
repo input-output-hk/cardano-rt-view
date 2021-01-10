@@ -10,7 +10,7 @@ module Cardano.RTView.GUI.Elements
     , ElementValue (..)
     , PeerInfoItem (..)
     , PeerInfoElements (..)
-    , TmpElements (..)
+    , TmpElements
     , initialTmpElements
     , (#.)
     , (##)
@@ -27,9 +27,12 @@ import           Data.Hashable (Hashable)
 import           GHC.Generics (Generic)
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, (#))
+import qualified Data.HashMap.Strict as HM
 import           Data.HashMap.Strict (HashMap)
 import           Data.Text (Text)
 import           Data.Word (Word64)
+
+import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
 instance NFData Element where
   rnf = rwhnf
@@ -120,15 +123,13 @@ data PeerInfoElements = PeerInfoElements
   , pieStatus     :: !Element
   } deriving (Generic, NFData)
 
--- | The storage for temporary Elements, which should be deleted explicitly.
+-- | The storage for temporary Elements, which should be deleted explicitly (separated for each node).
 --   Please read the documentation for details:
 --   https://hackage.haskell.org/package/threepenny-gui-0.9.0.0/docs/Graphics-UI-Threepenny-Core.html#v:delete
-newtype TmpElements = TmpElements
-  { tmpErrors :: [Element]
-  }
+type TmpElements = HashMap Text [Element]
 
-initialTmpElements :: TmpElements
-initialTmpElements = TmpElements []
+initialTmpElements :: [RemoteAddrNamed] -> TmpElements
+initialTmpElements = HM.fromList . map (\(RemoteAddrNamed nameOfNode _) -> (nameOfNode, []))
 
 -- | HTML elements identifiers, we use them in HTML, CSS and JS FFI.
 
@@ -446,6 +447,12 @@ data HTMLId
   | SSLInput
   | SubjectInput
   | UsernameInput
+  -- | Errors filters
+  | WarningMessageId
+  | ErrorMessageId
+  | CriticalMessageId
+  | AlertMessageId
+  | EmergencyMessageId
   deriving Show
 
 (##) :: UI Element -> String  -> UI Element
