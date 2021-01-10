@@ -11,7 +11,7 @@ module Cardano.RTView.GUI.Updater
 import           Control.Concurrent.STM.TVar (TVar, modifyTVar', readTVarIO)
 import           Control.Monad (void, forM, forM_, unless, when)
 import           Control.Monad.STM (atomically)
-import           Control.Monad.Extra (whenJust)
+import           Control.Monad.Extra (whenJust, whenJustM)
 import qualified Data.List as L
 import           Data.Maybe (fromJust, isJust)
 import           Data.HashMap.Strict ((!), (!?))
@@ -36,8 +36,9 @@ import           Cardano.RTView.GUI.Elements (ElementName (..), ElementValue (..
                                               HTMLClass (..), HTMLId (..),
                                               NodeStateElements, NodesStateElements,
                                               PeerInfoElements (..), PeerInfoItem (..),
-                                              TmpElements (..),
-                                              (#.), hideIt, showInline, pageTitle, pageTitleNotify)
+                                              TmpElements,
+                                              (#.), hideIt, showInline, showIt, pageTitle,
+                                              pageTitleNotify)
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
 import           Cardano.RTView.NodeState.Types
 import           Cardano.RTView.SupportedNodes (supportedNodesVersions, showSupportedNodesVersions)
@@ -398,7 +399,11 @@ updateErrorsListAndTab window tv tmpElsTVar nameOfNode nodeErrors' True els
 
     nss <- liftIO $ readTVarIO tv
     let shouldWeRebuild = errorsRebuild . nodeErrors $ (nss ! nameOfNode)
-    justUpdateErrorsListAndTab tmpElsTVar nodeErrors' shouldWeRebuild
+    justUpdateErrorsListAndTab window
+                               tmpElsTVar
+                               nameOfNode
+                               nodeErrors'
+                               shouldWeRebuild
                                el elTab elTabBadge
 
     unless (null nodeErrors') $
@@ -409,15 +414,18 @@ updateErrorsListAndTab window tv tmpElsTVar nameOfNode nodeErrors' True els
                    (\ns -> ns { nodeErrors = (nodeErrors ns) { errorsChanged = False } })
 
 justUpdateErrorsListAndTab
-  :: TVar TmpElements
+  :: UI.Window
+  -> TVar TmpElements
+  -> Text
   -> [NodeError]
   -> Bool
   -> Element
   -> Element
   -> Element
   -> UI ()
-justUpdateErrorsListAndTab _ [] _ _ _ _ = return ()
-justUpdateErrorsListAndTab tmpElsTVar
+justUpdateErrorsListAndTab window
+                           tmpElsTVar
+                           nameOfNode
                            nodeErrors'
                            shouldWeRebuild
                            elErrors elTab elTabBadge = do
@@ -433,7 +441,10 @@ justUpdateErrorsListAndTab tmpElsTVar
       void $ element elTabBadge # showInline
                                 # set text (show . length $ nodeErrors')
 
+  showFiltersOnlyForExistingSeverities
+
   tmpEls <- liftIO $ readTVarIO tmpElsTVar
+  let tmpElsForThisNode = maybe [] id $ tmpEls !? nameOfNode
   visibleNodeErrors <-
     if shouldWeRebuild
       then do
@@ -441,7 +452,7 @@ justUpdateErrorsListAndTab tmpElsTVar
         -- In this case we have to rebuild all the list from scratch,
         -- so explicitly delete all tmp Elements corresponding to shown errors.
         -- GC will clean them up later.
-        mapM_ UI.delete $ tmpErrors tmpEls
+        mapM_ UI.delete tmpElsForThisNode
         -- Please note that when the user filters errors,
         -- we don't remove them, just hide them.
         -- So only visible errors should be displayed.
@@ -449,11 +460,10 @@ justUpdateErrorsListAndTab tmpElsTVar
       else do
         -- It means that there's no actions from the user's side,
         -- just some new errors arrived. In this case append them
-        -- at the end of errors that are already shown.
-        let alreadyShownErrors = tmpErrors tmpEls
-            len = length alreadyShownErrors
-            onlyNewErrors = drop len nodeErrors'
-        return $ filter eVisible onlyNewErrors
+        -- at the end of already shown errors.
+        let alreadyShownErrors = tmpElsForThisNode
+            onlyNewErrors = drop (length alreadyShownErrors) nodeErrors'
+        return onlyNewErrors
 
   errors <- forM visibleNodeErrors $ \(NodeError utcTimeStamp sev msg _) -> do
     let (aClass, aTagClass, aTag, aTagTitle) =
@@ -485,20 +495,42 @@ justUpdateErrorsListAndTab tmpElsTVar
       errors' <- mapM (fmap element . return) errors
       void $ element elErrors #+ errors'
 
-  liftIO . atomically $ modifyTVar' tmpElsTVar $ \els ->
+  liftIO . atomically $ modifyTVar' tmpElsTVar $ \tmpEls' ->
     if shouldWeRebuild
       then
-        els { tmpErrors = errors }
+        HM.adjust (const errors) nameOfNode tmpEls'
       else
-        let alreadyShownErrors = tmpErrors els
+        let alreadyShownErrors = maybe [] id $ tmpEls' !? nameOfNode
             errorsWithNewOnes = alreadyShownErrors ++ errors
-        in els { tmpErrors = errorsWithNewOnes }
+        in HM.adjust (const errorsWithNewOnes) nameOfNode tmpEls'
  where
   errorsTabTitle =
     case length nodeErrors' of
       0 -> "Good news: there are no errors!"
       1 -> "There is one error from node"
       n -> "There are " <> show n <> " errors from node"
+
+  -- There are 5 severity levels, but we have to provide an ability to filter
+  -- errors using only existing severities (i.e. if there is no errors with Alert
+  -- severity, we have to hide Alert filter).
+  showFiltersOnlyForExistingSeverities = do
+    let existingSeverities = map eSeverity nodeErrors'
+        nameOfNodeS = unpack nameOfNode
+
+        forFilter anId action =
+          whenJustM (UI.getElementById window (show anId <> nameOfNodeS)) $ \aFilter ->
+            void $ element aFilter # action
+
+        showOrHide sev anId =
+          if sev `elem` existingSeverities
+            then forFilter anId showIt
+            else forFilter anId hideIt
+
+    showOrHide Warning   WarningMessageId
+    showOrHide Error     ErrorMessageId
+    showOrHide Critical  CriticalMessageId
+    showOrHide Alert     AlertMessageId
+    showOrHide Emergency EmergencyMessageId
 
 -- Check the errors for all nodes: if there's no errors at all,
 -- set the page's title to default one.

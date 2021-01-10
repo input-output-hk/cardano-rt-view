@@ -37,7 +37,7 @@ mkPageBody
   -> UI (Element, NodesStateElements)
 mkPageBody config nsTVar tmpElsTVar notifyTVar params window acceptors = do
   (paneNodesRootElem, paneNodesElems, panesWithNames)
-    <- mkNodesPanes nsTVar tmpElsTVar acceptors
+    <- mkNodesPanes window nsTVar tmpElsTVar acceptors
 
   -- Register clickable selector for nodes (to be able to show only one or all of them).
   nodesSelector <- forM acceptors $ \(RemoteAddrNamed nameOfNode _) -> do
