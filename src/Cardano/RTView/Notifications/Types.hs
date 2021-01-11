@@ -64,8 +64,8 @@ data SSL
   deriving (Eq, Generic, NFData, Show, Read, FromJSON, ToJSON)
 
 data EmailSettings = EmailSettings
-  { emServerHost :: !Text -- HostName
-  , emServerPort :: !Int -- PortNumber
+  { emServerHost :: !Text
+  , emServerPort :: !Int
   , emUsername   :: !Text
   , emPassword   :: !Text
   , emSSL        :: !SSL
@@ -77,7 +77,7 @@ data EmailSettings = EmailSettings
 initialNotificationSettings :: NotificationSettings
 initialNotificationSettings = NotificationSettings
   { nsEnabled = True
-  , nsCheckPeriodInSec = 30
+  , nsCheckPeriodInSec = 120
   , nsEventsToNotify =
       EventsToNotify
         { errorsEvents =

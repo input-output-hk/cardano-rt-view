@@ -19,3 +19,13 @@ Now you can set up RTView notifications:
 3. `Username`: most likely, it's your email address
 4. `Password`: app password you've generated
 5. `SSL`: `STARTTLS`
+
+## Check period
+
+By default, the email client in the RTView checks events once per 2 minutes. But this can be configured. To do it, please click on the info icon on the top bar to see `RTView Information`. Here you can find the path to `Notifications file`. This JSON-file contains a field `nsCheckPeriodInSec`, which specifies the check period in seconds. For example, if you set this value to `3600` like this:
+
+```
+"nsCheckPeriodInSec": 3600,
+```
+
+the email client will check events only once per hour. In this case, you will receive only one email per hour with all events (if any of them occurred).
