@@ -13,6 +13,7 @@ Changelog
 ### Fixed
 
 - Space leak fixed ([#113](https://github.com/input-output-hk/cardano-rt-view/pull/113), [#139](https://github.com/input-output-hk/cardano-rt-view/pull/139))
+- Handling of errors in `Errors` tab is fixed ([#143](https://github.com/input-output-hk/cardano-rt-view/pull/143), [#144](https://github.com/input-output-hk/cardano-rt-view/pull/144))
 
 ### Changed
 
