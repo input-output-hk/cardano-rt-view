@@ -130,10 +130,7 @@ Now you have to make the following changes in your node's configuration file:
 
    "options": {
      "mapBackends": {
-       "cardano.node-metrics": [
-         "TraceForwarderBK"
-       ],
-       "cardano.node.Forge.metrics": [
+       "cardano.node.metrics": [
          "TraceForwarderBK"
        ],
        ...

@@ -76,10 +76,7 @@ Please note that the public IP of the `Server machine` was indicated for the que
 
    "options": {
      "mapBackends": {
-       "cardano.node-metrics": [
-         "TraceForwarderBK"
-       ],
-       "cardano.node.Forge.metrics": [
+       "cardano.node.metrics": [
          "TraceForwarderBK"
        ],
        ...
