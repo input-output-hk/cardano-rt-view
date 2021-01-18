@@ -23,10 +23,7 @@ After you finished the RTView configuration dialog, it displayed all the changes
 
    "options": {
      "mapBackends": {
-       "cardano.node-metrics": [
-         "TraceForwarderBK"
-       ],
-       "cardano.node.Forge.metrics": [
+       "cardano.node.metrics": [
          "TraceForwarderBK"
        ],
        ...
@@ -126,27 +123,15 @@ This is an example of the node's configuration file prepared for working with RT
   "minSeverity": "Info",
   "options": {
     "mapBackends": {
-      "cardano.node-metrics": [
-        "EKGViewBK",
-        "TraceForwarderBK"
-      ],
-      "cardano.node.BlockFetchDecision.peers": [
-        "EKGViewBK"
-      ],
-      "cardano.node.ChainDB.metrics": [
-        "EKGViewBK",
-        "TraceForwarderBK"
-      ],
-      "cardano.node.Forge.metrics": [
-        "EKGViewBK",
-        "TraceForwarderBK"
-      ],
       "cardano.node.metrics": [
         "EKGViewBK",
         "TraceForwarderBK"
       ],
       "cardano.node.metrics.peersFromNodeKernel": [
         "TraceForwarderBK"
+      ],
+      "cardano.node.BlockFetchDecision.peers": [
+        "EKGViewBK"
       ],
       "cardano.node.AcceptPolicy": [
         "TraceForwarderBK"
@@ -231,9 +216,6 @@ This is an example of the node's configuration file prepared for working with RT
       "cardano.epoch-validation.utxo-stats": {
         "subtrace": "NoTrace"
       },
-      "cardano.node-metrics": {
-        "subtrace": "Neutral"
-      },
       "cardano.node.metrics": {
         "subtrace": "Neutral"
       }
@@ -277,49 +259,25 @@ After you finished the RTView configuration, you saw a few changes that should b
 
    "options": {
      "mapBackends": {
-       "cardano.node-metrics": [
-         "TraceForwarderBK"
-       ],
-       "cardano.node.Forge.metrics": [
+       "cardano.node.metrics": [
          "TraceForwarderBK"
        ],
        ...
      }
 ```
 
-These two lines, `cardano.node.metrics` and `cardano.node.Forge.metrics`, are tracers' names. You can think of tracers as points inside of Cardano node, and the node can send different values in these points. When you map the tracer `cardano.node.metrics` on the `TraceForwarderBK`, all the metrics from `cardano.node.metrics` will be sent to `TraceForwarderBK`. But if you remove `TraceForwarderBK` from `cardano.node.metrics`, all the metrics sent to this tracer will never be forwarded to RTView.
+This line, `cardano.node.metrics`, is a tracer's name. You can think of tracers as points inside of Cardano node, and the node can send different values in these points. When you map the tracer `cardano.node.metrics` on the `TraceForwarderBK`, all the metrics from `cardano.node.metrics` will be sent to `TraceForwarderBK`. But if you remove `TraceForwarderBK` from `cardano.node.metrics`, all the metrics sent to this tracer will never be forwarded to RTView.
 
 For more info about tracers, please read `Technical Details` -> `Understanding Metrics`.
 
-These are supported tracers:
+Main tracers are:
 
 | Tracer                                     | Metric on web-page                     |
 | ------------------------------------------ | -------------------------------------- |
 | `cardano.node.metrics.peersFromNodeKernel` | `Peers` -> peers list                  |
-| `cardano.node.metrics`                     | `Node info` -> `Node uptime`           |
-|                                            | `Mempool` -> `Mempool | TXs`           |
-|                                            | `Mempool` -> `Mempool | bytes`         |
-|                                            | `Mempool` -> `TXs processed`           |
-|                                            | `Blockchain` -> `Forged blocks number` |
-|                                            | `Blockchain` -> `Slot leader, number`  |
-|                                            | `Blockchain` -> `Cannot forge, number` |
-|                                            | `Blockchain` -> `Missed slots number`  |
-| `cardano.node-metrics`                     | `Resources` -> `Memory`                |
-|                                            | `Resources` -> `CPU`                   |
-|                                            | `Resources` -> `Disk`                  |
-|                                            | `Resources` -> `Network`               |
-|                                            | `Node info` -> `Node platform`         |
-|                                            | `RTS GC` -> `GC CPU time`              |
-|                                            | `RTS GC` -> `GC time elapsed`          |
-|                                            | `RTS GC` -> `Number of GC runs`        |
-|                                            | `RTS GC` -> `Major GC runs`            |
-| `cardano.node.ChainDB.metrics`             | `Blockchain` -> `Epoch`                |
-|                                            | `Blockchain` -> `Slot in epoch`        |
-|                                            | `Blockchain` -> `Blocks number`        |
-|                                            | `Blockchain` -> `Chain density`        |
-| `cardano.node.Forge.metrics`               | `KES` -> `Start KES period`            |
-|                                            | `KES` -> `KES period`                  |
-|                                            | `KES` -> `KES remaining`               |
+| `cardano.node.metrics`                     | All other metrics.                     |
+
+There are additional tracers as well for errors (please read below).
 
 ## Errors routing
 

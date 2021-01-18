@@ -399,9 +399,9 @@ askAboutNodesNames nodesNumber = askNodeNames 1
            colorize Red NormalIntensity $
              TIO.putStr "Node's name cannot be empty, please input again: "
            askNodeName i
-       | T.any (== ' ') aName -> do
+       | T.any (== ' ') aName || T.any (== '.') aName -> do
            colorize Red NormalIntensity $
-             TIO.putStr "Node's name cannot contain spaces, please input again: "
+             TIO.putStr "Node's name cannot contain spaces or dots, please input again: "
            askNodeName i
        | otherwise -> return aName
 
@@ -567,10 +567,7 @@ showChangesInNodeConfiguration config rtViewMachineHost = do
     colorize Yellow BoldIntensity $ do
       TIO.putStrLn "   \"options\": {"
       TIO.putStrLn "     \"mapBackends\": {"
-      TIO.putStrLn "       \"cardano.node-metrics\": ["
-      TIO.putStrLn "         \"TraceForwarderBK\""
-      TIO.putStrLn "       ],"
-      TIO.putStrLn "       \"cardano.node.Forge.metrics\": ["
+      TIO.putStrLn "       \"cardano.node.metrics\": ["
       TIO.putStrLn "         \"TraceForwarderBK\""
       TIO.putStrLn "       ],"
       TIO.putStrLn "       ..."
