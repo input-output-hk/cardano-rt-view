@@ -114,13 +114,13 @@ topNavigation window acceptors config params notifyTVar nodesSelector = do
   rtViewInfo <- mkOwnInfo config params
   rtViewInfoButton <- UI.img #. [RTViewInfoIcon]
                              # set UI.src "/static/images/info-light.svg"
-                             # set UI.title__ "RTView info"
+                             # set UI.title__ "See RTView info"
   void $ UI.onEvent (UI.click rtViewInfoButton) $ \_ ->
     element rtViewInfo # showIt
 
   rtViewNotificationsButton <- UI.img #. [NotificationsIcon]
                                       # set UI.src "/static/images/bell.svg"
-                                      # set UI.title__ "RTView notifications"
+                                      # set UI.title__ "Set RTView notifications"
   rtViewNotifications <- mkNotifications window config params notifyTVar rtViewNotificationsButton
   void $ UI.onEvent (UI.click rtViewNotificationsButton) $ \_ ->
     element rtViewNotifications # showIt
