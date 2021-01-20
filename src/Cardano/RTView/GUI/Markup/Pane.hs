@@ -165,7 +165,7 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
              , UI.div #+ [string "Node start time" # set UI.title__ "The time when this node has started"]
              , UI.div #+ [string "Node uptime"     # set UI.title__ "How long the node is working"]
              , vSpacer NodeInfoVSpacer
-             , UI.div #+ [string "Node endpoint"   # set UI.title__ "Socket/pipe used to connect the node with RTView"]
+             , UI.div #+ [string "Node endpoint"   # set UI.title__ "Socket/pipe used to connect the node with RTView,\ntaken from corresponding remoteAddr field in RTView configuration"]
              , vSpacer NodeInfoVSpacer
              ]
          , UI.div #. [W3Half, NodeInfoValues] #+
@@ -186,10 +186,10 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
   kesTabContent
     <- UI.div #. [TabContainer, W3Row] # hideIt #+
          [ UI.div #. [W3Half] #+
-             [ UI.div #+ [string "Start KES period"    # set UI.title__ "Certificate KES start period"]
-             , UI.div #+ [string "Expiry KES period"   # set UI.title__ "Certificate KES expiry period"]
-             , UI.div #+ [string "KES period"          # set UI.title__ "Current KES period"]
-             , UI.div #+ [string "KES remaining"       # set UI.title__ "KES periods until expiry"]
+             [ UI.div #+ [string "Start KES period"    # set UI.title__ "Start KES period of configured\noperational certificate"]
+             , UI.div #+ [string "Expiry KES period"   # set UI.title__ "KES expiry period, calculated as a sum of\nstart KES period and configured maximum KES evolutions"]
+             , UI.div #+ [string "Current KES period"  # set UI.title__ "Current KES period, calculated as a sum of\nstart KES period and current KES period of the hot key"]
+             , UI.div #+ [string "KES remaining"       # set UI.title__ "KES periods until expiry, calculated as a diff\nbetween expiry KES period and current KES period"]
              , UI.div #+ [string "KES remaining, days" # set UI.title__ "KES periods until expiry, in days"]
              , vSpacer NodeInfoVSpacer
              ]
@@ -225,9 +225,9 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
                 , UI.div #. [W3Quarter, W3RightAlign, NodeMetricsValues] #+
                     [element slotNumber]
                 , UI.div #. [W3Quarter, W3RightAlign, NodeMetricsValues] #+
-                    [ element bytesInF # set UI.title__ "Sum of the byte count of blocks expected from all in-flight fetch requests"
+                    [ element bytesInF # set UI.title__ "Sum of the byte count of blocks expected\nfrom all in-flight fetch requests"
                     , string " / "
-                    , element reqsInF # set UI.title__ "Number of blocks fetch requests that are currently in-flight"
+                    , element reqsInF # set UI.title__ "Number of blocks fetch requests\nthat are currently in-flight"
                     , string " / "
                     , element blocksInF # set UI.title__ "Blocks that are currently in-flight"
                     ]
@@ -277,9 +277,9 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
              , UI.div #+ [string "Slot leader, number"
                           # set UI.title__ "Number of slots when this node was a leader"]
              , UI.div #+ [string "Cannot forge, number"
-                          # set UI.title__ "Number of slots when this node was a leader but because of misconfiguration, it's impossible to forge a new block"]
+                          # set UI.title__ "Number of slots when this node was a leader\nbut because of misconfiguration, it was impossible to forge a new block"]
              , UI.div #+ [string "Missed slots number"
-                          # set UI.title__ "Number of slots when this node was a leader but didn't forge a new block"]
+                          # set UI.title__ "Number of slots when this node was a leader\nbut didn't forge a new block by some reason"]
              , vSpacer NodeInfoVSpacer
              ]
          , UI.div #. [W3Half, NodeInfoValues] #+
@@ -341,7 +341,7 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
          , vSpacer NodeMetricsVSpacer
          , UI.div #. [W3Row] #+
               [ string "TXs processed"
-                  # set UI.title__ "Number of processed transactions in this blockchain (these transactions are already removed from the mempool)"
+                  # set UI.title__ "Number of processed transactions in this blockchain\n(these transactions are already removed from the mempool)"
               , element elTxsProcessed #. [TXsProcessed]
               ]
          , vSpacer NodeMetricsVSpacer
@@ -379,8 +379,8 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
     <- UI.div #. [TabContainer] # hideIt #+
          [ UI.div #. [W3Row] #+
              [ UI.div #. [W3Half] #+
-                 [ UI.div #+ [string "Number of major GC runs" # set UI.title__ "Total number of major (oldest generation) GCs"]
-                 , UI.div #+ [string "Number of minor GC runs" # set UI.title__ "Total number of minor GCs"]
+                 [ UI.div #+ [string "Number of major GC runs" # set UI.title__ "Total number of major (oldest generation) garbage collections"]
+                 , UI.div #+ [string "Number of minor GC runs" # set UI.title__ "Total number of minor garbage collections"]
                  ]
              , UI.div #. [W3Half, NodeInfoValues] #+
                  [ UI.div #+ [element elRTSGcMajorNum]
@@ -401,11 +401,11 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
   elSortByTime  <- UI.img #. [ErrorsSortIcon]
                           # set UI.src "/static/images/sort.svg"
                           # set (dataAttr dataSortByTime) desc
-                          # set UI.title__ "Sort by time, latest first"
+                          # set UI.title__ "Sort by time, latest message first"
   elSortBySev   <- UI.img #. [ErrorsSortIcon]
                           # set UI.src "/static/images/sort.svg"
                           # set (dataAttr dataSortBySev) desc
-                          # set UI.title__ "Sort by severity level, worst first"
+                          # set UI.title__ "Sort by severity level, worst message first"
   elFilterBySev <- UI.img #. [ErrorsFilterIcon]
                           # set UI.src "/static/images/filter.svg"
                           # set UI.title__ "Filter by severity level"
@@ -453,7 +453,7 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
   elDownloadErrorsAsCSV
     <- UI.img #. [ErrorsDownloadIcon]
               # set UI.src "/static/images/file-download.svg"
-              # set UI.title__ "Download errors as CSV"
+              # set UI.title__ "Download all errors as CSV file"
 
   void $ UI.onEvent (UI.click elDownloadErrorsAsCSV) $ \_ -> do
     nss <- liftIO $ readTVarIO nsTVar
@@ -541,11 +541,11 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
       "desc" -> do
         setErrorsViewMode nsTVar nameOfNode $ sortErrors sortErrorsByTimeDesc
         void $ element elSortByTime # set (dataAttr dataSortByTime) asc
-                                    # set UI.title__ "Sort by time, earlier first"
+                                    # set UI.title__ "Sort by time, earlier message first"
       _ -> do
         setErrorsViewMode nsTVar nameOfNode $ sortErrors sortErrorsByTimeAsc
         void $ element elSortByTime # set (dataAttr dataSortByTime) desc
-                                    # set UI.title__ "Sort by time, latest first"
+                                    # set UI.title__ "Sort by time, latest message first"
     immediatelyUpdateErrors window nsTVar tmpElsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
 
   void $ UI.onEvent (UI.click elSortBySev) $ \_ -> do
@@ -553,11 +553,11 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
       "desc" -> do
         setErrorsViewMode nsTVar nameOfNode $ sortErrors sortErrorsBySevDesc
         void $ element elSortBySev # set (dataAttr dataSortBySev) asc
-                                   # set UI.title__ "Sort by severity level, warnings first"
+                                   # set UI.title__ "Sort by severity level, warning messages first"
       _ -> do
         setErrorsViewMode nsTVar nameOfNode $ sortErrors sortErrorsBySevAsc
         void $ element elSortBySev # set (dataAttr dataSortBySev) desc
-                                   # set UI.title__ "Sort by severity level, worst first"
+                                   # set UI.title__ "Sort by severity level, worst messages first"
     immediatelyUpdateErrors window nsTVar tmpElsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
 
   let makeResetButtonActive   = void $ element unFilter #. [W3BarItem, W3Button, W3Mobile, W3BorderTop]
@@ -652,6 +652,7 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
       [ UI.div #. [NodeNameArea] #+
           [ string "Name: "
           , string (T.unpack nameOfNode) #. [NodeName]
+                                         # set UI.title__ "Name of this node taken from corresponding\nnodeName field in RTView configuration"
           , element elIdleNode
           ]
       , UI.div #. [W3Bar, NodeBar] #+
