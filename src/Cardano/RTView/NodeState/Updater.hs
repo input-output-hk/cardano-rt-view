@@ -27,6 +27,7 @@ import           Data.Time.Clock (UTCTime)
 import           Data.Word (Word64)
 import           GHC.Clock (getMonotonicTimeNSec)
 import           System.Time.Extra (sleep)
+import           Text.Read (readMaybe)
 
 import           Cardano.BM.Backend.Switchboard (Switchboard, readLogBuffer)
 import           Cardano.BM.Data.Aggregated (Measurable (..))
@@ -161,6 +162,18 @@ updateNodesState tr nsTVar loggerName (LogObject aName aMeta aContent) = do
              textValue $ updateNodeStartTime ns now
            | itIs "basicInfo.systemStartTime" ->
              textValue $ updateSystemStartTime ns now
+           | itIs "basicInfo.slotLengthShelley" ->
+             textValue $ updateSlotLength Shelley ns now
+           | itIs "basicInfo.slotsPerKESPeriodShelley" ->
+             textValue $ updateSlotsPerKESPeriod Shelley ns now
+           | itIs "basicInfo.slotLengthAllegra" ->
+             textValue $ updateSlotLength Allegra ns now
+           | itIs "basicInfo.slotsPerKESPeriodAllegra" ->
+             textValue $ updateSlotsPerKESPeriod Allegra ns now
+           | itIs "basicInfo.slotLengthMary" ->
+             textValue $ updateSlotLength Mary ns now
+           | itIs "basicInfo.slotsPerKESPeriodMary" ->
+             textValue $ updateSlotsPerKESPeriod Mary ns now
            | otherwise ->
             case aContent of
               LogStructured newPeersInfo ->
@@ -289,7 +302,10 @@ updateNodeStartTime ns now startTime = ns { nodeMetrics = newNodeMetrics, metric
     , nodeStartTimeChanged = nodeStartTime currentMetrics /= startTimeUTC
     }
   currentMetrics = nodeMetrics ns
-  startTimeUTC = read (T.unpack startTime) :: UTCTime
+  startTimeUTC =
+    case readMaybe (T.unpack startTime) of
+      Just (st :: UTCTime) -> st
+      Nothing -> nullTime
 
 updateSystemStartTime :: NodeState -> Word64 -> Text -> NodeState
 updateSystemStartTime ns now systemStart = ns { blockchainMetrics = newNodeMetrics, metricsLastUpdate = now }
@@ -299,7 +315,38 @@ updateSystemStartTime ns now systemStart = ns { blockchainMetrics = newNodeMetri
     , systemStartTimeChanged = systemStartTime currentMetrics /= systemStartTimeUTC
     }
   currentMetrics = blockchainMetrics ns
-  systemStartTimeUTC = read (T.unpack systemStart) :: UTCTime
+  systemStartTimeUTC =
+    case readMaybe (T.unpack systemStart) of
+      Just (st :: UTCTime) -> st
+      Nothing -> nullTime
+
+updateSlotLength :: Era -> NodeState -> Word64 -> Text -> NodeState
+updateSlotLength era ns now sl = ns { blockchainMetrics = newNodeMetrics, metricsLastUpdate = now }
+ where
+  newNodeMetrics =
+    case era of
+      Shelley -> currentMetrics { slotLengthShelley = slotLength }
+      Allegra -> currentMetrics { slotLengthAllegra = slotLength }
+      Mary    -> currentMetrics { slotLengthMary    = slotLength }
+  currentMetrics = blockchainMetrics ns
+  slotLength =
+    case readMaybe (T.unpack sl) of
+      Just (sl' :: Integer) -> sl'
+      Nothing -> slotLengthShelley currentMetrics
+
+updateSlotsPerKESPeriod :: Era -> NodeState -> Word64 -> Text -> NodeState
+updateSlotsPerKESPeriod era ns now spk = ns { blockchainMetrics = newNodeMetrics, metricsLastUpdate = now }
+ where
+  newNodeMetrics =
+    case era of
+      Shelley -> currentMetrics { slotsPerKESPeriodShelley = spk' }
+      Allegra -> currentMetrics { slotsPerKESPeriodAllegra = spk' }
+      Mary    -> currentMetrics { slotsPerKESPeriodMary    = spk' }
+  currentMetrics = blockchainMetrics ns
+  spk' =
+    case readMaybe (T.unpack spk) of
+      Just (kes :: Integer) -> kes
+      Nothing -> slotsPerKESPeriodShelley currentMetrics
 
 updateNodePlatform :: NodeState -> Int -> Word64 -> NodeState
 updateNodePlatform ns platfId now = ns { nodeMetrics = newNodeMetrics, metricsLastUpdate = now }
@@ -637,9 +684,8 @@ updateRemainingKESPeriods ns kesPeriodsUntilExpiry now = ns { kesMetrics = newMe
     }
   currentMetrics = kesMetrics ns
   changed = remKESPeriods currentMetrics /= kesPeriodsUntilExpiry
-  remainingInSeconds =   fromIntegral kesPeriodsUntilExpiry
-                       * (1 :: Int)      -- TODO: take from node basic info metric for current protocol.
-                       * (129600 :: Int) -- TODO: take from node basic info metric for current protocol.
+  (slotLength', slotsPerKESPeriod') = getSlotsValues ns
+  remainingInSeconds = fromIntegral kesPeriodsUntilExpiry * slotLength' * slotsPerKESPeriod'
   remainingInDays :: Double
   remainingInDays = fromIntegral remainingInSeconds / 3600 / 24
 
@@ -679,3 +725,27 @@ updateEpoch ns newEpoch now = ns { blockchainMetrics = newMetrics, metricsLastUp
     , epochChanged = epoch currentMetrics /= newEpoch
     }
   currentMetrics = blockchainMetrics ns
+
+---
+
+getSlotsValues :: NodeState -> (Integer, Integer)
+getSlotsValues ns =
+  case protocol of
+    "Shelley" ->
+      (slotLengthShelley bm, slotsPerKESPeriodShelley bm)
+    "Byron; Shelley" ->
+      -- It's a Cardano protocol, which supports all eras.
+      -- Take Allegra-values for now.
+      -- TODO: check current era explicitly and use corresponding values.
+      (slotLengthAllegra bm, slotsPerKESPeriodAllegra bm)
+    _ ->
+      -- Ok, there are two possible ways:
+      --   1. If it's "Byron" protocol, it's impossible,
+      --      because Byron protocol doesn't support KES.
+      --   2. If it's some unknown/new protocol, corresponding KES-values
+      --      should be explicitly extracted from basicInfo.
+      -- Use Shelley-values for now.
+      (slotLengthShelley bm, slotsPerKESPeriodShelley bm)
+ where
+  protocol = nodeProtocol $ nodeMetrics ns
+  bm = blockchainMetrics ns

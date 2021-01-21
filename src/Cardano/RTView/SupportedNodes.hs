@@ -12,6 +12,7 @@ supportedNodesVersions :: [Text]
 supportedNodesVersions =
   [ "1.24.1"
   , "1.24.2"
+  , "1.25.0"
   ]
 
 showSupportedNodesVersions :: Text

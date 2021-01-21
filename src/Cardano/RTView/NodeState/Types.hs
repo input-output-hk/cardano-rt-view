@@ -16,6 +16,7 @@ module Cardano.RTView.NodeState.Types
     , NodeState (..)
     , NodeError (..)
     , PeerInfo (..)
+    , Era (..)
     , initialNodesState
     , showText
     , showInitTime
@@ -163,16 +164,22 @@ data RTSMetrics = RTSMetrics
   } deriving (Generic, NFData, Show)
 
 data BlockchainMetrics = BlockchainMetrics
-  { systemStartTime        :: !UTCTime
-  , systemStartTimeChanged :: !Bool
-  , epoch                  :: !Integer
-  , epochChanged           :: !Bool
-  , slot                   :: !Integer
-  , slotChanged            :: !Bool
-  , blocksNumber           :: !Integer
-  , blocksNumberChanged    :: !Bool
-  , chainDensity           :: !Double
-  , chainDensityChanged    :: !Bool
+  { systemStartTime          :: !UTCTime
+  , systemStartTimeChanged   :: !Bool
+  , epoch                    :: !Integer
+  , epochChanged             :: !Bool
+  , slot                     :: !Integer
+  , slotChanged              :: !Bool
+  , blocksNumber             :: !Integer
+  , blocksNumberChanged      :: !Bool
+  , chainDensity             :: !Double
+  , chainDensityChanged      :: !Bool
+  , slotLengthShelley        :: !Integer
+  , slotLengthAllegra        :: !Integer
+  , slotLengthMary           :: !Integer
+  , slotsPerKESPeriodShelley :: !Integer
+  , slotsPerKESPeriodAllegra :: !Integer
+  , slotsPerKESPeriodMary    :: !Integer
   } deriving (Generic, NFData, Show)
 
 data KESMetrics = KESMetrics
@@ -208,6 +215,11 @@ data ErrorsMetrics = ErrorsMetrics
   , errorsChanged :: !Bool
   , errorsRebuild :: !Bool
   } deriving (Generic, NFData, Show)
+
+data Era
+  = Shelley
+  | Allegra
+  | Mary
 
 initialNodesState
   :: Configuration
@@ -292,16 +304,22 @@ initialNodeState now = NodeState
         }
   , blockchainMetrics =
       BlockchainMetrics
-        { systemStartTime        = nullTime
-        , systemStartTimeChanged = False
-        , epoch                  = -1
-        , epochChanged           = False
-        , slot                   = -1
-        , slotChanged            = False
-        , blocksNumber           = -1
-        , blocksNumberChanged    = False
-        , chainDensity           = -0.1
-        , chainDensityChanged    = False
+        { systemStartTime          = nullTime
+        , systemStartTimeChanged   = False
+        , epoch                    = -1
+        , epochChanged             = False
+        , slot                     = -1
+        , slotChanged              = False
+        , blocksNumber             = -1
+        , blocksNumberChanged      = False
+        , chainDensity             = -0.1
+        , chainDensityChanged      = False
+        , slotLengthShelley        = 1
+        , slotLengthAllegra        = 1
+        , slotLengthMary           = 1
+        , slotsPerKESPeriodShelley = 129600
+        , slotsPerKESPeriodAllegra = 129600
+        , slotsPerKESPeriodMary    = 129600
         }
   , kesMetrics =
       KESMetrics
