@@ -10,6 +10,7 @@ import           Control.Concurrent.STM.TVar (TVar, modifyTVar', readTVarIO)
 import           Control.Monad (forM_, void)
 import           Control.Monad.STM (atomically)
 import           Data.Text (isPrefixOf, pack, unpack)
+import           Text.Read (readMaybe)
 
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core (Element, UI, element, liftIO, get, set, string,
@@ -394,10 +395,10 @@ takeEmailSettingsInputs window notifyTVar = do
     let currentSettings = nsHowToNotify notifySettings
         newEmailSettings = (emailSettings currentSettings)
           { emServerHost = host
-          , emServerPort = read (unpack port) :: Int
+          , emServerPort = maybe 0 id $ (readMaybe (unpack port) :: Maybe Int)
           , emUsername   = user
           , emPassword   = pass
-          , emSSL        = read (unpack ssl) :: SSL
+          , emSSL        = maybe TLS id $ (readMaybe (unpack ssl) :: Maybe SSL)
           , emEmailFrom  = emailFrom
           , emEmailTo    = emailTo
           , emSubject    = subject
