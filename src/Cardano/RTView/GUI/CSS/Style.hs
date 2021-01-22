@@ -465,6 +465,11 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl TestEmailResultError ? do
     color             red
+
+  cl AllTabsIcon ? do
+    widthPx           17
+    marginRightPx     13
+    marginBottomPx    3
  where
   cardanoLight    = rgb 31  193 195
   gray40          = rgb 102 102 102

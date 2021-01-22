@@ -435,11 +435,17 @@ justUpdateErrorsListAndTab window
                            # set UI.title__ errorsTabTitle
       void $ element elTabBadge # hideIt
                                 # set text ""
+      whenJustM (UI.getElementById window (show ErrorsTabsSwitcher)) $ \switcher ->
+        void $ element switcher #. [W3BarItem, W3Button, W3Mobile, W3Disabled]
+                                # set UI.title__ "Good news: there are no errors!"
     else do
       void $ element elTab # set UI.enabled True
                            # set UI.title__ errorsTabTitle
       void $ element elTabBadge # showInline
                                 # set text (show . length $ nodeErrors')
+      whenJustM (UI.getElementById window (show ErrorsTabsSwitcher)) $ \switcher ->
+        void $ element switcher #. [W3BarItem, W3Button, W3Mobile]
+                                # set UI.title__ "Open Errors tab for all nodes"
 
   showFiltersOnlyForExistingSeverities
 

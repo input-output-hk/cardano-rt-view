@@ -524,12 +524,19 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
                              ## (show NodeInfoTab <> nameOfNodeS)
                              # makeItActive
   kesTab        <- tabButton "Key Evolving Signature" "key.svg" Nothing
+                             ## (show KESTab <> nameOfNodeS)
   peersTab      <- tabButton "Peers" "peers.svg" Nothing
+                             ## (show PeersTab <> nameOfNodeS)
   blockchainTab <- tabButton "Blockchain" "blockchain.svg" Nothing
+                             ## (show BlockchainTab <> nameOfNodeS)
   mempoolTab    <- tabButton "Mempool" "mempool.svg" Nothing
+                             ## (show MempoolTab <> nameOfNodeS)
   ghcRTSTab     <- tabButton "RTS GC" "rts.svg" Nothing
+                             ## (show RTSGCTab <> nameOfNodeS)
   errorsBadge   <- UI.span #. [W3Badge, ErrorsBadge] # hideIt #+ [string ""]
-  errorsTab     <- tabButton "Errors" "bugs.svg" (Just errorsBadge) # set UI.enabled False
+  errorsTab     <- tabButton "Errors" "bugs.svg" (Just errorsBadge)
+                             ## (show ErrorsTab <> nameOfNodeS)
+                             # set UI.enabled False
 
   -- If we already have some errors in the node's state - update the list in "Errors" tab right now.
   let errors' = errors nodeErrors
@@ -605,9 +612,13 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
           else void $ element el' # makeItInactive
 
   resourcesTabMemory  <- anchorButton "Memory" "memory.svg"
+                           ## (show ResTabMemory <> nameOfNodeS)
   resourcesTabCPU     <- anchorButton "CPU" "cpu.svg"
+                           ## (show ResTabCPU <> nameOfNodeS)
   resourcesTabDisk    <- anchorButton "Disk" "disk.svg"
+                           ## (show ResTabDisk <> nameOfNodeS)
   resourcesTabNetwork <- anchorButton "Network" "network.svg"
+                           ## (show ResTabNetwork <> nameOfNodeS)
 
   resourcesTab
     <- UI.div #. [W3DropdownHover, W3Mobile] #+

@@ -136,6 +136,7 @@ initialTmpElements = HM.fromList . map (\(RemoteAddrNamed nameOfNode _) -> (name
 data HTMLClass
   = NoClass
   | ActiveTab
+  | AllTabsIcon
   | BarValueUnit
   | CardanoLogo
   | CommitLink
@@ -283,6 +284,7 @@ data HTMLClass
 instance Show HTMLClass where
   show NoClass                    = ""
   show ActiveTab                  = "ActiveTab"
+  show AllTabsIcon                = "AllTabsIcon"
   show BarValueUnit               = "BarValueUnit"
   show CardanoLogo                = "CardanoLogo"
   show CommitLink                 = "CommitLink"
@@ -432,7 +434,19 @@ data HTMLId
   | HideAllNodesButton
   | ShowAllNodesButton
   | ViewModeButton
+  -- Tabs
   | NodeInfoTab
+  | KESTab
+  | PeersTab
+  | BlockchainTab
+  | MempoolTab
+  | RTSGCTab
+  | ResTabCPU
+  | ResTabMemory
+  | ResTabDisk
+  | ResTabNetwork
+  | ErrorsTab
+  | ErrorsTabsSwitcher
   -- Id parts (the final id will be formed using unique name of node).
   | CPUUsageChartId
   | DiskUsageChartId
