@@ -17,6 +17,7 @@ import           Cardano.BM.Data.Configuration (RemoteAddrNamed (..))
 
 import           Cardano.RTView.CLI (RTViewParams (..))
 import qualified Cardano.RTView.GUI.JS.Charts as Chart
+import           Cardano.RTView.GUI.JS.Utils (goToTab)
 import           Cardano.RTView.GUI.Elements (HTMLClass (..), HTMLId (..),
                                               NodesStateElements, TmpElements,
                                               hideIt, showIt, (##), (#.))
@@ -129,11 +130,53 @@ topNavigation window acceptors config params notifyTVar nodesSelector = do
   nodesColumns2 <- UI.anchor #. [W3BarItem, W3Button, W3Mobile, ActiveTab] #+ [UI.string "2 nodes"]
   nodesColumns3 <- UI.anchor #. [W3BarItem, W3Button, W3Mobile]            #+ [UI.string "3 nodes"]
 
-  makeColumnsItemsActive [nodesColumns1, nodesColumns2, nodesColumns3]
+  makeItemsActive [nodesColumns1, nodesColumns2, nodesColumns3]
 
   changeColumns window acceptors nodesColumns1 [W3L12, W3M12, W3S12]
   changeColumns window acceptors nodesColumns2 [W3L6,  W3M12, W3S12]
   changeColumns window acceptors nodesColumns3 [W3L4,  W3M12, W3S12]
+
+  let anchorWithIcon icon title =
+        UI.anchor #. [W3BarItem, W3Button, W3Mobile]
+                  # set UI.title__ ("Open " <> title <> " tab for all nodes")
+                  #+
+          [ UI.img #. [AllTabsIcon]
+                   # set UI.src ("/static/images/" <> icon)
+          , UI.string title
+          ]
+
+  nodeInfoTab   <- anchorWithIcon "info.svg"       "Node info"
+  kesTab        <- anchorWithIcon "key.svg"        "KES"
+  peersTab      <- anchorWithIcon "peers.svg"      "Peers"
+  blockchainTab <- anchorWithIcon "blockchain.svg" "Blockchain"
+  mempoolTab    <- anchorWithIcon "mempool.svg"    "Mempool"
+  resTabMemory  <- anchorWithIcon "memory.svg"     "Memory usage"
+  resTabCPU     <- anchorWithIcon "cpu.svg"        "CPU usage"
+  ghcRTSTab     <- anchorWithIcon "rts.svg"        "RTS GC"
+  errorsTab     <- anchorWithIcon "bugs.svg"       "Errors"
+                     #. [W3BarItem, W3Button, W3Mobile, W3Disabled]
+                     ## show ErrorsTabsSwitcher
+
+  let tabsItems =
+        [ (nodeInfoTab,   NodeInfoTab)
+        , (kesTab,        KESTab)
+        , (peersTab,      PeersTab)
+        , (blockchainTab, BlockchainTab)
+        , (mempoolTab,    MempoolTab)
+        , (resTabMemory,  ResTabMemory)
+        , (resTabCPU,     ResTabCPU)
+        , (errorsTab,     ErrorsTab)
+        , (ghcRTSTab,     RTSGCTab)
+        ]
+
+  makeItemsActiveIfEnabled window $ map fst tabsItems
+
+  tabs :: [UI Element] <-
+    forM tabsItems $ \(tab, tabId) -> do
+      void $ UI.onEvent (UI.click tab) $ \_ ->
+        forM_ acceptors $ \(RemoteAddrNamed nameOfNode _) ->
+          UI.runFunction $ UI.ffi goToTab (show tabId <> T.unpack nameOfNode)
+      return $ element tab
 
   UI.div #. [W3Bar, W3Large, TopBar] #+
     [ UI.anchor #. [W3BarItem, W3Mobile] # set UI.href "https://cardano.org/" #+
@@ -141,10 +184,17 @@ topNavigation window acceptors config params notifyTVar nodesSelector = do
         ]
     , UI.div #. [W3DropdownHover, W3Mobile] #+
         [ UI.button #. [W3Button] #+
-            [ string "Select node"
+            [ string "Node"
             , UI.img #. [TopNavDropdownIcon] # set UI.src "/static/images/dropdown-light.svg"
             ]
         , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] #+ nodesSelector
+        ]
+    , UI.div #. [W3DropdownHover, W3Mobile] #+
+        [ UI.button #. [W3Button] #+
+            [ string "Tab"
+            , UI.img #. [TopNavDropdownIcon] # set UI.src "/static/images/dropdown-light.svg"
+            ]
+        , UI.div #. [W3DropdownContent, W3BarBlock, W3Card4] #+ tabs
         ]
     , UI.div #. [W3DropdownHover, W3Mobile] #+
         [ UI.button #. [W3Button] #+
@@ -170,10 +220,10 @@ topNavigation window acceptors config params notifyTVar nodesSelector = do
         ]
     ]
 
-makeColumnsItemsActive
+makeItemsActive
   :: [Element]
   -> UI ()
-makeColumnsItemsActive cols = do
+makeItemsActive cols = do
   let nodesCols = zip cols [1 :: Int .. length cols]
   forM_ nodesCols $ \(el, num) ->
     void $ UI.onEvent (UI.click el) $ \_ ->
@@ -181,6 +231,24 @@ makeColumnsItemsActive cols = do
         if num == num'
           then void $ element el' #. [W3BarItem, W3Button, W3Mobile, ActiveTab]
           else void $ element el' #. [W3BarItem, W3Button, W3Mobile]
+
+makeItemsActiveIfEnabled
+  :: UI.Window
+  -> [Element]
+  -> UI ()
+makeItemsActiveIfEnabled window cols = do
+  let nodesCols = zip cols [1 :: Int .. length cols]
+  forM_ nodesCols $ \(el, num) ->
+    void $ UI.onEvent (UI.click el) $ \_ ->
+      forM_ nodesCols $ \(el', num') ->
+        if num == num'
+          then void $ element el' #. [W3BarItem, W3Button, W3Mobile, ActiveTab]
+          else do
+            void $ element el' #. [W3BarItem, W3Button, W3Mobile]
+            -- By default Errors switcher is disabled (it will be cative only if there are some errors).
+            whenJustM (UI.getElementById window (show ErrorsTabsSwitcher)) $ \switcher ->
+              void $ element switcher #. [W3BarItem, W3Button, W3Mobile, W3Disabled]
+                                      # set UI.title__ "Good news: there are no errors!"
 
 changeColumns
   :: UI.Window
