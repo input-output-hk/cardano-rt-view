@@ -458,9 +458,14 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
   void $ UI.onEvent (UI.click elDownloadErrorsAsCSV) $ \_ -> do
     nss <- liftIO $ readTVarIO nsTVar
     let NodeState _ _ _ _ _ _ _ _ em _ = nss ! nameOfNode
-        csvFileName = "cardano-rt-view-" <> T.unpack nameOfNode <> "-errors.csv"
+        csvFileName = "cardano-rt-view-" <> nameOfNodeS <> "-errors.csv"
         errorsAsCSV = mkCSVWithErrorsForHref (errors em)
     UI.runFunction $ UI.ffi downloadCSVFile csvFileName errorsAsCSV
+
+  elSearchErrorInput
+    <- UI.input ## (show SearchErrorInputId <> nameOfNodeS)
+                #. [W3Input, SearchErrorInput]
+                # set (UI.attr "placeholder") "Search message..."
 
   errorsTabContent
     <- UI.div #. [TabContainer] # hideIt #+
@@ -495,6 +500,16 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
                  ]
              ]
          , element elNodeErrorsList
+         , UI.div #. [W3Row] #+
+             [ UI.div #. [W3Third] #+
+                 [ UI.span # set UI.html "&nbsp;"
+                 ]
+             , UI.div #. [W3TwoThird, SearchErrorArea] #+
+                 [ UI.img #. [SearchErrorIcon]
+                          # set UI.src "/static/images/search.svg"
+                 , element elSearchErrorInput
+                 ]
+             ]
          ]
 
   -- Tabs for corresponding sections.
@@ -610,6 +625,14 @@ mkNodePane window nsTVar tmpElsTVar NodeState {..} nameOfNode acceptors = do
         if ix == ix'
           then void $ element el' # makeItActive
           else void $ element el' # makeItInactive
+
+  void $ UI.onEvent (UI.valueChange elSearchErrorInput) $ \currentText -> do
+    let filterAction =
+          if null currentText
+            then unFilterErrors
+            else filterErrorsByText currentText
+    setErrorsViewMode nsTVar nameOfNode filterAction
+    immediatelyUpdateErrors window nsTVar tmpElsTVar nameOfNode elNodeErrorsList errorsTab errorsBadge
 
   resourcesTabMemory  <- anchorButton "Memory" "memory.svg"
                            ## (show ResTabMemory <> nameOfNodeS)
@@ -778,6 +801,24 @@ filterErrors targetSev ns = ns { nodeErrors = newMetrics }
   showOnlyThisSeverity (NodeError ts sev msg _) = NodeError ts sev msg visible
    where
     visible = targetSev == sev
+
+filterErrorsByText
+  :: String
+  -> NodeState
+  -> NodeState
+filterErrorsByText s ns = ns { nodeErrors = newMetrics }
+ where
+  newMetrics = currentMetrics
+    { errors = map showOnlyWithThisText currentErrors
+    , errorsChanged = True
+    , errorsRebuild = True
+    }
+  currentMetrics = nodeErrors ns
+  currentErrors = errors currentMetrics
+  textWeSearch = T.strip . T.pack $ s
+  showOnlyWithThisText (NodeError ts sev msg _) = NodeError ts sev msg visible
+   where
+    visible = (T.toLower textWeSearch) `T.isInfixOf` (T.toLower msg)
 
 unFilterErrors
   :: NodeState
