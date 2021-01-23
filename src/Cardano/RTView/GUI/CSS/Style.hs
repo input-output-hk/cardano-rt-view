@@ -262,7 +262,7 @@ ownCSS = unpack . TL.toStrict . render $ do
 
   cl ErrorsTabList ? do
     overflowY         scroll
-    heightPx          312
+    heightPx          260
 
   cl ErrorRow ? do
     marginBottomPx    10
@@ -470,6 +470,25 @@ ownCSS = unpack . TL.toStrict . render $ do
     widthPx           17
     marginRightPx     13
     marginBottomPx    3
+
+  cl SearchErrorArea ? do
+    marginBottomPx    19
+    marginTopPx       16
+    marginLeftPx      (-4)
+
+  cl SearchErrorIcon ? do
+    widthPx           19
+    position          absolute
+    marginTopPx       12
+    marginLeftPx      6
+
+  cl SearchErrorInput ? do
+    background        transparent
+    fontSizePct       90
+    paddingLeftPx     33
+    maxWidthPct       50
+    position          relative
+    zIndex            1
  where
   cardanoLight    = rgb 31  193 195
   gray40          = rgb 102 102 102
@@ -499,6 +518,7 @@ ownCSS = unpack . TL.toStrict . render $ do
   widthPct        = width . pct
   minWidthPx      = minWidth . px
   maxWidthPx      = maxWidth . px
+  maxWidthPct     = maxWidth . pct
 
   topPx           = top . px
   leftPx          = left . px

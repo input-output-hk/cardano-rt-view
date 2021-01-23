@@ -189,6 +189,9 @@ data HTMLClass
   | RTViewInfoCopyPathIcon
   | RTViewInfoIcon
   | RTViewInfoTop
+  | SearchErrorArea
+  | SearchErrorIcon
+  | SearchErrorInput
   | SelectMetricCheck
   | SelectMetricCheckArea
   | SelectNodeCheck
@@ -272,6 +275,7 @@ data HTMLClass
   | W3Table
   | W3Theme
   | W3Third
+  | W3ThreeQuarter
   | W3TwoThird
   | W3Quarter
   | W3L3
@@ -337,6 +341,9 @@ instance Show HTMLClass where
   show RTViewInfoCopyPathIcon     = "RTViewInfoCopyPathIcon"
   show RTViewInfoIcon             = "RTViewInfoIcon"
   show RTViewInfoTop              = "RTViewInfoTop"
+  show SearchErrorArea            = "SearchErrorArea"
+  show SearchErrorIcon            = "SearchErrorIcon"
+  show SearchErrorInput           = "SearchErrorInput"
   show SelectMetricCheck          = "SelectMetricCheck"
   show SelectMetricCheckArea      = "SelectMetricCheckArea"
   show SelectNodeCheck            = "SelectNodeCheck"
@@ -418,6 +425,7 @@ instance Show HTMLClass where
   show W3Table           = "w3-table"
   show W3Theme           = "w3-theme"
   show W3Third           = "w3-third"
+  show W3ThreeQuarter    = "w3-threequarter"
   show W3TwoThird        = "w3-twothird"
   show W3Quarter         = "w3-quarter"
   show W3L3              = "l3"
@@ -467,6 +475,7 @@ data HTMLId
   | CriticalMessageId
   | AlertMessageId
   | EmergencyMessageId
+  | SearchErrorInputId
   deriving Show
 
 (##) :: UI Element -> String  -> UI Element
