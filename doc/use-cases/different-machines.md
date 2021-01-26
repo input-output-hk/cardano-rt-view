@@ -62,29 +62,11 @@ Great, RTView is ready to run! Its configuration was saved at /home/denis/.confi
 Please note that the public IP of the `Server machine` was indicated for the question `indicate a host of machine RTView will be launched on`. Now, after you press `Enter`, you will see the changes you have to make in your node's configuration file:
 
 ```
-1. Find setupBackends and add TraceForwarderBK in it:
-
-   "setupBackends": [
-     "TraceForwarderBK"
-   ]
-
-2. Find TurnOnLogMetrics and set it to True:
+1. Find TurnOnLogMetrics flag and make sure it is true:
 
    "TurnOnLogMetrics": true
 
-3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:
-
-   "options": {
-     "mapBackends": {
-       "cardano.node.metrics": [
-         "TraceForwarderBK"
-       ],
-       ...
-     }
-
-   For more info about supported metrics please read the documentation.
-
-4. Since you have 1 node, add following traceForwardTo section in the root of its configuration file:
+2. Since you have 1 node, add following traceForwardTo section in the root of its configuration file:
 
    "traceForwardTo": {
      "tag": "RemoteSocket",

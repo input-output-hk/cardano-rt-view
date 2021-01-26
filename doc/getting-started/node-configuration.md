@@ -9,29 +9,11 @@ It is assumed that you already have at least one instance of `cardano-node`, whi
 After you finished the RTView configuration dialog, it displayed all the changes you have to make in your nodes' configuration files. For example, on Linux with all default values accepted, it looks like this:
 
 ```
-1. Find setupBackends and add TraceForwarderBK in it:
-
-   "setupBackends": [
-     "TraceForwarderBK"
-   ]
-
-2. Find TurnOnLogMetrics and set it to True:
+1. Find TurnOnLogMetrics flag and make sure it is true:
 
    "TurnOnLogMetrics": true
 
-3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:
-
-   "options": {
-     "mapBackends": {
-       "cardano.node.metrics": [
-         "TraceForwarderBK"
-       ],
-       ...
-     }
-
-   For more info about supported metrics please read the documentation.
-
-4. Since you have 3 nodes, add following traceForwardTo sections in the root of their configuration files:
+2. Since you have 3 nodes, add following traceForwardTo sections in the root of their configuration files:
 
    "traceForwardTo": {
      "tag": "RemoteSocket",
@@ -124,44 +106,10 @@ This is an example of the node's configuration file prepared for working with RT
   "options": {
     "mapBackends": {
       "cardano.node.metrics": [
-        "EKGViewBK",
-        "TraceForwarderBK"
-      ],
-      "cardano.node.metrics.peersFromNodeKernel": [
-        "TraceForwarderBK"
+        "EKGViewBK"
       ],
       "cardano.node.BlockFetchDecision.peers": [
         "EKGViewBK"
-      ],
-      "cardano.node.AcceptPolicy": [
-        "TraceForwarderBK"
-      ],
-      "cardano.node.ChainDB": [
-        "TraceForwarderBK"
-      ],
-      "cardano.node.DnsResolver": [
-        "TraceForwarderBK"
-      ],
-      "cardano.node.DnsSubscription": [
-        "TraceForwarderBK"
-      ],
-      "cardano.node.ErrorPolicy": [
-        "TraceForwarderBK"
-      ],
-      "cardano.node.Handshake": [
-        "TraceForwarderBK"
-      ],
-      "cardano.node.IpSubscription": [
-        "TraceForwarderBK"
-      ],
-      "cardano.node.LocalErrorPolicy": [
-        "TraceForwarderBK"
-      ],
-      "cardano.node.LocalHandshake": [
-        "TraceForwarderBK"
-      ],
-      "cardano.node.Mux": [
-        "TraceForwarderBK"
       ]
     },
     "mapSubtrace": {
@@ -227,8 +175,7 @@ This is an example of the node's configuration file prepared for working with RT
     "rpMaxAgeHours": 24
   },
   "setupBackends": [
-    "KatipBK",
-    "TraceForwarderBK"
+    "KatipBK"
   ],
   "setupScribes": [
     {
@@ -249,95 +196,3 @@ This is an example of the node's configuration file prepared for working with RT
 ```
 
 This configuration file is based on [this Mainnet configuration](https://hydra.iohk.io/build/4553119/download/1/mainnet-config.json).
-
-## Metrics routing
-
-After you finished the RTView configuration, you saw a few changes that should be made in the node's configuration file. Particularly, the step `3` said:
-
-```
-3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:
-
-   "options": {
-     "mapBackends": {
-       "cardano.node.metrics": [
-         "TraceForwarderBK"
-       ],
-       ...
-     }
-```
-
-This line, `cardano.node.metrics`, is a tracer's name. You can think of tracers as points inside of Cardano node, and the node can send different values in these points. When you map the tracer `cardano.node.metrics` on the `TraceForwarderBK`, all the metrics from `cardano.node.metrics` will be sent to `TraceForwarderBK`. But if you remove `TraceForwarderBK` from `cardano.node.metrics`, all the metrics sent to this tracer will never be forwarded to RTView.
-
-For more info about tracers, please read `Technical Details` -> `Understanding Metrics`.
-
-Main tracers are:
-
-| Tracer                                     | Metric on web-page                     |
-| ------------------------------------------ | -------------------------------------- |
-| `cardano.node.metrics.peersFromNodeKernel` | `Peers` -> peers list                  |
-| `cardano.node.metrics`                     | All other metrics.                     |
-
-There are additional tracers as well for errors (please read below).
-
-## Errors routing
-
-Node forwards not only the metrics; it forwards possible errors as well. To see a particular error in the `Errors` tab, you should add corresponding tracers' names in the `mapBackends` section in the node's configuration file.
-
-For example, to see all DNS-related problems, add the following lines in the `mapBackends` section:
-
-```
-"cardano.node.DnsResolver": [
-  "TraceForwarderBK"
-],
-"cardano.node.DnsSubscription": [
-  "TraceForwarderBK"
-]
-```
-
-This is the complete list of tracers' names for all possible errors (actual for Cardano node `1.23.0`):
-
-* `cardano.node.AcceptPolicy`
-* `cardano.node.ChainDB`
-* `cardano.node.DnsResolver`
-* `cardano.node.DnsSubscription`
-* `cardano.node.ErrorPolicy`
-* `cardano.node.Handshake`
-* `cardano.node.IpSubscription`
-* `cardano.node.LocalErrorPolicy`
-* `cardano.node.LocalHandshake`
-* `cardano.node.Mux`
-
-To forward all possible errors to RTView, add the following lines in the `mapBackends` section:
-
-```
-"cardano.node.AcceptPolicy": [
-  "TraceForwarderBK"
-],
-"cardano.node.ChainDB": [
-  "TraceForwarderBK"
-],
-"cardano.node.DnsResolver": [
-  "TraceForwarderBK"
-],
-"cardano.node.DnsSubscription": [
-  "TraceForwarderBK"
-],
-"cardano.node.ErrorPolicy": [
-  "TraceForwarderBK"
-],
-"cardano.node.Handshake": [
-  "TraceForwarderBK"
-],
-"cardano.node.IpSubscription": [
-  "TraceForwarderBK"
-],
-"cardano.node.LocalErrorPolicy": [
-  "TraceForwarderBK"
-],
-"cardano.node.LocalHandshake": [
-  "TraceForwarderBK"
-],
-"cardano.node.Mux": [
-  "TraceForwarderBK"
-]
-```

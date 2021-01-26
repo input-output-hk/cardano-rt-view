@@ -25,9 +25,9 @@ RTView is useful for anyone who runs Cardano nodes and wants to see what is goin
 Key features
 ============
 
-1. **Cross-platform**: you can use it on Windows, Linux, or macOS.
-2. **Multiple nodes**: connect as many nodes as you want, whether they run locally or on different machines.
-3. **Web-based UI**: it provides configurable sections, live charts, and interactive tooltips. Use any browser or run RTView behind a web server like NGINX and view your nodes' state on any third-party device.
+1. **Multiple nodes**: connect as many nodes as you want, whether they run locally or on different machines.
+2. **Web-based UI**: it provides configurable sections, live charts, and interactive tooltips. Use any browser or run RTView behind a web server like NGINX and view your nodes' state on any third-party device.
+3. **Email notifications**: get notified about any problems with your nodes.
 
 How it looks like
 =================
@@ -41,13 +41,12 @@ The web-page with 3 nodes may look like this:
 Download
 ========
 
-Stable release packages for Windows, Linux, and macOS are available `here <https://github.com/input-output-hk/cardano-rt-view/releases>`_.
+Stable release packages for Linux and macOS are available `here <https://github.com/input-output-hk/cardano-rt-view/releases>`_.
 
-Also, you can download the latest CI builds from Hydra:
+Also, you can download the latest builds from Hydra CI:
 
-1. `Windows <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-win64-release/latest/download/1>`_
-2. `Linux <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-linux-release/latest/download/1>`_
-3. `macOS <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-darwin-release/latest/download/1>`_
+1. `Linux <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-linux-release/latest/download/1>`_
+2. `macOS <https://hydra.iohk.io/job/Cardano/cardano-rt-view/cardano-rt-view-darwin-release/latest/download/1>`_
 
 Documentation
 =============

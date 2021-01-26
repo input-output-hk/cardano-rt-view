@@ -537,43 +537,17 @@ showChangesInNodeConfiguration config rtViewMachineHost = do
   TIO.putStrLn ""
   TIO.putStrLn "Now you have to make the following changes in your node's configuration file:"
   TIO.putStrLn ""
-  enableTraceForwarderBK
   enableMetricsTracing
-  mapBackendsExamples
   addTraceForwardTo
   colorize Magenta BoldIntensity $ do
     TIO.putStr "After you are done, press <Enter> to run RTView..."
   void TIO.getLine
  where
-  enableTraceForwarderBK = do
-    TIO.putStrLn "1. Find setupBackends and add TraceForwarderBK in it:"
-    TIO.putStrLn ""
-    colorize Yellow BoldIntensity $ do
-      TIO.putStrLn "   \"setupBackends\": ["
-      TIO.putStrLn "     \"TraceForwarderBK\""
-      TIO.putStrLn "   ]"
-    TIO.putStrLn ""
-
   enableMetricsTracing = do
-    TIO.putStrLn "2. Find TurnOnLogMetrics and set it to True:"
+    TIO.putStrLn "1. Find TurnOnLogMetrics flag and make sure it is true:"
     TIO.putStrLn ""
     colorize Yellow BoldIntensity $
       TIO.putStrLn "   \"TurnOnLogMetrics\": true"
-    TIO.putStrLn ""
-
-  mapBackendsExamples = do
-    TIO.putStrLn "3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:"
-    TIO.putStrLn ""
-    colorize Yellow BoldIntensity $ do
-      TIO.putStrLn "   \"options\": {"
-      TIO.putStrLn "     \"mapBackends\": {"
-      TIO.putStrLn "       \"cardano.node.metrics\": ["
-      TIO.putStrLn "         \"TraceForwarderBK\""
-      TIO.putStrLn "       ],"
-      TIO.putStrLn "       ..."
-      TIO.putStrLn "     }"
-      TIO.putStrLn ""
-    TIO.putStrLn "   For more info about supported metrics please read the documentation."
     TIO.putStrLn ""
 
   addTraceForwardTo = do
@@ -583,7 +557,7 @@ showChangesInNodeConfiguration config rtViewMachineHost = do
           if num == 1
             then ("1 node",              "section",  "its",   "file")
             else (showt num <> " nodes", "sections", "their", "files")
-    TIO.putStrLn $ "4. Since you have "
+    TIO.putStrLn $ "2. Since you have "
                    <> nNodes <> ", add following traceForwardTo "
                    <> sections <> " in the root of "
                    <> its <> " configuration "

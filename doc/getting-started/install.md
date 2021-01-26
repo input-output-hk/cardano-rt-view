@@ -116,29 +116,11 @@ After you pressed `Enter`, RTView will show all the changes you have to make in 
 ```
 Now you have to make the following changes in your node's configuration file:
 
-1. Find setupBackends and add TraceForwarderBK in it:
-
-   "setupBackends": [
-     "TraceForwarderBK"
-   ]
-
-2. Find TurnOnLogMetrics and set it to True:
+1. Find TurnOnLogMetrics flag and make sure it is true:
 
    "TurnOnLogMetrics": true
 
-3. Find options -> mapBackends and redirect required metrics to TraceForwarderBK, for example:
-
-   "options": {
-     "mapBackends": {
-       "cardano.node.metrics": [
-         "TraceForwarderBK"
-       ],
-       ...
-     }
-
-   For more info about supported metrics please read the documentation.
-
-4. Since you have 3 nodes, add following traceForwardTo sections in the root of their configuration files:
+2. Since you have 3 nodes, add following traceForwardTo sections in the root of their configuration files:
 
    "traceForwardTo": {
      "tag": "RemoteSocket",
