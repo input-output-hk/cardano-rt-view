@@ -12,8 +12,25 @@ After you finished the RTView configuration dialog, it displayed all the changes
 1. Find TurnOnLogMetrics flag and make sure it is true:
 
    "TurnOnLogMetrics": true
+  
+2. Add TraceForwarderBK to mapBackends
 
-2. Since you have 3 nodes, add following traceForwardTo sections in the root of their configuration files:
+   "options": {
+     "mapBackends": {
+       "cardano.node.metrics": [
+         ...,
+         "TraceForwarderBK"
+       ],
+
+2. Add TraceForwarderBK to setupBackends
+
+   "setupBackends": {
+     "cardano.node.metrics": [
+       ...,
+       "TraceForwarderBK"
+     ],
+       
+3. Since you have 3 nodes, add following traceForwardTo sections in the root of their configuration files:
 
    "traceForwardTo": {
      "tag": "RemoteSocket",
@@ -106,7 +123,8 @@ This is an example of the node's configuration file prepared for working with RT
   "options": {
     "mapBackends": {
       "cardano.node.metrics": [
-        "EKGViewBK"
+        "EKGViewBK",
+        "TraceForwarderBK"
       ],
       "cardano.node.BlockFetchDecision.peers": [
         "EKGViewBK"
@@ -175,7 +193,8 @@ This is an example of the node's configuration file prepared for working with RT
     "rpMaxAgeHours": 24
   },
   "setupBackends": [
-    "KatipBK"
+    "KatipBK",
+    "TraceForwarderBK"
   ],
   "setupScribes": [
     {
