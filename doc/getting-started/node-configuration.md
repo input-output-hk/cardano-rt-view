@@ -22,7 +22,7 @@ After you finished the RTView configuration dialog, it displayed all the changes
          "TraceForwarderBK"
        ],
 
-2. Add TraceForwarderBK to setupBackends
+3. Add TraceForwarderBK to setupBackends
 
    "setupBackends": {
      "cardano.node.metrics": [
@@ -30,7 +30,7 @@ After you finished the RTView configuration dialog, it displayed all the changes
        "TraceForwarderBK"
      ],
        
-3. Since you have 3 nodes, add following traceForwardTo sections in the root of their configuration files:
+4. Since you have 3 nodes, add following traceForwardTo sections in the root of their configuration files:
 
    "traceForwardTo": {
      "tag": "RemoteSocket",
