@@ -18,6 +18,7 @@ import           Cardano.RTView.Acceptor (launchMetricsAcceptor)
 import           Cardano.RTView.CLI (RTViewParams (..))
 import           Cardano.RTView.Config (prepareConfigAndParams)
 import           Cardano.RTView.GUI.Elements (TmpElements, initialTmpElements)
+import           Cardano.RTView.EKG (EKGStores, mkEKGStores)
 import           Cardano.RTView.ErrorBuffer (ErrorBuffer, effectuate, realize, unrealize)
 import           Cardano.RTView.NodeState.Types (NodesState, initialNodesState)
 import           Cardano.RTView.NodeState.Updater (launchNodeStateUpdater)
@@ -50,6 +51,8 @@ runCardanoRTView params' = do
   tmpElsTVar :: TVar TmpElements <- newTVarIO $ initialTmpElements acceptors
   -- This TVar contains complete notification settings.
   notifyTVar :: TVar NotificationSettings <- newTVarIO notifySettings
+  -- This TVar contains EKG-stores for all acceptors.
+  ekgStoresTVar :: TVar EKGStores <- newTVarIO =<< mkEKGStores acceptors
 
   let nsTr = appendName "nodeState" tr
       wsTr = appendName "webServer" tr
@@ -60,7 +63,7 @@ runCardanoRTView params' = do
   --   3. web server (it serves requests from user's browser and shows nodes' metrics in the real time).
   --   4. notifications: check events and notify the user about them.
   acceptorThr <- async $ launchMetricsAcceptor config accTr switchBoard
-  updaterThr  <- async $ launchNodeStateUpdater nsTr switchBoard be nsTVar
+  updaterThr  <- async $ launchNodeStateUpdater nsTr switchBoard be nsTVar ekgStoresTVar
   serverThr   <- async $ launchWebServer wsTr config nsTVar tmpElsTVar notifyTVar params acceptors
   notifyThr   <- async $ launchNotifications ntTr nsTVar notifyTVar
 

@@ -15,17 +15,20 @@ module Cardano.RTView.NodeState.Updater
     ( launchNodeStateUpdater
     ) where
 
-import           Control.Concurrent.STM.TVar (TVar, modifyTVar')
+import           Control.Concurrent.STM.TVar (TVar, modifyTVar', readTVarIO)
 import           Control.Monad (forever, forM_)
 import           Control.Monad.STM (atomically)
 import qualified Data.Aeson as A
-import           Data.HashMap.Strict ((!?))
+import           Data.HashMap.Strict ((!), (!?))
 import qualified Data.HashMap.Strict as HM
+import           Data.List (partition)
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Time.Clock (UTCTime)
 import           Data.Word (Word64)
 import           GHC.Clock (getMonotonicTimeNSec)
+import           System.Metrics.Gauge (Gauge)
+import qualified System.Metrics.Gauge as G
 import           System.Time.Extra (sleep)
 import           Text.Read (readMaybe)
 
@@ -36,6 +39,7 @@ import           Cardano.BM.Data.LogItem (LOContent (..), LOMeta (..), LogObject
                                           MonitorAction (..), utc2ns)
 import           Cardano.BM.Trace (Trace, logDebug)
 
+import           Cardano.RTView.EKG (EKGStores, isItEKGMetric, storeEKGMetrics)
 import           Cardano.RTView.ErrorBuffer (ErrorBuffer, readErrorBuffer)
 import           Cardano.RTView.NodeState.Parsers (extractPeersInfo)
 import           Cardano.RTView.NodeState.Types
@@ -49,18 +53,32 @@ launchNodeStateUpdater
   -> Switchboard Text
   -> ErrorBuffer Text
   -> TVar NodesState
+  -> TVar EKGStores
   -> IO ()
-launchNodeStateUpdater tr switchBoard errBuff nsTVar = forever $ do
+launchNodeStateUpdater tr switchBoard errBuff nsTVar ekgStoresTVar = forever $ do
   -- Take current |LogObject|s from the |ErrorBuffer|.
+  updateNodesStateByTracedErrors tr errBuff nsTVar
+  -- Take current |LogObject|s from the |LogBuffer| and split them in two groups:
+  -- 1. EKG-metrics,
+  -- 2. Traced values.
+  -- Later all traced values and EKG-metrics will be received via two independent channels.
+  (ekgMetrics, tracedValues) <- partition isItEKGMetric <$> readLogBuffer switchBoard
+  storeEKGMetrics ekgMetrics ekgStoresTVar
+
+  updateNodesStateByTracedValues tr nsTVar tracedValues
+  updateNodesStateByEKGMetrics tr nsTVar ekgStoresTVar
+  -- Check for updates in the |LogBuffer| every second.
+  sleep 1.0
+
+updateNodesStateByTracedErrors
+  :: Trace IO Text
+  -> ErrorBuffer Text
+  -> TVar NodesState
+  -> IO ()
+updateNodesStateByTracedErrors tr errBuff nsTVar = do
   currentErrLogObjects <- readErrorBuffer errBuff
   forM_ currentErrLogObjects $ \(loggerName, errLogObject) ->
     updateNodesStateErrors tr nsTVar loggerName errLogObject
-  -- Take current |LogObject|s from the |LogBuffer|.
-  currentLogObjects <- readLogBuffer switchBoard
-  forM_ currentLogObjects $ \(loggerName, logObject) ->
-    updateNodesState tr nsTVar loggerName logObject
-  -- Check for updates in the |LogBuffer| every second.
-  sleep 1.0
 
 -- | Update NodeState for particular node based on loggerName.
 --   Please note that this function updates only Error-messages (if errors occurred).
@@ -116,14 +134,23 @@ updateNodeErrors ns (LOMeta timeStamp _ _ sev _) aContent = ns { nodeErrors = ne
       _ -> "UNPARSED_ERROR_MESSAGE"
   visible = True
 
+updateNodesStateByTracedValues
+  :: Trace IO Text
+  -> TVar NodesState
+  -> [(Text, LogObject Text)]
+  -> IO ()
+updateNodesStateByTracedValues tr nsTVar tracedValues =
+  forM_ tracedValues $ \(loggerName, logObject) ->
+    updateNodesStateByTracedValue tr nsTVar loggerName logObject
+
 -- | Update NodeState for particular node based on loggerName.
-updateNodesState
+updateNodesStateByTracedValue
   :: Trace IO Text
   -> TVar NodesState
   -> Text
   -> LogObject Text
   -> IO ()
-updateNodesState tr nsTVar loggerName (LogObject aName aMeta aContent) = do
+updateNodesStateByTracedValue tr nsTVar loggerName (LogObject aName aMeta aContent) = do
   logDebug tr $ "New logObject, name: " <> aName
                 <> ", meta: " <> T.pack (show aMeta)
                 <> ", content: " <> T.pack (show aContent)
@@ -175,80 +202,102 @@ updateNodesState tr nsTVar loggerName (LogObject aName aMeta aContent) = do
            | itIs "basicInfo.slotsPerKESPeriodMary" ->
              textValue $ updateSlotsPerKESPeriod Mary ns now
            | otherwise ->
-            case aContent of
-              LogStructured newPeersInfo ->
-                nsWith $ updatePeersInfo ns newPeersInfo now
-              LogValue "density" (PureD density) ->
-                nsWith $ updateChainDensity ns density now
-              LogValue "blockNum" (PureI blockNum) ->
-                nsWith $ updateBlocksNumber ns blockNum now
-              LogValue "slotInEpoch" (PureI slotNum) ->
-                nsWith $ updateSlotInEpoch ns slotNum now
-              LogValue "epoch" (PureI epoch') ->
-                nsWith $ updateEpoch ns epoch' now
-              LogValue "txsInMempool" (PureI txsInMempool) ->
-                nsWith $ updateMempoolTxs ns txsInMempool now
-              LogValue "mempoolBytes" (PureI mempoolBytes') ->
-                nsWith $ updateMempoolBytes ns mempoolBytes' now
-              LogValue "txsProcessedNum" (PureI processedTxsNum) ->
-                nsWith $ updateTxsProcessed ns processedTxsNum now
-              LogValue "blocksForgedNum" (PureI forgedBlocksNum) ->
-                nsWith $ updateBlocksForged ns forgedBlocksNum now
-              LogValue "nodeCannotForge" (PureI cannotForge) ->
-                nsWith $ updateNodeCannotForge ns cannotForge now
-              LogValue "nodeIsLeaderNum" (PureI leaderNum) ->
-                nsWith $ updateNodeIsLeader ns leaderNum now
-              LogValue "slotsMissedNum" (PureI missedSlotsNum) ->
-                nsWith $ updateSlotsMissed ns missedSlotsNum now
+               case aContent of
+                 LogStructured newPeersInfo ->
+                   nsWith $ updatePeersInfo ns newPeersInfo now
+                 LogValue "density" (PureD density) ->
+                   nsWith $ updateChainDensity ns density now
+                 LogValue "blockNum" (PureI blockNum) ->
+                   nsWith $ updateBlocksNumber ns blockNum now
+                 LogValue "slotInEpoch" (PureI slotNum) ->
+                   nsWith $ updateSlotInEpoch ns slotNum now
+                 LogValue "epoch" (PureI epoch') ->
+                   nsWith $ updateEpoch ns epoch' now
+                 LogValue "txsInMempool" (PureI txsInMempool) ->
+                   nsWith $ updateMempoolTxs ns txsInMempool now
+                 LogValue "mempoolBytes" (PureI mempoolBytes') ->
+                   nsWith $ updateMempoolBytes ns mempoolBytes' now
+                 LogValue "txsProcessedNum" (PureI processedTxsNum) ->
+                   nsWith $ updateTxsProcessed ns processedTxsNum now
+                 LogValue "blocksForgedNum" (PureI forgedBlocksNum) ->
+                   nsWith $ updateBlocksForged ns forgedBlocksNum now
+                 LogValue "nodeCannotForge" (PureI cannotForge) ->
+                   nsWith $ updateNodeCannotForge ns cannotForge now
+                 LogValue "nodeIsLeaderNum" (PureI leaderNum) ->
+                   nsWith $ updateNodeIsLeader ns leaderNum now
+                 LogValue "slotsMissedNum" (PureI missedSlotsNum) ->
+                   nsWith $ updateSlotsMissed ns missedSlotsNum now
+                 LogValue "operationalCertificateStartKESPeriod" (PureI oCertStartKesPeriod) ->
+                   nsWith $ updateCertStartKESPeriod ns oCertStartKesPeriod now
+                 LogValue "operationalCertificateExpiryKESPeriod" (PureI oCertExpiryKesPeriod) ->
+                   nsWith $ updateCertExpiryKESPeriod ns oCertExpiryKesPeriod now
+                 LogValue "currentKESPeriod" (PureI currentKesPeriod) ->
+                   nsWith $ updateCurrentKESPeriod ns currentKesPeriod now
+                 LogValue "remainingKESPeriods" (PureI kesPeriodsUntilExpiry) ->
+                   nsWith $ updateRemainingKESPeriods ns kesPeriodsUntilExpiry now
+                 _ -> currentNodesState
+      Nothing ->
+        -- This is a problem, because it means that configuration is unexpected one:
+        -- name of node in getAcceptAt doesn't correspond to the name of loggerName.
+        currentNodesState
+
+updateNodesStateByEKGMetrics
+  :: Trace IO Text
+  -> TVar NodesState
+  -> TVar EKGStores
+  -> IO ()
+updateNodesStateByEKGMetrics tr nsTVar ekgStoresTVar = do
+  ekgStores <- readTVarIO ekgStoresTVar
+  let namesOfNodes = HM.keys ekgStores
+  forM_ namesOfNodes $ \nameOfNode -> do
+    let (_, gaugesForThisNode) = ekgStores ! nameOfNode
+    forM_ (HM.toList gaugesForThisNode) $ \(metricName, (gauge, timeStamp)) ->
+      updateNodesStateByEKGMetric tr nsTVar nameOfNode metricName gauge timeStamp
+
+updateNodesStateByEKGMetric
+  :: Trace IO Text
+  -> TVar NodesState
+  -> Text
+  -> Text
+  -> Gauge
+  -> UTCTime
+  -> IO ()
+updateNodesStateByEKGMetric _tr nsTVar nameOfNode mName gauge ts = do
+  mValue <- G.read gauge
+  now <- getMonotonicTimeNSec
+
+  atomically $ modifyTVar' nsTVar $ \currentNodesState ->
+    let nsWith :: NodeState -> NodesState
+        nsWith newState = HM.adjust (const newState) nameOfNode currentNodesState
+    in
+    case currentNodesState !? nameOfNode of
+      Just ns ->
+        if | mName == "Sys.Platform" ->    nsWith $ updateNodePlatform ns (fromIntegral mValue) now
+           | mName == "RTS.gcLiveBytes" -> nsWith $ updateRTSBytesUsed ns (fromIntegral mValue) now
+           | mName == "RTS.gcMajorNum" ->  nsWith $ updateGcMajorNum   ns (fromIntegral mValue) now
+           | mName == "RTS.gcMinorNum" ->  nsWith $ updateGcMinorNum   ns (fromIntegral mValue) now
+           | mName == "RTS.gcticks" ->     nsWith $ updateGCTicks      ns (fromIntegral mValue) ts now
+           | mName == "RTS.mutticks" ->    nsWith $ updateMutTicks     ns (fromIntegral mValue) ts now
 #ifdef WINDOWS
-              LogValue "Stat.CPUTime" (Microseconds microsecs) ->
-                nsWith $ updateCPUSecs ns (microsecs * 1000) aMeta now
+           | mName == "Stat.CPUTime" ->
+             let microsecs = fromIntegral rawValue in
+             nsWith $ updateCPUSecs ns (microsecs * 1000) ts now
 #endif
 #ifdef DARWIN
-              LogValue "Mem.resident_size" (Bytes bytes) ->
-                nsWith $ updateMemoryBytes ns bytes now
-              LogValue "Sys.CPUTime" (Nanoseconds nanosecs) ->
-                nsWith $ updateCPUSecs ns nanosecs aMeta now
-              LogValue "Net.ifd_0-ibytes" (Bytes inBytes) ->
-                nsWith $ updateNetworkIn ns inBytes aMeta now
-              LogValue "Net.ifd_0-obytes" (Bytes outBytes) ->
-                nsWith $ updateNetworkOut ns outBytes aMeta now
+           | mName == "Mem.resident_size" -> nsWith $ updateMemoryBytes ns (fromIntegral mValue) now
+           | mName == "Sys.CPUTime" ->       nsWith $ updateCPUSecs     ns (fromIntegral mValue) ts now
+           | mName == "Net.ifd_0-ibytes" ->  nsWith $ updateNetworkIn   ns (fromIntegral mValue) ts now
+           | mName == "Net.ifd_0-obytes" ->  nsWith $ updateNetworkOut  ns (fromIntegral mValue) ts now
 #endif
 #ifdef LINUX
-              LogValue "Mem.resident" (PureI bytes) ->
-                nsWith $ updateMemoryBytes ns bytes now
-              LogValue "IO.rchar" (Bytes bytesWereRead) ->
-                nsWith $ updateDiskRead ns bytesWereRead aMeta now
-              LogValue "IO.wchar" (Bytes bytesWereWritten) ->
-                nsWith $ updateDiskWrite ns bytesWereWritten aMeta now
-              LogValue "Stat.cputicks" (PureI ticks) ->
-                nsWith $ updateCPUTicks ns ticks aMeta now
-              LogValue "Net.IpExt:InOctets" (Bytes inBytes) ->
-                nsWith $ updateNetworkIn ns inBytes aMeta now
-              LogValue "Net.IpExt:OutOctets" (Bytes outBytes) ->
-                nsWith $ updateNetworkOut ns outBytes aMeta now
+           | mName == "Mem.resident" ->        nsWith $ updateMemoryBytes ns (fromIntegral mValue) now
+           | mName == "IO.rchar" ->            nsWith $ updateDiskRead    ns (fromIntegral mValue) ts now
+           | mName == "IO.wchar" ->            nsWith $ updateDiskWrite   ns (fromIntegral mValue) ts now
+           | mName == "Stat.cputicks" ->       nsWith $ updateCPUTicks    ns (fromIntegral mValue) ts now
+           | mName == "Net.IpExt:InOctets" ->  nsWith $ updateNetworkIn   ns (fromIntegral mValue) ts now
+           | mName == "Net.IpExt:OutOctets" -> nsWith $ updateNetworkOut  ns (fromIntegral mValue) ts now
 #endif
-              LogValue "Sys.Platform" (PureI pfid) ->
-                nsWith $ updateNodePlatform ns (fromIntegral pfid) now
-              LogValue "operationalCertificateStartKESPeriod" (PureI oCertStartKesPeriod) ->
-                nsWith $ updateCertStartKESPeriod ns oCertStartKesPeriod now
-              LogValue "operationalCertificateExpiryKESPeriod" (PureI oCertExpiryKesPeriod) ->
-                nsWith $ updateCertExpiryKESPeriod ns oCertExpiryKesPeriod now
-              LogValue "currentKESPeriod" (PureI currentKesPeriod) ->
-                nsWith $ updateCurrentKESPeriod ns currentKesPeriod now
-              LogValue "remainingKESPeriods" (PureI kesPeriodsUntilExpiry) ->
-                nsWith $ updateRemainingKESPeriods ns kesPeriodsUntilExpiry now
-              LogValue "RTS.gcLiveBytes" (PureI usedMemBytes) ->
-                nsWith $ updateRTSBytesUsed ns usedMemBytes now
-              LogValue "RTS.gcMajorNum" (PureI gcMajorNum) ->
-                nsWith $ updateGcMajorNum ns gcMajorNum now
-              LogValue "RTS.gcMinorNum" (PureI gcMinorNum) ->
-                nsWith $ updateGcMinorNum ns gcMinorNum now
-              LogValue "RTS.gcticks" (PureI ticks) ->
-                nsWith $ updateGCTicks ns ticks aMeta now
-              LogValue "RTS.mutticks" (PureI ticks) ->
-                nsWith $ updateMutTicks ns ticks aMeta now
-              _ -> currentNodesState
+           | otherwise -> currentNodesState
       Nothing ->
         -- This is a problem, because it means that configuration is unexpected one:
         -- name of node in getAcceptAt doesn't correspond to the name of loggerName.
@@ -385,8 +434,8 @@ updateMemoryBytes ns bytes now = ns { resourcesMetrics = newMetrics, metricsLast
 #endif
 
 #ifdef LINUX
-updateDiskRead :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
-updateDiskRead ns bytesWereRead meta now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
+updateDiskRead :: NodeState -> Word64 -> UTCTime -> Word64 -> NodeState
+updateDiskRead ns bytesWereRead ts now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics =
     currentMetrics
@@ -403,10 +452,10 @@ updateDiskRead ns bytesWereRead meta now = ns { resourcesMetrics = newMetrics, m
   bytesDiff       = fromIntegral (bytesWereRead - diskUsageRLast currentMetrics) :: Double
   timeDiffInSecs  = timeDiff / 1000000000
   timeDiff        = fromIntegral (currentTimeInNs - diskUsageRNs currentMetrics) :: Double
-  currentTimeInNs = utc2ns (tstamp meta)
+  currentTimeInNs = utc2ns ts
 
-updateDiskWrite :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
-updateDiskWrite ns bytesWereWritten meta now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
+updateDiskWrite :: NodeState -> Word64 -> UTCTime -> Word64 -> NodeState
+updateDiskWrite ns bytesWereWritten ts now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics =
     currentMetrics
@@ -423,10 +472,10 @@ updateDiskWrite ns bytesWereWritten meta now = ns { resourcesMetrics = newMetric
   bytesDiff       = fromIntegral (bytesWereWritten - diskUsageWLast currentMetrics) :: Double
   timeDiffInSecs  = timeDiff / 1000000000
   timeDiff        = fromIntegral (currentTimeInNs - diskUsageWNs currentMetrics) :: Double
-  currentTimeInNs = utc2ns (tstamp meta)
+  currentTimeInNs = utc2ns ts
 
-updateCPUTicks :: NodeState -> Integer -> LOMeta -> Word64 -> NodeState
-updateCPUTicks ns ticks meta now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
+updateCPUTicks :: NodeState -> Integer -> UTCTime -> Word64 -> NodeState
+updateCPUTicks ns ticks ts now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics =
     currentMetrics
@@ -441,12 +490,12 @@ updateCPUTicks ns ticks meta now = ns { resourcesMetrics = newMetrics, metricsLa
   cpuperc        = fromIntegral (ticks - cpuLast currentMetrics) / fromIntegral clktck / tdiff
   clktck         = 100 :: Integer
   tdiff          = max 0.1 $ fromIntegral (tns - cpuNs currentMetrics) / 1000000000 :: Double
-  tns            = utc2ns $ tstamp meta
+  tns            = utc2ns ts
 #endif
 
 #if defined(DARWIN) || defined(LINUX)
-updateNetworkIn :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
-updateNetworkIn ns inBytes meta now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
+updateNetworkIn :: NodeState -> Word64 -> UTCTime -> Word64 -> NodeState
+updateNetworkIn ns inBytes ts now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics =
     currentMetrics
@@ -460,10 +509,10 @@ updateNetworkIn ns inBytes meta now = ns { resourcesMetrics = newMetrics, metric
   timeDiffInSecs  = timeDiff / 1000000000
   bytesDiff       = fromIntegral (inBytes - networkUsageInLast currentMetrics) :: Double
   timeDiff        = fromIntegral (currentTimeInNs - networkUsageInNs currentMetrics) :: Double
-  currentTimeInNs = utc2ns (tstamp meta)
+  currentTimeInNs = utc2ns ts
 
-updateNetworkOut :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
-updateNetworkOut ns outBytes meta now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
+updateNetworkOut :: NodeState -> Word64 -> UTCTime -> Word64 -> NodeState
+updateNetworkOut ns outBytes ts now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics =
     currentMetrics
@@ -477,12 +526,12 @@ updateNetworkOut ns outBytes meta now = ns { resourcesMetrics = newMetrics, metr
   timeDiffInSecs  = timeDiff / 1000000000
   bytesDiff       = fromIntegral (outBytes - networkUsageOutLast currentMetrics) :: Double
   timeDiff        = fromIntegral (currentTimeInNs - networkUsageOutNs currentMetrics) :: Double
-  currentTimeInNs = utc2ns (tstamp meta)
+  currentTimeInNs = utc2ns ts
 #endif
 
 #if defined(DARWIN) || defined(WINDOWS)
-updateCPUSecs :: NodeState -> Word64 -> LOMeta -> Word64 -> NodeState
-updateCPUSecs ns nanosecs meta now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
+updateCPUSecs :: NodeState -> Word64 -> UTCTime -> Word64 -> NodeState
+updateCPUSecs ns nanosecs ts now = ns { resourcesMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics =
     currentMetrics
@@ -499,7 +548,7 @@ updateCPUSecs ns nanosecs meta now = ns { resourcesMetrics = newMetrics, metrics
   cpuperc  = fromIntegral deltacpu / 100000000 / tdiff
   deltacpu = fromIntegral nanosecs - cpuLast currentMetrics
   tdiff    = max 0.1 $ fromIntegral (tns - cpuNs currentMetrics) / 1000000000 :: Double
-  tns      = utc2ns $ tstamp meta
+  tns      = utc2ns ts
 #endif
 
 updateMempoolTxs :: NodeState -> Integer -> Word64 -> NodeState
@@ -610,8 +659,8 @@ updateGcMinorNum ns gcMinorNum now = ns { rtsMetrics = newMetrics, metricsLastUp
     }
   currentMetrics = rtsMetrics ns
 
-updateGCTicks :: NodeState -> Integer -> LOMeta -> Word64 -> NodeState
-updateGCTicks ns ticks meta now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
+updateGCTicks :: NodeState -> Integer -> UTCTime -> Word64 -> NodeState
+updateGCTicks ns ticks ts now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics =
     currentMetrics
@@ -626,10 +675,10 @@ updateGCTicks ns ticks meta now = ns { rtsMetrics = newMetrics, metricsLastUpdat
   gcPerc         = fromIntegral (ticks - rtsGCLast currentMetrics) / fromIntegral clktck / tdiff
   clktck         = 100 :: Integer
   tdiff          = max 0.1 $ fromIntegral (tns - rtsGCNs currentMetrics) / 1000000000 :: Double
-  tns            = utc2ns $ tstamp meta
+  tns            = utc2ns ts
 
-updateMutTicks :: NodeState -> Integer -> LOMeta -> Word64 -> NodeState
-updateMutTicks ns ticks meta now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
+updateMutTicks :: NodeState -> Integer -> UTCTime -> Word64 -> NodeState
+updateMutTicks ns ticks ts now = ns { rtsMetrics = newMetrics, metricsLastUpdate = now }
  where
   newMetrics =
     currentMetrics
@@ -644,7 +693,7 @@ updateMutTicks ns ticks meta now = ns { rtsMetrics = newMetrics, metricsLastUpda
   mutPerc        = fromIntegral (ticks - rtsMutLast currentMetrics) / fromIntegral clktck / tdiff
   clktck         = 100 :: Integer
   tdiff          = max 0.1 $ fromIntegral (tns - rtsMutNs currentMetrics) / 1000000000 :: Double
-  tns            = utc2ns $ tstamp meta
+  tns            = utc2ns ts
 
 updateCertStartKESPeriod :: NodeState -> Integer -> Word64 -> NodeState
 updateCertStartKESPeriod ns oCertStartKesPeriod now = ns { kesMetrics = newMetrics, metricsLastUpdate = now }
