@@ -19,6 +19,8 @@ library
 
                        Cardano.RTView.Acceptor
 
+                       Cardano.RTView.EKG
+
                        Cardano.RTView.ErrorBuffer
 
                        Cardano.RTView.GUI.CSS.Style
@@ -61,6 +63,7 @@ library
                      , containers
                      , deepseq
                      , directory
+                     , ekg-core
                      , extra
                      , file-embed
                      , filepath
