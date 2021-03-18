@@ -64,6 +64,7 @@ library
                      , deepseq
                      , directory
                      , ekg-core
+                     , ekg-forward
                      , extra
                      , file-embed
                      , filepath
