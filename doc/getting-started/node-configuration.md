@@ -18,7 +18,7 @@ After you finished the RTView configuration dialog, it displayed all the changes
    "traceForwardTo": {
      "tag": "RemoteSocket",
      "contents": [
-       "0.0.0.0",
+       "<RTView_IPaddr>",
        "3000"
      ]
    }
@@ -26,7 +26,7 @@ After you finished the RTView configuration dialog, it displayed all the changes
    "traceForwardTo": {
      "tag": "RemoteSocket",
      "contents": [
-       "0.0.0.0",
+       "<RTView_IPaddr>",
        "3001"
      ]
    }
@@ -34,10 +34,20 @@ After you finished the RTView configuration dialog, it displayed all the changes
    "traceForwardTo": {
      "tag": "RemoteSocket",
      "contents": [
-       "0.0.0.0",
+       "<RTView_IPaddr>",
        "3002"
      ]
    }
+
+  where <RTView_IPaddr> is the interface IP address where RTView is listening (can be 127.0.0.1 or internal network address i.e. 192.168.1.1 or public IP address)
+
+3. extend `defaultbackends` with `TraceForwarderBK`
+
+  "defaultBackends": [
+    "KatipBK",
+    "TraceForwarderBK"
+  ]
+
 ```
 
 ## Cardano node configuration file: complete example
@@ -89,7 +99,8 @@ This is an example of the node's configuration file prepared for working with RT
   "TurnOnLogging": true,
   "ViewMode": "SimpleView",
   "defaultBackends": [
-    "KatipBK"
+    "KatipBK",
+    "TraceForwarderBK"
   ],
   "defaultScribes": [
     [
@@ -188,7 +199,7 @@ This is an example of the node's configuration file prepared for working with RT
   "traceForwardTo": {
     "tag": "RemoteSocket",
     "contents": [
-      "0.0.0.0",
+      "127.0.0.1",
       "3000"
     ]
   }
