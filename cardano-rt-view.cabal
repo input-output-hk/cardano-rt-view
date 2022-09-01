@@ -33,9 +33,6 @@ library
                        Cardano.RTView.GUI.Markup.Pane
                        Cardano.RTView.GUI.Updater
 
-                       Cardano.RTView.Git.Rev
-                       Cardano.RTView.Git.RevTH
-
                        Cardano.RTView.NodeState.CSV
                        Cardano.RTView.NodeState.Parsers
                        Cardano.RTView.NodeState.Types
@@ -58,6 +55,7 @@ library
                      , async
                      , base >=4.12 && <5
                      , bytestring
+                     , cardano-config
                      , clay
                      , cassava
                      , containers
@@ -65,7 +63,6 @@ library
                      , directory
                      , ekg-core
                      , extra
-                     , file-embed
                      , filepath
                      , formatting
                      , hashable
@@ -73,10 +70,8 @@ library
                      , lobemo-backend-trace-acceptor
                      , mime-mail
                      , optparse-applicative
-                     , process
                      , smtp-mail == 0.3.0.0
                      , stm
-                     , template-haskell
                      , text
                      , threepenny-gui
                      , time
